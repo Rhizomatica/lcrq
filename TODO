@@ -1,0 +1,21 @@
+# TODO
+
+## Calculate transfer & encoding parameters
+
+## Generators:
+- (5.3.5.1) Random Number Generator
+- (5.3.5.2) Degree Generator
+- (5.3.5.3) Encoding Symbol Generator
+- (5.3.5.4) Tuple Generator
+
+## Encoding
+### Padding (5.3.2)
+### Generate Intermediate Symbols (5.3.3.4)
+### Encoding (5.3.4)
+
+## Decoding (5.4)
+### First Phase  - (5.4.2.2) Gaussian Elimination -> lower triangular form
+### Second Phase - (5.4.2.3) more Gaussian Elimination
+### Third Phase  - (5.4.2.4)
+### Fourth Phase - (5.4.2.5)
+### Fifth Phase  - (5.4.2.6)
