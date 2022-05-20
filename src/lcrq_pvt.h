@@ -16,7 +16,7 @@ typedef struct t2_s {
 } t2_t;
 
 /* Table 2 (5.6) */
-static const t2_t kpad[] = {
+static const t2_t T2[] = {
 	{10, 254, 7, 10, 17},
 	{12, 630, 7, 10, 19},
 	{18, 682, 11, 10, 29},
@@ -495,5 +495,37 @@ static const t2_t kpad[] = {
 	{55843, 963, 907, 16, 56393},
 	{56403, 471, 907, 16, 56951}
 };
+
+struct rq_s {
+	/* F: the transfer length of the source object, in octets */
+	size_t F;
+	/* WS: the maximum size block that is decodable in working memory */
+	size_t WS;
+	/* Kt is the total number of symbols required to represent the source data of the object */
+	size_t Kt;
+	size_t kl;
+	/* Al: the symbol alignment parameter, in octets (recommended: 4) */
+	uint16_t Al;
+	/* P' (PP): the maximum payload size in octets, which is assumed to be a multiple of Al */
+	//uint16_t PP; Not required => P' == T
+	/* T: symbol size, MUST be a multiple of Al */
+	uint16_t T;
+	/* sub-symbol size */
+	uint16_t SSS;
+	/* SS: a parameter where the desired lower bound on the sub-symbol size is SS*Al */
+	uint16_t SS;
+	uint16_t Nmax;
+	/* Z: the number of source blocks */
+	uint16_t Z;
+	/* N: the number of sub-blocks in each source block */
+	uint16_t N;
+	/* K: the number of symbols in a source block */
+	uint16_t K;
+	/* K': K' smallest K' >= K in Table 2 */
+	uint16_t KP;
+};
+
+static const int T2LEN = sizeof T2 / sizeof T2[0];
+static const uint16_t KPAD_MAX = T2[T2LEN - 1].k; /* 56403 */
 
 #endif /* LCRQ_PVT_H */

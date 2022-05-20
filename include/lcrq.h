@@ -4,6 +4,25 @@
 #ifndef LCRQ_H
 #define LCRQ_H 1
 
-void ok(void);
+#include <stddef.h>
+#include <stdint.h>
+
+/* rounding integer division */
+#define CEIL(x, y)  (((x) + ((y) - 1)) / (y))
+#define FLOOR(x, y) ((x) / (y))
+
+typedef struct part_s {
+	size_t IL;
+	size_t IS;
+	size_t JL;
+	size_t JS;
+} part_t;
+
+typedef struct rq_s rq_t;
+
+part_t rq_partition(size_t I, uint16_t J);
+
+rq_t *rq_init(size_t F, uint16_t T);
+void rq_free(rq_t *rq);
 
 #endif /* LCRQ_PVT_H */
