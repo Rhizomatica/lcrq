@@ -38,7 +38,7 @@ build:
 	@echo -e "$(TIMESTAMP) - starting tests" >> $(LOGFILE)
 	@echo -e "\nRunning tests"
 
-0000-0000.%: LDFLAGS += -lsodium
+0000-0001.%: LDFLAGS += -lsodium
 
 
 %.test %.clang: %.c $(OBJS)
