@@ -3,7 +3,6 @@
 
 #include <lcrq_pvt.h>
 #include <assert.h>
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,6 +28,16 @@ uint64_t KL(uint64_t WS, uint16_t Al, uint16_t T, uint16_t n)
 		if (T2[i].k <= v) return T2[i].k;
 	}
 	return 0;
+}
+
+size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
+{
+	const uint8_t x0 = (y + i) % (1 << 8);
+	const uint8_t x1 = ((y >> 8) + i) % (1 << 8);
+	const uint8_t x2 = ((y >> 16) + i) % (1 << 8);
+	const uint8_t x3 = ((y >> 24) + i) % (1 << 8);
+	assert(m); /* must be positive */
+	return ((V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m);
 }
 
 /* The function Partition[I,J] derives parameters for partitioning a

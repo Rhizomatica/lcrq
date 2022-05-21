@@ -21,6 +21,7 @@ typedef struct part_s {
 typedef struct rq_s rq_t;
 
 part_t rq_partition(size_t I, uint16_t J);
+size_t rq_rand(size_t y, uint8_t i, size_t m);
 
 rq_t *rq_init(size_t F, uint16_t T);
 void rq_free(rq_t *rq);
