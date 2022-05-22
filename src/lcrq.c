@@ -147,5 +147,10 @@ rq_t *rq_init(size_t F, uint16_t T)
 		if (CEIL(rq->Kt,rq->Z) <= KL(rq->WS, rq->Al, rq->T, rq->N)) break;
 	}
 
+	/* verify primes */
+	assert(isprime(rq->P1));
+	assert(isprime(rq->S));
+	assert(isprime(rq->W));
+
 	return rq;
 }
