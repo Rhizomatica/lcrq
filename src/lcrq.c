@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 
 static uint16_t K_padded(uint16_t K)
 {
@@ -28,6 +29,25 @@ uint64_t KL(uint64_t WS, uint16_t Al, uint16_t T, uint16_t n)
 		if (T2[i].k <= v) return T2[i].k;
 	}
 	return 0;
+}
+
+/* The degree generator Deg[v] is defined as follows, where v is a non-
+   negative integer that is less than 2^^20 = 1048576.  Given v, find
+   index d in Table 1 such that f[d-1] <= v < f[d], and set Deg[v] =
+   min(d, W-2).  Recall that W is derived from K' as described in
+   Section 5.3.3.3. */
+int rq_deg(rq_t *rq, int v)
+{
+	assert(v >= 0);
+	assert(v <= (1 << 20));
+
+	uint16_t W = T2[rq->KP].w;
+	int d;
+
+	for (d = 1; d <= 30; d++) {
+		if (DEG[d-1] <= v && v < DEG[d]) break;
+	}
+	return MIN(d, W-2);
 }
 
 size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
