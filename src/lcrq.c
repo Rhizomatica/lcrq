@@ -128,11 +128,15 @@ rq_t *rq_init(size_t F, uint16_t T)
 	rq->K = CEIL(rq->kl, rq->T);
 	rq->KP = K_padded(rq->K);
 	rq->J = T2[rq->KP].j;
+
+	/* 5.3.3.3.  Pre-Coding Relationships */
 	rq->H = T2[rq->KP].h;
 	rq->S = T2[rq->KP].s;
 	rq->W = T2[rq->KP].w;
 	rq->L = rq->KP + rq->S + rq->H;
 	rq->P = rq->L - rq->W;
+	rq->U = rq->P - rq->H;
+	rq->B = rq->W - rq->S;
 
 	/* P1 denotes the smallest prime number greater than or equal to P */
 	rq->P1 = rq->P;

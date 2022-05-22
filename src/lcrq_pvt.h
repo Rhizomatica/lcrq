@@ -828,6 +828,8 @@ struct rq_s {
 	uint16_t P;
 	/* P1 denote the smallest prime number greater than or equal to P */
 	uint16_t P1;
+	uint16_t U;
+	uint16_t B;
 };
 
 static const int T2LEN = sizeof T2 / sizeof T2[0];
