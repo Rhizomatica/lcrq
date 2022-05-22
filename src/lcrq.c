@@ -7,6 +7,17 @@
 #include <string.h>
 #include <sys/param.h>
 
+int isprime(int n)
+{
+	if (n <= 1) return 0;
+	if (n % 2 == 0) return 0;
+	for (int i = 3; i < n; i++) {
+		if (n % i == 0) return 0;
+	}
+	return 1;
+}
+
+
 static uint16_t K_padded(uint16_t K)
 {
 	assert(K <= KPAD_MAX);
@@ -41,13 +52,12 @@ int rq_deg(rq_t *rq, int v)
 	assert(v >= 0);
 	assert(v <= (1 << 20));
 
-	uint16_t W = T2[rq->KP].w;
 	int d;
 
 	for (d = 1; d <= 30; d++) {
 		if (DEG[d-1] <= v && v < DEG[d]) break;
 	}
-	return MIN(d, W-2);
+	return MIN(d, rq->W-2);
 }
 
 size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
@@ -58,6 +68,23 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 	const uint8_t x3 = ((y >> 24) + i) % (1 << 8);
 	assert(m); /* must be positive */
 	return ((V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m);
+}
+
+rq_tuple_t rq_tuple(rq_t *rq, size_t X)
+{
+	rq_tuple_t tup = {0};
+	size_t A = 53591 + rq->J * 997;
+	if (A % 2 == 0) A++;
+	size_t B = 10267 * (rq->J + 1);
+	size_t y = (B + X * A) & 0xffff;
+	size_t v = rq_rand(y, 0, 1048576);
+	size_t d = rq_deg(rq, v);
+	tup.a = 1 + rq_rand(y, 1, rq->W-1);
+	tup.b = rq_rand(y, 2, rq->W);
+	tup.d1 = (d < 4) ? 2 + rq_rand(X, 3, 2) : 2;
+	tup.a1 = 1 + rq_rand(X, 4, rq->P1 - 1);
+	tup.b1 = rq_rand(X, 5, rq->P1);
+	return tup;
 }
 
 /* The function Partition[I,J] derives parameters for partitioning a
@@ -100,6 +127,16 @@ rq_t *rq_init(size_t F, uint16_t T)
 	rq->Z = CEIL(rq->Kt,rq->kl);
 	rq->K = CEIL(rq->kl, rq->T);
 	rq->KP = K_padded(rq->K);
+	rq->J = T2[rq->KP].j;
+	rq->H = T2[rq->KP].h;
+	rq->S = T2[rq->KP].s;
+	rq->W = T2[rq->KP].w;
+	rq->L = rq->KP + rq->S + rq->H;
+	rq->P = rq->L - rq->W;
+
+	/* P1 denotes the smallest prime number greater than or equal to P */
+	rq->P1 = rq->P;
+	while (!isprime(rq->P1)) rq->P1++;
 
 	/* N is the minimum n=1, ..., Nmax such that ceil(Kt/Z) <= KL(n) */
 	for (rq->N = 1; rq->N <= rq->Nmax; rq->N++) {

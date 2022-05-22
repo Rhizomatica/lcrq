@@ -820,6 +820,14 @@ struct rq_s {
 	uint16_t K;
 	/* K': K' smallest K' >= K in Table 2 */
 	uint16_t KP;
+	uint16_t J;
+	uint16_t H;
+	uint16_t S;
+	uint16_t W;
+	uint16_t L;
+	uint16_t P;
+	/* P1 denote the smallest prime number greater than or equal to P */
+	uint16_t P1;
 };
 
 static const int T2LEN = sizeof T2 / sizeof T2[0];
