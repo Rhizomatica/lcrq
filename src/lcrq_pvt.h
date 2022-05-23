@@ -794,6 +794,8 @@ static const uint8_t OCT_EXP[] = {
 };
 
 struct rq_s {
+	part_t src_part;
+	part_t sub_part;
 	/* F: the transfer length of the source object, in octets */
 	size_t F;
 	/* WS: the maximum size block that is decodable in working memory */

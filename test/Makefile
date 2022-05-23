@@ -21,8 +21,6 @@ VALGRIND = valgrind --leak-check=full --error-exitcode=2 --errors-for-leak-kinds
 .PHONY: test clean realclean build result check cap
 
 cap: SKIP = "----- capabilities not required \(skipping\) -----\\e[0m"
-#cap: test
-cap: clean 0000-0046.test 0000-0047.test 0000-0051.test 0000-0058.test 0000-0060.test 0000-0061.test 0000-0062.test 0000-0064.test 0000-0065.test 0000-0066.test 0000-0067.test 0000-0069.test
 
 check: MEMCHECK = $(VALGRIND)
 check: FAIL = $(LEAK)
@@ -39,6 +37,7 @@ build:
 	@echo -e "\nRunning tests"
 
 0000-0001.%: LDFLAGS += -lsodium
+0000-0006.%: LDFLAGS += -lsodium
 
 
 %.test %.clang: %.c $(OBJS)

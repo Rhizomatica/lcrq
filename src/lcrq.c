@@ -2,6 +2,7 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include <lcrq_pvt.h>
+#include <matrix.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,16 +16,6 @@ int isprime(int n)
 		if (n % i == 0) return 0;
 	}
 	return 1;
-}
-
-
-static uint16_t K_padded(uint16_t K)
-{
-	assert(K <= KPAD_MAX);
-	for (int i = 0; i < T2LEN; i++) {
-		if (T2[i].k >= K) return T2[i].k;
-	}
-	return KPAD_MAX;
 }
 
 /* KL(n) is the maximum K' value in Table 2 in Section 5.6 such
@@ -104,6 +95,57 @@ part_t rq_partition(size_t I, uint16_t J)
 	return p;
 }
 
+/* The first row of Matrix A consists of three sub-matrices:
+ * G_LDPC1, the identity matrix I_S and G_LDPC2
+ * See RFC 6330 (5.3.3.3) p23 */
+static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
+{
+	matrix_t L1, I_S;
+
+	matrix_new(&L1, rq->S, rq->L, A->base);
+	matrix_new(&I_S, rq->S, rq->S, L1.base + L1.size);
+
+	/* G_LDPC,1 (S x B) */
+	for (int i = 0; i < rq->B; i++) {        // For i = 0, ..., B-1 do
+		const int a = 1 + i / rq->S;     //   a = 1 + floor(i/S)
+		int b = i % rq->S;               //   b = i % S
+		matrix_set(&L1, b, i, 1);        //   D[b] = D[b] + C[i]
+		b = (b + a) % rq->S;             //   b = (b + a) % S
+		matrix_set(&L1, b, i, 1);        //   D[b] = D[b] + C[i]
+		b = (b + a) % rq->S;             //   b = (b + a) % S
+		matrix_set(&L1, b, i, 1);        //   D[b] = D[b] + C[i]
+	}
+
+	/* The identity matrix, I_S */
+	matrix_identity(&I_S);
+
+	/* G_LDPC,2 (S x P) */
+	for (int i = 0; i < rq->S; i++) {         // For i = 0, ..., S-1 do
+		const int a = i % rq->P;          //   a = i % P
+		const int b = (i + 1) % rq->P;    //   b = (i+1) % P
+		matrix_set(&L1, i, rq->W + a, 1); //   D[i] = D[i] + C[W+a] + C[W+b]
+		matrix_set(&L1, i, rq->W + b, 1);
+	}
+}
+
+static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
+{
+	matrix_new(A, rq->KP, rq->L, sym);
+	matrix_zero(A);
+	rq_generate_LDPC(rq, A);
+}
+
+void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, uint8_t *sym)
+{
+	matrix_t A = {0};
+	rq_generate_matrix_A(rq, &A, sym);
+}
+
+void *rq_intermediate_symbols_alloc(rq_t *rq)
+{
+	return calloc(rq->L, rq->T);
+}
+
 void rq_free(rq_t *rq)
 {
 	free(rq);
@@ -126,13 +168,18 @@ rq_t *rq_init(size_t F, uint16_t T)
 	rq->kl = KL(rq->WS, rq->Al, rq->T, rq->Nmax);
 	rq->Z = CEIL(rq->Kt,rq->kl);
 	rq->K = CEIL(rq->kl, rq->T);
-	rq->KP = K_padded(rq->K);
+	for (int i = 0; i < T2LEN; i++) {
+		if (T2[i].k >= rq->K) {
+			rq->KP = T2[i].k;
+			rq->H = T2[i].h;
+			rq->S = T2[i].s;
+			rq->W = T2[i].w;
+			break;
+		}
+	}
 	rq->J = T2[rq->KP].j;
 
 	/* 5.3.3.3.  Pre-Coding Relationships */
-	rq->H = T2[rq->KP].h;
-	rq->S = T2[rq->KP].s;
-	rq->W = T2[rq->KP].w;
 	rq->L = rq->KP + rq->S + rq->H;
 	rq->P = rq->L - rq->W;
 	rq->U = rq->P - rq->H;
@@ -151,6 +198,9 @@ rq_t *rq_init(size_t F, uint16_t T)
 	assert(isprime(rq->P1));
 	assert(isprime(rq->S));
 	assert(isprime(rq->W));
+
+	rq->src_part = rq_partition(rq->Kt, rq->Z);
+	rq->sub_part = rq_partition(rq->T / rq->Al, rq->N);
 
 	return rq;
 }

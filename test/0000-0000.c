@@ -56,6 +56,20 @@ void test_parms(size_t F)
 	test_log("NS  = %u\n", NS);
 	test_log("K   = %u\n", rq->K);
 	test_log("K'  = %u\n", rq->KP);
+	test_log("L   = %u\n", rq->L); /* always 107 ? */
+	test_log("P   = %u\n", rq->P);
+	test_log("P1  = %u\n", rq->P1);
+	test_log("U   = %u\n", rq->U);
+	test_log("J   = %u\n", rq->J);
+	test_log("S   = %u\n", rq->S);
+	test_log("H   = %u\n", rq->H);
+	test_log("W   = %u\n", rq->W);
+	test_log("B   = %u\n", rq->B);
+
+	test_assert(rq->L == rq->KP + rq->S + rq->H, "L = K' + S + H");
+	test_assert(rq->P == rq->L - rq->W, "P (%u) = L(%u) - W(%u)", rq->P, rq->L, rq->W);
+	test_assert(rq->B <= rq->L, "B (%u) <= L (%u)", rq->B, rq->L);
+	test_assert(rq->L > rq->KP, "L > K'");
 
 	assert(rq->N == NL + NS);
 	assert(rq->F <= 946270874880);

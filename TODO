@@ -6,6 +6,17 @@
 ## Encoding
 ### Padding (5.3.2)
 ### Generate Intermediate Symbols (5.3.3.4)
+
+Matrix A is formed from the sub-matrices:
+- G_LDPC,1
+- G_LDPC,2
+- G_HDPC
+- G_ENC
+- I_S
+- I_H
+
+From this the intermediate symbols are calculated: C = (A^^-1)*D
+
 ### Encoding (5.3.4)
 
 ## Decoding (5.4)
