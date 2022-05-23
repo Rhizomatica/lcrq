@@ -8,7 +8,7 @@
 #include <sodium.h>
 #include <sys/param.h>
 
-#define MAX_SRCOBJ 4099
+#define MAX_SRCOBJ 1024 * 1024 * 1024
 
 /* generate source object of data of random size and content up to max bytes */
 uint32_t generate_source_object(uint32_t max, unsigned char **block)
@@ -41,20 +41,44 @@ int main(void)
 
 	rq_dump(rq, stderr);
 
-	/* allocate memory for intermediate symbols */
-	intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
 
 	srcblk = srcobj;
 	len = F;
-	for (int SBN = 0; SBN < rq->Z; SBN++) {
-		srcblk += rq->T;
-		rq_intermediate_symbols(rq, srcblk, MIN(rq->T, len), intsym);
-		test_log("encoding %zu bytes\n", MIN(rq->T, len));
-		len -= rq->T;
+
+	size_t SBN;
+	size_t blklen;
+
+	test_log("ZL = %zu\n", rq->src_part.JL);
+	test_log("ZS = %zu\n", rq->src_part.JS);
+
+	/* encode long blocks */
+	for (SBN = 0; SBN < rq->src_part.JL; SBN++) {
+		blklen = rq->src_part.IL * rq->T;
+
+		/* allocate memory for intermediate symbols */
+		intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
+
+		rq_intermediate_symbols(rq, srcblk, blklen, intsym);
+		test_log("encoding %zu bytes\n", blklen);
+		srcblk += blklen;
+		len -= blklen;
+		free(intsym);
+	}
+	/* encode short blocks */
+	for (; SBN < rq->src_part.JS; SBN++) {
+		blklen = rq->src_part.IS * rq->T;
+
+		/* allocate memory for intermediate symbols */
+		intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
+
+		rq_intermediate_symbols(rq, srcblk, blklen, intsym);
+		test_log("%zu: encoding %zu bytes\n", blklen);
+		srcblk += blklen;
+		len -= blklen;
+		free(intsym);
 	}
 
 	rq_free(rq);
-	free(intsym);
 	free(srcobj);
 
 	//test_rusage();
