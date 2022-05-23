@@ -128,11 +128,47 @@ static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 	}
 }
 
+/* The second row of Matrix A has the HDPC codes followed by
+ * the identity matrix I_H
+ * See RFC 6330 (5.3.3.3) p25 */
+static void rq_generate_HDPC(rq_t *rq, matrix_t *A)
+{
+	matrix_t H1, I_H;
+	uint8_t val = 1;
+
+	matrix_new(&H1, rq->H, rq->L, A->base + rq->S * rq->L);
+	matrix_new(&I_H, rq->H, rq->H, H1.base + H1.size);
+
+	for (int j = 0; j < rq->H; j++) {
+		matrix_set(&H1, j, rq->KP + rq->S - 1, val);
+		val = OCT_LOG[val] + OCT_LOG[2];
+	}
+	for (int j = rq->KP + rq->S - 2; j >= 0; j--) {
+		for (int i = 0; i < rq->H; i++) {
+			val = matrix_get(&H1, i, j + 1);
+			val = (val) ? OCT_LOG[2] + OCT_LOG[val] : 0;
+			matrix_set(&H1, i, j, val);
+		}
+		int a = rq_rand(j + 1, 6, rq->H);
+		val = matrix_get(&H1, a, j);
+		val ^= 1; /* Add => XOR */
+		matrix_set(&H1, a, j, val);
+		a = (a + rq_rand(j + 1, 7, rq->H - 1) + 1) % rq->H;
+		val = matrix_get(&H1, a, j);
+		val ^= 1; /* Add => XOR */
+		matrix_set(&H1, a, j, val);
+	}
+
+	/* The identity matrix, I_H */
+	matrix_identity(&I_H);
+}
+
 static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
 {
 	matrix_new(A, rq->KP, rq->L, sym);
 	matrix_zero(A);
 	rq_generate_LDPC(rq, A);
+	rq_generate_HDPC(rq, A);
 }
 
 void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, uint8_t *sym)
