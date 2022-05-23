@@ -197,15 +197,15 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
 {
 	matrix_new(A, rq->KP, rq->L, sym);
-	matrix_zero(A);
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
 	rq_generate_LT(rq, A);
 }
 
-void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, uint8_t *sym)
+void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, size_t blklen, uint8_t *sym)
 {
 	matrix_t A = {0};
+	memcpy(sym, blk, rq->T);
 	rq_generate_matrix_A(rq, &A, sym);
 }
 

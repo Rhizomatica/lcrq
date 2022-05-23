@@ -6,6 +6,7 @@
 #include <lcrq.h>
 #include <lcrq_pvt.h>
 #include <sodium.h>
+#include <sys/param.h>
 
 #define MAX_SRCOBJ 4099
 
@@ -27,7 +28,7 @@ int main(void)
 	unsigned char *srcobj = NULL;
 	unsigned char *srcblk;
 	uint8_t *intsym;
-	size_t F;
+	size_t F, len;
 
 	loginit();
 	test_name("5.3.3.4 Intermediate Symbol Generation");
@@ -42,9 +43,11 @@ int main(void)
 	intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
 
 	srcblk = srcobj;
+	len = F;
 	for (int SBN = 0; SBN < rq->Z; SBN++) {
 		srcblk += rq->T;
-		rq_intermediate_symbols(rq, srcblk, intsym);
+		rq_intermediate_symbols(rq, srcblk, MIN(rq->T, len), intsym);
+		len -= rq->T;
 	}
 
 	rq_free(rq);
