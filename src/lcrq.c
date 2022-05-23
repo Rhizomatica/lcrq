@@ -170,12 +170,37 @@ static void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 	matrix_identity(&I_H);
 }
 
+static void rq_generate_LT(rq_t *rq, matrix_t *A)
+{
+	matrix_t LT;
+	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L);
+	for (int row = 0; row < LT.rows; row++) {
+		uint32_t X = row - rq->S - rq->H;
+		rq_tuple_t tup = rq_tuple(rq, X);
+		matrix_set(&LT, row, tup.b, 1);
+		for (int j = 1; j < tup.d; j++) {
+			tup.b = (tup.b + tup.a) % rq->W;
+			matrix_set(&LT, row, tup.b, 1);
+		}
+		while (tup.b1 >= rq->P)
+			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+		matrix_set(&LT, row, rq->W + tup.b1, 1);
+		for (int j = 1; j < tup.d1; j++) {
+			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+			while (tup.b1 >= rq->P)
+				tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+			matrix_set(&LT, row, rq->W + tup.b1, 1);
+		}
+	}
+}
+
 static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
 {
 	matrix_new(A, rq->KP, rq->L, sym);
 	matrix_zero(A);
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
+	rq_generate_LT(rq, A);
 }
 
 void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, uint8_t *sym)
