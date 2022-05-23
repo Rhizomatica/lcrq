@@ -128,6 +128,13 @@ static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 	}
 }
 
+/* Galois Field multiplication using lookup tables
+ * See p63 of RFC 6330 */
+static uint8_t rq_gf_mul(uint8_t a, uint8_t b)
+{
+	return (!a || !b) ? 0 : OCT_EXP[OCT_LOG[a] + OCT_LOG[b]];
+}
+
 /* The second row of Matrix A has the HDPC codes followed by
  * the identity matrix I_H
  * See RFC 6330 (5.3.3.3) p25 */
@@ -141,21 +148,21 @@ static void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 
 	for (int j = 0; j < rq->H; j++) {
 		matrix_set(&H1, j, rq->KP + rq->S - 1, val);
-		val = OCT_LOG[val] + OCT_LOG[2];
+		val = rq_gf_mul(val, 2);
 	}
 	for (int j = rq->KP + rq->S - 2; j >= 0; j--) {
 		for (int i = 0; i < rq->H; i++) {
 			val = matrix_get(&H1, i, j + 1);
-			val = (val) ? OCT_LOG[2] + OCT_LOG[val] : 0;
+			val = rq_gf_mul(val, 2);
 			matrix_set(&H1, i, j, val);
 		}
 		int a = rq_rand(j + 1, 6, rq->H);
 		val = matrix_get(&H1, a, j);
-		val ^= 1; /* Add => XOR */
+		val ^= 1; /* GF add => XOR */
 		matrix_set(&H1, a, j, val);
 		a = (a + rq_rand(j + 1, 7, rq->H - 1) + 1) % rq->H;
 		val = matrix_get(&H1, a, j);
-		val ^= 1; /* Add => XOR */
+		val ^= 1; /* GF add => XOR */
 		matrix_set(&H1, a, j, val);
 	}
 
