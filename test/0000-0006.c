@@ -59,20 +59,20 @@ int main(void)
 		intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
 
 		rq_intermediate_symbols(rq, srcblk, blklen, intsym);
-		test_log("encoding %zu bytes\n", blklen);
+		test_log("SBN %zu: encoding %zu bytes\n", SBN, blklen);
 		srcblk += blklen;
 		len -= blklen;
 		free(intsym);
 	}
 	/* encode short blocks */
-	for (; SBN < rq->src_part.JS; SBN++) {
+	for (; SBN < rq->Z; SBN++) {
 		blklen = rq->src_part.IS * rq->T;
 
 		/* allocate memory for intermediate symbols */
 		intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
 
 		rq_intermediate_symbols(rq, srcblk, blklen, intsym);
-		test_log("%zu: encoding %zu bytes\n", blklen);
+		test_log("SBN %zu: encoding %zu bytes\n", SBN, blklen);
 		srcblk += blklen;
 		len -= blklen;
 		free(intsym);
