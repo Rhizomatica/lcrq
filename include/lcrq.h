@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /* rounding integer division */
 #define CEIL(x, y)  (((x) + ((y) - 1)) / (y))
@@ -41,5 +42,6 @@ void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, size_t blklen, unsign
 
 rq_t *rq_init(size_t F, uint16_t T);
 void rq_free(rq_t *rq);
+void rq_dump(rq_t *rq, FILE *stream);
 
 #endif /* LCRQ_PVT_H */

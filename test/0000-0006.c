@@ -39,6 +39,8 @@ int main(void)
 
 	rq = rq_init(F, 1024);
 
+	rq_dump(rq, stderr);
+
 	/* allocate memory for intermediate symbols */
 	intsym = rq_intermediate_symbols_alloc(rq); assert(intsym);
 
@@ -47,6 +49,7 @@ int main(void)
 	for (int SBN = 0; SBN < rq->Z; SBN++) {
 		srcblk += rq->T;
 		rq_intermediate_symbols(rq, srcblk, MIN(rq->T, len), intsym);
+		test_log("encoding %zu bytes\n", MIN(rq->T, len));
 		len -= rq->T;
 	}
 

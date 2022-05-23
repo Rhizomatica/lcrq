@@ -219,6 +219,33 @@ void rq_free(rq_t *rq)
 	free(rq);
 }
 
+/* dump all rq_t values to stream */
+void rq_dump(rq_t *rq, FILE *stream)
+{
+	fprintf(stream, "%s\t= %zu\n", "F", rq->F);
+	fprintf(stream, "%s\t= %zu\n", "WS", rq->WS);
+	fprintf(stream, "%s\t= %zu\n", "Kt", rq->Kt);
+	fprintf(stream, "%s\t= %zu\n", "kl", rq->kl);
+	fprintf(stream, "%s\t= %u\n", "Al", rq->Al);
+	fprintf(stream, "%s\t= %u\n", "T", rq->T);
+	fprintf(stream, "%s\t= %u\n", "SSS", rq->SSS);
+	fprintf(stream, "%s\t= %u\n", "SS", rq->SS);
+	fprintf(stream, "%s\t= %u\n", "Nmax", rq->Nmax);
+	fprintf(stream, "%s\t= %u\n", "Z", rq->Z);
+	fprintf(stream, "%s\t= %u\n", "N", rq->N);
+	fprintf(stream, "%s\t= %u\n", "K", rq->K);
+	fprintf(stream, "%s\t= %u\n", "K'", rq->KP);
+	fprintf(stream, "%s\t= %u\n", "J", rq->J);
+	fprintf(stream, "%s\t= %u\n", "H", rq->H);
+	fprintf(stream, "%s\t= %u\n", "S", rq->S);
+	fprintf(stream, "%s\t= %u\n", "W", rq->W);
+	fprintf(stream, "%s\t= %u\n", "L", rq->L);
+	fprintf(stream, "%s\t= %u\n", "P", rq->P);
+	fprintf(stream, "%s\t= %u\n", "P1", rq->P1);
+	fprintf(stream, "%s\t= %u\n", "U", rq->U);
+	fprintf(stream, "%s\t= %u\n", "B", rq->B);
+}
+
 rq_t *rq_init(size_t F, uint16_t T)
 {
 	rq_t *rq = malloc(sizeof(rq_t));

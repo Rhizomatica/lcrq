@@ -33,38 +33,7 @@ void test_parms(size_t F)
 	/* verify 1 <= K <= 56403 (K'_max) */
 	test_assert(1 <= rq->K && rq->K <= 56403, "1 <= K (%lu) <= 56403", rq->K);
 
-	test_log("F   = %zu\n", rq->F);
-	test_log("WS  = %zu\n", rq->WS);
-	test_log("Al  = %u\n", rq->Al);
-	test_log("T   = P' = %u\n", rq->T);
-	test_log("SSS = %u\n", rq->SSS);
-	test_log("SS  = %u\n", rq->SS);
-	test_log("Nmax = %u\n", rq->Nmax);
-
-	/* calculated */
-	test_log("Kt  = %zu\n", rq->Kt);
-	test_log("kl  = %zu\n", rq->kl);
-	test_log("Z   = %u\n", rq->Z);
-	test_log("N   = %u\n", rq->N);
-	test_log("KL  = %u\n", KL);
-	test_log("KS  = %u\n", KS);
-	test_log("ZL  = %u\n", ZL);
-	test_log("ZS  = %u\n", ZS);
-	test_log("TL  = %u\n", TL);
-	test_log("TS  = %u\n", TS);
-	test_log("NL  = %u\n", NL);
-	test_log("NS  = %u\n", NS);
-	test_log("K   = %u\n", rq->K);
-	test_log("K'  = %u\n", rq->KP);
-	test_log("L   = %u\n", rq->L); /* always 107 ? */
-	test_log("P   = %u\n", rq->P);
-	test_log("P1  = %u\n", rq->P1);
-	test_log("U   = %u\n", rq->U);
-	test_log("J   = %u\n", rq->J);
-	test_log("S   = %u\n", rq->S);
-	test_log("H   = %u\n", rq->H);
-	test_log("W   = %u\n", rq->W);
-	test_log("B   = %u\n", rq->B);
+	rq_dump(rq, stderr);
 
 	test_assert(rq->L == rq->KP + rq->S + rq->H, "L = K' + S + H");
 	test_assert(rq->P == rq->L - rq->W, "P (%u) = L(%u) - W(%u)", rq->P, rq->L, rq->W);
