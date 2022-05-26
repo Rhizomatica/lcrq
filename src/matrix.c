@@ -12,7 +12,7 @@ matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 	mat->cols = cols;
 	mat->trans = 0;
 	mat->size = rows * cols;
-	mat->base = (base) ? base : malloc(mat->size);
+	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
 	return mat;
 }
 
