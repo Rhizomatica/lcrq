@@ -24,4 +24,19 @@ void matrix_dump(matrix_t *mat, FILE *stream);
 uint8_t matrix_get(matrix_t *mat, int row, int col);
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val);
 
+/* increment element by val using GF(256) addition */
+uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val);
+
+/* GF(256) dot product of x and y returned in p. Allocate p->base if required */
+matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p);
+
+/* mark matrix as "transposed" without modifying data */
+void matrix_transpose(matrix_t *mat);
+
+/* copy base data of src matrix to dst and set other vals */
+matrix_t *matrix_copy(matrix_t *dst, matrix_t *src);
+
+/* duplicate matrix, allocating base */
+matrix_t matrix_dup(matrix_t *src);
+
 #endif /* MATRIX_H */

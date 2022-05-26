@@ -79,6 +79,56 @@ uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
 	return val;
 }
 
+uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val)
+{
+	uint8_t sum = gf256_add(matrix_get(mat, row, col), val);
+	return matrix_set(mat, row, col, sum);
+}
+
+/* GF(256) dot product of x and y returned in p. Allocate p->base if required */
+matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p)
+{
+	assert(x->cols == y->rows);
+	if (!p->base) {
+		matrix_new(p, x->rows, y->cols, NULL);
+		matrix_zero(p);
+	}
+	else {
+		if (p->cols != x->rows || p->rows != y->rows)
+			return NULL;
+	}
+	for (int i = 0; i < p->rows; i++) {
+		for (int j = 0; j < p->cols; j++) {
+			for (int k = 0; k < x->cols; k++) {
+				const uint8_t a = matrix_get(x, i, k);
+				const uint8_t b = matrix_get(y, k, j);
+				matrix_inc_gf256(p, i, j, gf256_mul(a, b));
+			}
+		}
+	}
+
+	return p;
+}
+
+matrix_t *matrix_copy(matrix_t *dst, matrix_t *src)
+{
+	memcpy(dst->base, src->base, src->size);
+	dst->rows = src->rows;
+	dst->cols = src->cols;
+	dst->trans = src->trans;
+	dst->size = src->size;
+	return dst;
+}
+
+matrix_t matrix_dup(matrix_t *src)
+{
+	matrix_t m;
+	m.base = malloc(src->size);
+	matrix_copy(&m, src);
+	return m;
+}
+
+
 void matrix_transpose(matrix_t *mat)
 {
 	mat->trans = !(mat->trans);
@@ -87,4 +137,5 @@ void matrix_transpose(matrix_t *mat)
 void matrix_free(matrix_t *mat)
 {
 	free(mat->base);
+	mat->base = NULL;
 }

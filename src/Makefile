@@ -21,7 +21,7 @@ INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
-OBJECTS := lcrq.o matrix.o
+OBJECTS := gf256.o lcrq.o matrix.o
 
 LIBS :=
 SOFILES := lib$(LIBNAME).so
