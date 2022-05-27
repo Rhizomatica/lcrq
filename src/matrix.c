@@ -3,6 +3,7 @@
 
 #include <matrix.h>
 #include <assert.h>
+#include <gf256.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -91,23 +92,118 @@ matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p)
 	assert(x->cols == y->rows);
 	if (!p->base) {
 		matrix_new(p, x->rows, y->cols, NULL);
-		matrix_zero(p);
 	}
 	else {
 		if (p->cols != x->rows || p->rows != y->rows)
 			return NULL;
 	}
+	matrix_zero(p);
 	for (int i = 0; i < p->rows; i++) {
 		for (int j = 0; j < p->cols; j++) {
 			for (int k = 0; k < x->cols; k++) {
 				const uint8_t a = matrix_get(x, i, k);
 				const uint8_t b = matrix_get(y, k, j);
-				matrix_inc_gf256(p, i, j, gf256_mul(a, b));
+				const uint8_t pv = matrix_get(p, i, j);
+				const uint8_t ab = gf256_mul(a, b);
+				const uint8_t v = gf256_add(pv, ab);
+				if (ab) matrix_set(p, i, j, v);
 			}
 		}
 	}
 
 	return p;
+}
+
+matrix_t *matrix_swap_rows(matrix_t *m, int r1, int r2)
+{
+	for (int i = 0; i < matrix_cols(m); i++) {
+		const uint8_t tmp = matrix_get(m, r1, i);
+		matrix_set(m, r1, i, matrix_get(m, r2, i));
+		matrix_set(m, r2, i, tmp);
+	}
+	return m;
+}
+
+matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2)
+{
+	for (int i = 0; i < matrix_rows(m); i++) {
+		const uint8_t tmp = matrix_get(m, i, c1);
+		matrix_set(m, i, c1, matrix_get(m, i, c2));
+		matrix_set(m, i, c2, tmp);
+	}
+	return m;
+}
+
+void matrix_row_add(matrix_t *m, int row, uint8_t val)
+{
+	for (int col = 0; col < m->cols; col++) {
+		matrix_set(m, row, col, gf256_add(matrix_get(m, row, col), val));
+	}
+}
+
+void matrix_row_mul(matrix_t *m, int row, uint8_t val)
+{
+	for (int col = 0; col < m->cols; col++) {
+		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), val));
+	}
+}
+
+void matrix_row_div(matrix_t *m, int row, uint8_t val)
+{
+	for (int col = 0; col < m->cols; col++) {
+		uint8_t a = matrix_get(m, row, col);
+		uint8_t b = val;
+		uint8_t v = gf256_div(a, b);
+		matrix_set(m, row, col, v);
+	}
+}
+
+void matrix_row_mul_byrow(matrix_t *m, int rdst, int rsrc, uint8_t factor)
+{
+	for (int col = 0; col < m->cols; col++) {
+		uint8_t dv = matrix_get(m, rdst, col);
+		uint8_t sv = matrix_get(m, rsrc, col);
+		uint8_t f = gf256_mul(sv, factor);
+		if (f != 0) {
+			matrix_set(m, rdst, col, gf256_add(dv, f));
+		}
+	}
+}
+
+matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
+{
+	matrix_new(I, A->rows, A->cols, NULL);
+	matrix_identity(I);
+
+	/* lower echelon form */
+	for (int j = 0; j < A->cols; j++) {
+		/* first, reduce the pivot row so jj = 1 */
+		uint8_t jj = matrix_get(A, j, j);
+		if (jj != 1) {
+			matrix_row_div(A, j, jj);
+			matrix_row_div(I, j, jj);
+		}
+		for (int i = j + 1; i < A->rows; i++) {
+			/* add pivot row (j) * factor to row i so that ij == 0 */
+			jj = matrix_get(A, j, j);
+			const uint8_t ij = matrix_get(A, i, j);
+			const uint8_t f = gf256_div(ij, jj);
+			matrix_row_mul_byrow(A, i, j, f);
+			matrix_row_mul_byrow(I, i, j, f);
+		}
+	}
+	/* finish upper triangle */
+	for (int i = 0; i < A->cols; i++) {
+		for (int j = i + 1; j < A->cols; j++) {
+			const uint8_t ij = matrix_get(A, i, j);
+			const uint8_t jj = matrix_get(A, j, j);
+			const uint8_t f = gf256_div(ij, jj);
+			matrix_row_mul_byrow(A, i, j, f);
+			matrix_row_mul_byrow(I, i, j, f);
+		}
+	}
+
+	return I;
 }
 
 matrix_t *matrix_copy(matrix_t *dst, matrix_t *src)
@@ -127,7 +223,6 @@ matrix_t matrix_dup(matrix_t *src)
 	matrix_copy(&m, src);
 	return m;
 }
-
 
 void matrix_transpose(matrix_t *mat)
 {

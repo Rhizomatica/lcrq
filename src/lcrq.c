@@ -4,6 +4,7 @@
 #include <lcrq_pvt.h>
 #include <matrix.h>
 #include <assert.h>
+#include <gf256.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
@@ -128,13 +129,6 @@ static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 	}
 }
 
-/* Galois Field multiplication using lookup tables
- * See p63 of RFC 6330 */
-static uint8_t rq_gf_mul(uint8_t a, uint8_t b)
-{
-	return (!a || !b) ? 0 : OCT_EXP[OCT_LOG[a] + OCT_LOG[b]];
-}
-
 /* The second row of Matrix A has the HDPC codes followed by
  * the identity matrix I_H
  * See RFC 6330 (5.3.3.3) p25 */
@@ -148,12 +142,12 @@ static void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 
 	for (int j = 0; j < rq->H; j++) {
 		matrix_set(&H1, j, rq->KP + rq->S - 1, val);
-		val = rq_gf_mul(val, 2);
+		val = gf256_mul(val, 2);
 	}
 	for (int j = rq->KP + rq->S - 2; j >= 0; j--) {
 		for (int i = 0; i < rq->H; i++) {
 			val = matrix_get(&H1, i, j + 1);
-			val = rq_gf_mul(val, 2);
+			val = gf256_mul(val, 2);
 			matrix_set(&H1, i, j, val);
 		}
 		int a = rq_rand(j + 1, 6, rq->H);

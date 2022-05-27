@@ -30,6 +30,13 @@ uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val);
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p);
 
+/* swap rows/cols in place */
+matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2);
+matrix_t *matrix_swap_rows(matrix_t *m, int r1, int r2);
+
+/* I = (A^^-1) - set I to the inverse of A, allocating if required */
+matrix_t *matrix_inverse(matrix_t *A, matrix_t *I);
+
 /* mark matrix as "transposed" without modifying data */
 void matrix_transpose(matrix_t *mat);
 
