@@ -190,7 +190,7 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 
 static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
 {
-	matrix_new(A, rq->KP, rq->L, sym);
+	matrix_new(A, rq->L, rq->L, sym);
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
 	rq_generate_LT(rq, A);
