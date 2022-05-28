@@ -11,7 +11,7 @@
 /* add (or subtract) in GF(256) */
 uint8_t gf256_add(uint8_t a, uint8_t b);
 
-uint8_t gf256_exp(uint8_t e);
+uint8_t gf256_exp(int e);
 
 uint8_t gf256_log(uint8_t v);
 

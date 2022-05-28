@@ -41,6 +41,7 @@ static const uint8_t OCT_EXP[] = {
 	22, 44, 88, 176, 125, 250, 233, 207, 131, 27, 54, 108, 216, 173, 71,
 	142
 };
+static_assert(sizeof(OCT_EXP) == 510, "OCT_EXP table has wrong size.");
 
 /*
 5.7.4.  The Table OCT_LOG
@@ -73,13 +74,14 @@ static const uint8_t OCT_LOG[] = {
 	79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80,
 	88, 175
 };
+static_assert(sizeof(OCT_LOG) == 255 + 1, "OCT_LOG table has wrong size.");
 
 uint8_t gf256_add(uint8_t a, uint8_t b)
 {
 	return a ^ b;
 }
 
-uint8_t gf256_exp(uint8_t e)
+uint8_t gf256_exp(int e)
 {
 	assert(0 <= e);
 	assert(e < sizeof(OCT_EXP));
@@ -101,7 +103,7 @@ uint8_t gf256_inv(uint8_t v)
 uint8_t gf256_mul(uint8_t a, uint8_t b)
 {
 	if (a == 0 || b == 0) return 0;
-	return gf256_exp(gf256_log(a) + gf256_log(b));
+	return gf256_exp((int)gf256_log(a) + (int)gf256_log(b));
 }
 
 
