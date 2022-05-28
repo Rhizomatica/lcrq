@@ -12,8 +12,8 @@ matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 	mat->rows = rows;
 	mat->cols = cols;
 	mat->trans = 0;
-	mat->stride = cols * sizeof(uint8_t);
-	mat->size = rows * cols * sizeof(uint8_t);
+	mat->stride = (size_t)cols * sizeof(uint8_t);
+	mat->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
 	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
 	return mat;
 }
@@ -75,8 +75,8 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 
 uint8_t matrix_get(matrix_t *mat, int row, int col)
 {
-	int r = (mat->trans) ? col : row;
-	int c = (mat->trans) ? row : col;
+	long int r = (mat->trans) ? col : row;
+	long int c = (mat->trans) ? row : col;
 	assert(r < mat->rows);
 	assert(c < mat->cols);
 	return mat->base[c + r * mat->stride];
@@ -84,8 +84,8 @@ uint8_t matrix_get(matrix_t *mat, int row, int col)
 
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
 {
-	int r = (mat->trans) ? col : row;
-	int c = (mat->trans) ? row : col;
+	long int r = (mat->trans) ? col : row;
+	long int c = (mat->trans) ? row : col;
 	assert(r < mat->rows);
 	assert(c < mat->cols);
 	mat->base[c + r * mat->stride] = val;

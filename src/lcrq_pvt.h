@@ -758,15 +758,15 @@ static const t2_t T2[] = {
 struct rq_s {
 	part_t src_part;
 	part_t sub_part;
-	/* F: the transfer length of the source object, in octets */
-	size_t F;
+	/* F: the transfer length of the source object, in octets (40 bits) */
+	uint64_t F;
 	/* WS: the maximum size block that is decodable in working memory */
 	size_t WS;
 	/* Kt is the total number of symbols required to represent the source data of the object */
-	size_t Kt;
+	uint64_t Kt;
 	size_t kl;
 	/* Al: the symbol alignment parameter, in octets (recommended: 4) */
-	uint16_t Al;
+	uint8_t Al;
 	/* P' (PP): the maximum payload size in octets, which is assumed to be a multiple of Al */
 	//uint16_t PP; Not required => P' == T
 	/* T: symbol size, MUST be a multiple of Al */

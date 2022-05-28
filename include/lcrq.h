@@ -4,6 +4,7 @@
 #ifndef LCRQ_H
 #define LCRQ_H 1
 
+#include <matrix.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -35,13 +36,15 @@ size_t rq_rand(size_t y, uint8_t i, size_t m);
 int rq_deg(rq_t *rq, int v);
 rq_tuple_t rq_tuple(rq_t *rq, size_t X);
 
-/* allocates L x T bytes */
-void *rq_intermediate_symbols_alloc(rq_t *rq);
+void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *src, size_t len);
+matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk);
+matrix_t rq_intermediate_symbols(matrix_t *A, matrix_t *D);
 
-void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, size_t blklen, unsigned char *sym);
-
+void rq_block(rq_t *rq); /* calculate params based on K */
 rq_t *rq_init(size_t F, uint16_t T);
 void rq_free(rq_t *rq);
 void rq_dump(rq_t *rq, FILE *stream);
+void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream);
+void rq_dump_hdpc(rq_t *rq, matrix_t *A, FILE *stream);
 
 #endif /* LCRQ_PVT_H */

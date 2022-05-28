@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <time.h>
 
 int isprime(int n)
 {
@@ -99,12 +100,11 @@ part_t rq_partition(size_t I, uint16_t J)
 /* The first row of Matrix A consists of three sub-matrices:
  * G_LDPC1, the identity matrix I_S and G_LDPC2
  * See RFC 6330 (5.3.3.3) p23 */
-static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
+void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 {
 	matrix_t L1, I_S;
 
 	matrix_new(&L1, rq->S, rq->L, A->base);
-	matrix_new(&I_S, rq->S, rq->S, L1.base + L1.size);
 
 	/* G_LDPC,1 (S x B) */
 	for (int i = 0; i < rq->B; i++) {        // For i = 0, ..., B-1 do
@@ -118,6 +118,7 @@ static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 	}
 
 	/* The identity matrix, I_S */
+	I_S = matrix_submatrix(A, 0, rq->B, rq->S, rq->S);
 	matrix_identity(&I_S);
 
 	/* G_LDPC,2 (S x P) */
@@ -132,13 +133,13 @@ static void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 /* The second row of Matrix A has the HDPC codes followed by
  * the identity matrix I_H
  * See RFC 6330 (5.3.3.3) p25 */
-static void rq_generate_HDPC(rq_t *rq, matrix_t *A)
+void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 {
 	matrix_t H1, I_H;
 	uint8_t val = 1;
 
-	matrix_new(&H1, rq->H, rq->L, A->base + rq->S * rq->L);
-	matrix_new(&I_H, rq->H, rq->H, H1.base + H1.size);
+	H1 = matrix_submatrix(A, rq->S, 0, rq->H, rq->L);
+	I_H = matrix_submatrix(&H1, 0, rq->L - rq->H, rq->H, rq->H);
 
 	for (int j = 0; j < rq->H; j++) {
 		matrix_set(&H1, j, rq->KP + rq->S - 1, val);
@@ -188,24 +189,81 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 	}
 }
 
-static void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *sym)
+void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *src, size_t len)
 {
-	matrix_new(A, rq->L, rq->L, sym);
+	matrix_new(A, rq->L, rq->L, NULL);
+	matrix_zero(A);
+	assert(rq->L == rq->KP + rq->S + rq->H); /* L = K'+S+H (5.3.3.3) */
+	assert(rq->L == rq->W + rq->P);          /* L = W+P (5.3.3.3) */
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
 	rq_generate_LT(rq, A);
 }
 
-void rq_intermediate_symbols(rq_t *rq, unsigned char *blk, size_t blklen, uint8_t *sym)
+matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk)
 {
-	matrix_t A = {0};
-	memcpy(sym, blk, rq->T);
-	rq_generate_matrix_A(rq, &A, sym);
+	uint8_t *ptr;
+	matrix_t D = {0};
+
+	matrix_new(&D, rq->L, 1, NULL);
+	matrix_zero(&D);
+	/* copy K' symbols of size T into D */
+	ptr = D.base + (rq->S + rq->H);
+	memcpy(ptr, blk, rq->KP);
+
+	return D;
+}
+
+/* calculate intermediate symbols (C) such that:
+ *   C = (A^^-1)*D
+ * where:
+ *   D denotes the column vector consisting of S+H zero symbols
+ *   followed by the K' source symbols C'[0], C'[1], ..., C'[K'-1]
+ */
+matrix_t rq_intermediate_symbols(matrix_t *A, matrix_t *D)
+{
+	matrix_t A_inv = {0};
+	matrix_t C = {0};
+	fprintf(stderr, "%li: calculating A^^-1\n", clock());
+	matrix_inverse(A, &A_inv);
+	fprintf(stderr, "%li: multiplying (A^^-1).D => C\n", clock());
+	matrix_multiply_gf256(&A_inv, D, &C);
+	matrix_free(&A_inv);
+	return C;
 }
 
 void *rq_intermediate_symbols_alloc(rq_t *rq)
 {
-	return calloc(rq->L, rq->T);
+	fprintf(stderr, "Matrix A: allocating %zu bytes\n", (size_t)rq->L * rq->L);
+	return calloc(rq->L, rq->L);
+}
+
+void rq_dump_hdpc(rq_t *rq, matrix_t *A, FILE *stream)
+{
+	matrix_t H;
+	H = matrix_submatrix(A, rq->S, 0, rq->H, rq->L);
+	for (int r = 0; r < rq->H; r++) {
+		for (int c = 0; c < rq->L; c++) {
+			const uint8_t v = matrix_get(&H, r, c);
+			fprintf(stream, " %02x", (int)v);
+		}
+		fputc('\n', stream);
+	}
+}
+
+void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
+{
+	for (int r = 0; r < rq->S; r++) {
+		for (int c = 0; c < rq->L; c++) {
+			switch (matrix_get(A, r, c)) {
+			case 0:         fputc('0', stream); break;
+			case 1:         fputc('1', stream); break;
+			default:
+					fputc('-', stream); break;
+			}
+		}
+		fputc('\n', stream);
+	}
 }
 
 void rq_free(rq_t *rq)
@@ -240,33 +298,19 @@ void rq_dump(rq_t *rq, FILE *stream)
 	fprintf(stream, "%s\t= %u\n", "B", rq->B);
 }
 
-rq_t *rq_init(size_t F, uint16_t T)
+/* set per-block values */
+void rq_block(rq_t *rq)
 {
-	rq_t *rq = malloc(sizeof(rq_t));
-	memset(rq, 0, sizeof(rq_t));
-
-	rq->F = F;
-	/* TODO what is an appropriate size for WS ? */
-	rq->WS = 1073741824; /* 1GiB */
-	rq->Al = 4;
-	rq->T = T;
-	rq->SSS = T;
-	rq->SS = rq->SSS / rq->Al;
-	rq->Nmax = rq->T/(rq->SS*rq->Al);
-	rq->Kt = CEIL(rq->F,rq->T);
-	rq->kl = KL(rq->WS, rq->Al, rq->T, rq->Nmax);
-	rq->Z = CEIL(rq->Kt,rq->kl);
-	rq->K = CEIL(rq->kl, rq->T);
 	for (int i = 0; i < T2LEN; i++) {
 		if (T2[i].k >= rq->K) {
 			rq->KP = T2[i].k;
 			rq->H = T2[i].h;
 			rq->S = T2[i].s;
 			rq->W = T2[i].w;
+			rq->J = T2[i].j;
 			break;
 		}
 	}
-	rq->J = T2[rq->KP].j;
 
 	/* 5.3.3.3.  Pre-Coding Relationships */
 	rq->L = rq->KP + rq->S + rq->H;
@@ -287,9 +331,35 @@ rq_t *rq_init(size_t F, uint16_t T)
 	assert(isprime(rq->P1));
 	assert(isprime(rq->S));
 	assert(isprime(rq->W));
+}
 
+rq_t *rq_init(size_t F, uint16_t T)
+{
+	rq_t *rq = malloc(sizeof(rq_t));
+	memset(rq, 0, sizeof(rq_t));
+
+	rq->F = F;
+	/* TODO what is an appropriate size for WS ? */
+	rq->WS = 1073741824; /* 1GiB */
+	rq->Al = 4;
+	rq->T = T;
+	rq->SSS = T; /* sub-symbol size */
+	rq->SS = rq->SSS / rq->Al;
+	rq->Nmax = rq->T/(rq->SS*rq->Al);
+	rq->Kt = CEIL(rq->F,rq->T);
+	rq->kl = KL(rq->WS, rq->Al, rq->T, rq->Nmax);
+	rq->Z = CEIL(rq->Kt,rq->kl);
+
+	/* N is the minimum n=1, ..., Nmax such that ceil(Kt/Z) <= KL(n) */
+	for (rq->N = 1; rq->N <= rq->Nmax; rq->N++) {
+		if (CEIL(rq->Kt,rq->Z) <= KL(rq->WS, rq->Al, rq->T, rq->N)) break;
+	}
+	assert(rq->N == 1); /* no handling of sub-blocks */
 	rq->src_part = rq_partition(rq->Kt, rq->Z);
 	rq->sub_part = rq_partition(rq->T / rq->Al, rq->N);
+
+	rq->K = rq->src_part.IL;
+	rq_block(rq);
 
 	return rq;
 }

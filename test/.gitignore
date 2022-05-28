@@ -1,5 +1,6 @@
 *.test
 *.log
 *.valgrind
+*.tmp.*
 lsd-auth-db.tmp.*
 ????-????.*tmp.*/
