@@ -12,14 +12,27 @@ matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 	mat->rows = rows;
 	mat->cols = cols;
 	mat->trans = 0;
-	mat->size = rows * cols;
+	mat->stride = cols * sizeof(uint8_t);
+	mat->size = rows * cols * sizeof(uint8_t);
 	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
 	return mat;
 }
 
+matrix_t matrix_submatrix(matrix_t *A, int off_rows, int off_cols, int rows, int cols)
+{
+	assert(rows <= A->rows);
+	assert(cols <= A->cols);
+	matrix_t sub = {0};
+	matrix_new(&sub, rows, cols, A->base + off_rows * A->stride + off_cols);
+	sub.stride = A->stride;
+	return sub;
+}
+
 matrix_t *matrix_zero(matrix_t *mat)
 {
-	memset(mat->base, 0, mat->size);
+	for (int i = 0; i < mat->rows; i++) {
+		memset(mat->base + i * mat->stride, 0, mat->cols);
+	}
 	return mat;
 }
 
@@ -35,11 +48,10 @@ int matrix_rows(matrix_t *mat)
 
 matrix_t *matrix_identity(matrix_t *m)
 {
-	size_t sz = m->size / m->cols / m->rows;
 	assert(m->rows == m->cols);
 	matrix_zero(m);
-	for (int i = 0; i < m->cols * m->rows; i += m->cols + 1) {
-		((char *)m->base)[i * sz] = 1;
+	for (int i = 0; i < m->rows; i++) {
+		matrix_set(m, i, i, 1);
 	}
 	return m;
 }
@@ -67,7 +79,7 @@ uint8_t matrix_get(matrix_t *mat, int row, int col)
 	int c = (mat->trans) ? row : col;
 	assert(r < mat->rows);
 	assert(c < mat->cols);
-	return mat->base[c + r * matrix_cols(mat)];
+	return mat->base[c + r * mat->stride];
 }
 
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
@@ -76,7 +88,7 @@ uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
 	int c = (mat->trans) ? row : col;
 	assert(r < mat->rows);
 	assert(c < mat->cols);
-	mat->base[c + r * matrix_cols(mat)] = val;
+	mat->base[c + r * mat->stride] = val;
 	return val;
 }
 
@@ -100,14 +112,13 @@ matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p)
 	matrix_zero(p);
 	for (int i = 0; i < p->rows; i++) {
 		for (int j = 0; j < p->cols; j++) {
+			uint8_t v = 0;
 			for (int k = 0; k < x->cols; k++) {
 				const uint8_t a = matrix_get(x, i, k);
 				const uint8_t b = matrix_get(y, k, j);
-				const uint8_t pv = matrix_get(p, i, j);
-				const uint8_t ab = gf256_mul(a, b);
-				const uint8_t v = gf256_add(pv, ab);
-				if (ab) matrix_set(p, i, j, v);
+				v = gf256_add(v, gf256_mul(a, b));
 			}
+			matrix_set(p, i, j, v);
 		}
 	}
 
@@ -212,6 +223,7 @@ matrix_t *matrix_copy(matrix_t *dst, matrix_t *src)
 	dst->rows = src->rows;
 	dst->cols = src->cols;
 	dst->trans = src->trans;
+	dst->stride = src->stride;
 	dst->size = src->size;
 	return dst;
 }

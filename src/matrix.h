@@ -12,11 +12,13 @@ typedef struct matrix_s {
 	int      rows;
 	int      cols;
 	int      trans;
+	size_t   stride;
 	size_t   size;
 	uint8_t *base;
 } matrix_t;
 
 matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base);
+matrix_t matrix_submatrix(matrix_t *A, int off_rows, int off_cols, int rows, int cols);
 void matrix_free(matrix_t *mat);
 matrix_t *matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
