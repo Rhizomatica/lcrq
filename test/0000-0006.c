@@ -9,7 +9,7 @@
 #include <sys/param.h>
 
 //#define MAX_SRCOBJ 1024 * 1024 * 1024
-#define MAX_SRCOBJ 1538
+#define MAX_SRCOBJ 1538 * 420
 static_assert(MAX_SRCOBJ > 1);
 
 /* generate source object of data of random size and content up to max bytes */
