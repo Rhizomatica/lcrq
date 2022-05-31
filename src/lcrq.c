@@ -91,6 +91,7 @@ uint8_t *rq_encode(rq_t *rq, matrix_t *C, size_t isi)
 	uint16_t b1 = tup.b1;
 	matrix_t R;
 	matrix_new(&R, 1, rq->T, NULL);
+	matrix_zero(&R);
 
 	matrix_row_copy(&R, 0, C, b);
 	for (int j = 1; j < tup.d; j++) {

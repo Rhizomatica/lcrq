@@ -119,17 +119,19 @@ int main(void)
 		matrix_multiply_gf256(&A_dup, &C, &D2);
 		test_assert(memcmp(D.base, D2.base, D.size) == 0, "verify A*C=D");
 
-		/* TODO encoding (5.3.4) */
-		uint8_t *sym;
+		/* encoding (5.3.4) */
 		/* as per 5.3.2, the original source symbols C' can be generated
 		 * using the encoding process where 0 < ISI < K'
 		 * we will use this to test the encoder before generating repair
 		 * symbols */
-		for (size_t isi = 0; isi < rq->KP; isi++) {
+		uint8_t *sym;
+		uint8_t *src = srcblk;
+		for (size_t isi = 0; isi < rq->K; isi++) {
 			test_log("encoding ISI %zu\n", isi);
 			sym = rq_encode(rq, &C, isi);
-			// TODO compare with source symbol
+			test_assert(!memcmp(sym, src, rq->T), "verify ISI %zu", isi);
 			free(sym);
+			src += rq->T;
 		}
 		/* TODO: repair symbols */
 		//for (size_t isi = rq->KP; isi < rq->KP + 5; isi++) {
