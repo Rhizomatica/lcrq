@@ -63,6 +63,51 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 	return ((V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m);
 }
 
+/* Encoding Symbol Generator (5.3.5.3)
+   The encoding symbol generator produces a single encoding symbol as
+   output (referred to as result), according to the following algorithm:
+
+	result = C[b]
+
+	For j = 1, ..., d-1 do
+		b = (b + a) % W
+		result = result + C[b]
+
+	While (b1 >= P) do b1 = (b1+a1) % P1
+
+	result = result + C[W+b1]
+
+	For j = 1, ..., d1-1 do
+		b1 = (b1 + a1) % P1
+		While (b1 >= P) do b1 = (b1+a1) % P1
+		result = result + C[W+b1]
+
+	Return result
+*/
+uint8_t *rq_encode(rq_t *rq, matrix_t *C, size_t isi)
+{
+	rq_tuple_t tup = rq_tuple(rq, isi);
+	uint16_t b = tup.b;
+	uint16_t b1 = tup.b1;
+	matrix_t R;
+	matrix_new(&R, 1, rq->T, NULL);
+
+	matrix_row_copy(&R, 0, C, b);
+	for (int j = 1; j < tup.d; j++) {
+		b = (b ^ tup.a) % rq->W;
+		matrix_row_add(&R, 0, matrix_get(C, b, 0));
+	}
+	while (b1 >= rq->P) b1 = (b1 ^ tup.a1) % rq->P1;
+	matrix_row_add(&R, 0, matrix_get(C, rq->W + b1, 0));
+	for (int j = 1; j < tup.d1; j++) {
+		b1 = (b1 ^ tup.a1) % rq->P1;
+		while (b1 >= rq->P) b1 = (b1 ^ tup.a1) % rq->P1;
+		matrix_row_add(&R, 0, matrix_get(C, rq->W + b1, 0));
+	}
+	return R.base;
+}
+
+
 rq_tuple_t rq_tuple(rq_t *rq, size_t X)
 {
 	rq_tuple_t tup = {0};

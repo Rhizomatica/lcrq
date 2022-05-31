@@ -39,6 +39,7 @@ rq_tuple_t rq_tuple(rq_t *rq, size_t X);
 void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *src, size_t len);
 matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk);
 matrix_t rq_intermediate_symbols(matrix_t *A, matrix_t *D);
+uint8_t *rq_encode(rq_t *rq, matrix_t *C, size_t isi);
 
 void rq_block(rq_t *rq); /* calculate params based on K */
 rq_t *rq_init(size_t F, uint16_t T);

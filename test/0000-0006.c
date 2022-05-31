@@ -9,7 +9,7 @@
 #include <sys/param.h>
 
 //#define MAX_SRCOBJ 1024 * 1024 * 1024
-#define MAX_SRCOBJ 1024 * 1024
+#define MAX_SRCOBJ 1538
 static_assert(MAX_SRCOBJ > 1);
 
 /* generate source object of data of random size and content up to max bytes */
@@ -118,6 +118,22 @@ int main(void)
 		matrix_t D2 = {0};
 		matrix_multiply_gf256(&A_dup, &C, &D2);
 		test_assert(memcmp(D.base, D2.base, D.size) == 0, "verify A*C=D");
+
+		/* TODO encoding (5.3.4) */
+		uint8_t *sym;
+		/* as per 5.3.2, the original source symbols C' can be generated
+		 * using the encoding process where 0 < ISI < K'
+		 * we will use this to test the encoder before generating repair
+		 * symbols */
+		for (size_t isi = 0; isi < rq->KP; isi++) {
+			test_log("encoding ISI %zu\n", isi);
+			sym = rq_encode(rq, &C, isi);
+			// TODO compare with source symbol
+			free(sym);
+		}
+		/* TODO: repair symbols */
+		//for (size_t isi = rq->KP; isi < rq->KP + 5; isi++) {
+		//}
 
 		matrix_free(&D2);
 		matrix_free(&D);

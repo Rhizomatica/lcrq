@@ -181,6 +181,14 @@ void matrix_row_mul_byrow(matrix_t *m, int rdst, int rsrc, uint8_t factor)
 	}
 }
 
+void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow)
+{
+	uint8_t *dptr, *sptr;
+	dptr = dst->base + drow * dst->stride;
+	sptr = src->base + srow * src->stride;
+	memcpy(dptr, sptr, src->stride);
+}
+
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 {
 	matrix_new(I, A->rows, A->cols, NULL);
