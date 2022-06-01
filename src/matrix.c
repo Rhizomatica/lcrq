@@ -101,19 +101,23 @@ uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val)
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p)
 {
-	assert(x->cols == y->rows);
+	int xrows = matrix_rows(x);
+	int yrows = matrix_rows(y);
+	int xcols = matrix_cols(x);
+	int ycols = matrix_cols(y);
+	assert(xcols == yrows);
 	if (!p->base) {
-		matrix_new(p, x->rows, y->cols, NULL);
+		matrix_new(p, xrows, ycols, NULL);
 	}
 	else {
-		if (p->cols != x->rows || p->rows != y->rows)
+		if (p->cols != xrows || p->rows != yrows)
 			return NULL;
 	}
 	matrix_zero(p);
 	for (int i = 0; i < p->rows; i++) {
 		for (int j = 0; j < p->cols; j++) {
 			uint8_t v = 0;
-			for (int k = 0; k < x->cols; k++) {
+			for (int k = 0; k < xcols; k++) {
 				const uint8_t a = matrix_get(x, i, k);
 				const uint8_t b = matrix_get(y, k, j);
 				v = gf256_add(v, gf256_mul(a, b));
