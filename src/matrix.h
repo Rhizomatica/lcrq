@@ -31,6 +31,8 @@ void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow);
 void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow);
 void matrix_row_add_val(matrix_t *m, int row, uint8_t val);
 
+matrix_t matrix_add(matrix_t *x, matrix_t *y);
+
 /* increment element by val using GF(256) addition */
 uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val);
 

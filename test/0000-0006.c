@@ -127,7 +127,7 @@ symbols), and '+' denotes addition over octet vectors.
  */
 static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 {
-	matrix_t MT, GAMMA, CT, CT1, CT2;
+	matrix_t MT, GAMMA, CT, CT1, CT2, P0, P1 = {0}, P2 = {0};
 	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
 	matrix_zero(&MT);
 	for (int j = 0; j < rq->KP - 1; j++) {
@@ -164,9 +164,31 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	CT1 = matrix_submatrix(&CT, 0, rq->KP + rq->S, rq->T, rq->H);
 	CT2 = matrix_submatrix(&CT, 0, 0, rq->T, rq->KP + rq->S);
 
+
+	fprintf(stderr, "CT1:\n");
 	matrix_dump(&CT1, stderr);
+	fprintf(stderr, "CT2:\n");
 	matrix_dump(&CT2, stderr);
 
+	matrix_multiply_gf256(&MT, &GAMMA, &P1);
+	fprintf(stderr, "P1 (MT * GAMMA):\n");
+	matrix_dump(&P1, stderr);
+
+
+	matrix_transpose(&CT2); // FIXME? Is this right?
+	matrix_multiply_gf256(&P1, &CT2, &P2);
+	matrix_transpose(&P2); // FIXME? Is this right?
+	fprintf(stderr, "P2:\n");
+	matrix_dump(&P2, stderr);
+
+	fprintf(stderr, "P0:\n");
+	P0 = matrix_add(&CT1, &P2);
+	matrix_dump(&P0, stderr);
+
+	/* TODO verify == 0 */
+
+	matrix_free(&P1);
+	matrix_free(&P2);
 	matrix_free(&CT);
 }
 

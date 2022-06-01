@@ -159,6 +159,18 @@ void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow)
 	}
 }
 
+matrix_t matrix_add(matrix_t *x, matrix_t *y)
+{
+	assert(matrix_rows(x) == matrix_rows(y));
+	assert(matrix_cols(x) == matrix_cols(y));
+	matrix_t p = matrix_dup(x);
+	matrix_zero(&p);
+	for (int i = 0; i < matrix_rows(x); i++) {
+		matrix_row_add(&p, i, x, i);
+		matrix_row_add(&p, i, y, i);
+	}
+	return p;
+}
 
 void matrix_row_add_val(matrix_t *m, int row, uint8_t val)
 {
