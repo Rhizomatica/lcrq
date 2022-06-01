@@ -95,19 +95,18 @@ uint8_t *rq_encode(rq_t *rq, matrix_t *C, size_t isi)
 
 	matrix_row_copy(&R, 0, C, b);
 	for (int j = 1; j < tup.d; j++) {
-		b = (b ^ tup.a) % rq->W;
-		matrix_row_add(&R, 0, matrix_get(C, b, 0));
+		b = (b + tup.a) % rq->W;
+		matrix_row_add(&R, 0, C, b);
 	}
-	while (b1 >= rq->P) b1 = (b1 ^ tup.a1) % rq->P1;
-	matrix_row_add(&R, 0, matrix_get(C, rq->W + b1, 0));
+	while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
+	matrix_row_add(&R, 0, C, rq->W + b1);
 	for (int j = 1; j < tup.d1; j++) {
-		b1 = (b1 ^ tup.a1) % rq->P1;
-		while (b1 >= rq->P) b1 = (b1 ^ tup.a1) % rq->P1;
-		matrix_row_add(&R, 0, matrix_get(C, rq->W + b1, 0));
+		b1 = (b1 + tup.a1) % rq->P1;
+		while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
+		matrix_row_add(&R, 0, C, rq->W + b1);
 	}
 	return R.base;
 }
-
 
 rq_tuple_t rq_tuple(rq_t *rq, size_t X)
 {
@@ -235,7 +234,7 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 	}
 }
 
-void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *src, size_t len)
+void rq_generate_matrix_A(rq_t *rq, matrix_t *A)
 {
 	matrix_new(A, rq->L, rq->L, NULL);
 	matrix_zero(A);
@@ -246,16 +245,21 @@ void rq_generate_matrix_A(rq_t *rq, matrix_t *A, uint8_t *src, size_t len)
 	rq_generate_LT(rq, A);
 }
 
+/* 5.3.3.4.2
+ * D denote the column vector consisting of S+H zero symbols followed
+	by the K' source symbols C'[0], C'[1], ..., C'[K'-1] */
 matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk)
 {
 	uint8_t *ptr;
 	matrix_t D = {0};
 
-	matrix_new(&D, rq->L, 1, NULL);
+	assert(rq->KP + rq->S + rq->H == rq->L);
+	matrix_new(&D, rq->L, rq->T, NULL);
 	matrix_zero(&D);
+	/* first S + H symbols are zero */
+	ptr = D.base + (rq->S + rq->H) * rq->T * sizeof(uint8_t);
 	/* copy K' symbols of size T into D */
-	ptr = D.base + (rq->S + rq->H);
-	memcpy(ptr, blk, rq->KP);
+	memcpy(ptr, blk, rq->KP * rq->T);
 
 	return D;
 }
@@ -310,6 +314,15 @@ void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
 		}
 		fputc('\n', stream);
 	}
+}
+
+void rq_dump_symbol(rq_t *rq, uint8_t *sym, FILE *stream)
+{
+	fprintf(stream, "symbol (%p)\n", (void *)sym);
+	for (int i = 0; i < rq->T; i++) {
+		fprintf(stream, " %02x", sym[i]);
+	}
+	fputc('\n', stream);
 }
 
 void rq_free(rq_t *rq)

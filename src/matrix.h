@@ -26,8 +26,10 @@ void matrix_dump(matrix_t *mat, FILE *stream);
 uint8_t matrix_get(matrix_t *mat, int row, int col);
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val);
 
+void matrix_col_copy(matrix_t *dst, int dcol, matrix_t *src, int scol);
 void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow);
-void matrix_row_add(matrix_t *m, int row, uint8_t val);
+void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow);
+void matrix_row_add_val(matrix_t *m, int row, uint8_t val);
 
 /* increment element by val using GF(256) addition */
 uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val);

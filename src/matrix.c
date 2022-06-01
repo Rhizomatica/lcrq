@@ -63,14 +63,15 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	for (int r = 0; r < mat->rows; r++) {
 		for (int c = 0; c < mat->cols; c++) {
 			if (mat->trans) {
-				fprintf(stream, "%4u", i[mat->cols * c + r]);
+				fprintf(stream, " %02x", i[mat->cols * c + r]);
 			}
 			else {
-				fprintf(stream, "%4u", *(i++));
+				fprintf(stream, " %02x", *(i++));
 			}
 		}
 		fprintf(stream, "\n");
 	}
+	fprintf(stream, "\n");
 }
 
 uint8_t matrix_get(matrix_t *mat, int row, int col)
@@ -145,7 +146,18 @@ matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2)
 	return m;
 }
 
-void matrix_row_add(matrix_t *m, int row, uint8_t val)
+void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow)
+{
+	for (int col = 0; col < dst->cols; col++) {
+		const uint8_t a = matrix_get(dst, drow, col);
+		const uint8_t b = matrix_get(src, srow, col);
+		const uint8_t v = a ^ b;
+		matrix_set(dst, drow, col, v);
+	}
+}
+
+
+void matrix_row_add_val(matrix_t *m, int row, uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
 		matrix_set(m, row, col, gf256_add(matrix_get(m, row, col), val));
@@ -178,6 +190,13 @@ void matrix_row_mul_byrow(matrix_t *m, int rdst, int rsrc, uint8_t factor)
 		if (f != 0) {
 			matrix_set(m, rdst, col, gf256_add(dv, f));
 		}
+	}
+}
+
+void matrix_col_copy(matrix_t *dst, int dcol, matrix_t *src, int scol)
+{
+	for (int row = 0; row < src->rows; row++) {
+		matrix_set(dst, row, dcol, matrix_get(src, row, scol));
 	}
 }
 

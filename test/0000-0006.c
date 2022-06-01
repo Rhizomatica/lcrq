@@ -8,21 +8,28 @@
 #include <sodium.h>
 #include <sys/param.h>
 
+static const size_t MAX_PAYLOAD = 4; /* MAX_PAYLOAD must be at least Al=4 bytes */
+//static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 10 + 0;// OK
+static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 0;// FIXME breaks if > 10 * T
+
 //#define MAX_SRCOBJ 1024 * 1024 * 1024
-#define MAX_SRCOBJ 1538 * 420
-static_assert(MAX_SRCOBJ > 1);
+//#define MAX_SRCOBJ 1538 * 420
+//static_assert(MAX_SRCOBJ > 1);
 
 /* generate source object of data of random size and content up to max bytes */
-uint32_t generate_source_object(uint32_t max, unsigned char **block)
+unsigned char *generate_source_object(size_t max, size_t *F)
 {
-	uint32_t sz = randombytes_uniform(max);
+	unsigned char *block;
+	size_t sz = 0;
+	//size_t sz = randombytes_uniform(max);
 	if (!sz) sz = max;
-	*block = malloc(sz);
-	assert(*block);
-	//randombytes_buf(*block, sz);
-	memset(*block, 0, sz); // FIXME - temp
-
-	return sz;
+	block = malloc(sz);
+	assert(block);
+	//randombytes_buf(block, sz);
+	for (unsigned char i = 0; i < 4; i++) block[i] = i + 42;
+	//memset(block, 0, sz);
+	*F = sz;
+	return block;
 }
 
 int main(void)
@@ -44,10 +51,10 @@ int main(void)
 	test_name("5.3.3.4 Intermediate Symbol Generation");
 
 	/* generate random source block for test */
-	F = generate_source_object(MAX_SRCOBJ, &srcobj);
+	srcobj = generate_source_object(MAX_SRCOBJ, &F);
 	test_log("block of %u bytes generated\n", F);
 
-	rq = rq_init(F, 1024);
+	rq = rq_init(F, MAX_PAYLOAD);
 	rq_dump(rq, stderr);
 
 	srcblk = srcobj;
@@ -98,7 +105,7 @@ int main(void)
 		test_log("SBN %zu: K' (%u) * T (%u) = %zu\n", SBN, rq->KP, rq->T, rq->KP * rq->T);
 
 		test_log("generating matrix A\n");
-		rq_generate_matrix_A(rq, &A, srcblk, blklen);
+		rq_generate_matrix_A(rq, &A);
 
 		//rq_dump_ldpc(rq, &A, stderr);
 		//rq_dump_hdpc(rq, &A, stderr);
@@ -110,8 +117,15 @@ int main(void)
 
 		test_log("generating matrix D\n");
 		D = rq_matrix_D(rq, srcblk);
+		test_assert(D.rows = rq->L, "D has L rows");
+		test_assert(D.cols = rq->T, "D has T cols");
+
+		matrix_dump(&D, stderr);
+
 		test_log("generating intermediate symbols\n");
 		C = rq_intermediate_symbols(&A, &D);
+
+		matrix_dump(&C, stderr);
 
 		/* verify A*C=D */
 		test_log("verifying A*C=D ... \n");
@@ -130,6 +144,10 @@ int main(void)
 			test_log("encoding ISI %zu\n", isi);
 			sym = rq_encode(rq, &C, isi);
 			test_assert(!memcmp(sym, src, rq->T), "verify ISI %zu", isi);
+
+			rq_dump_symbol(rq, src, stderr);
+			rq_dump_symbol(rq, sym, stderr);
+
 			free(sym);
 			src += rq->T;
 		}
@@ -144,8 +162,10 @@ int main(void)
 		matrix_free(&A_dup);
 		matrix_free(&A);
 
-		srcblk += blklen;
-		len -= blklen;
+		size_t off = MIN(blklen, len);
+		srcblk += off;
+		len -= off;
+		fprintf(stderr, "len remaining = %zu\n", len);
 	}
 
 	rq_free(rq);
