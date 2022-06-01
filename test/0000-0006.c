@@ -3,6 +3,7 @@
 
 #include "test.h"
 #include <assert.h>
+#include <gf256.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
 #include <sodium.h>
@@ -91,6 +92,75 @@ static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 
 	matrix_dump(&D, stderr);
 	matrix_free(&D);
+}
+
+/*
+ * The second set of relations among the intermediate symbols C[0], ..., C[L-1]
+ * are the HDPC relations and they are defined as follows:
+
+Let:
+
+alpha denote the octet represented by integer 2 as defined in Section 5.7.
+
+MT denote an H x (K' + S) matrix of octets, where for j=0, ..., K'+S-2,
+the entry MT[i,j] is the octet represented by the integer 1
+if i= Rand[j+1,6,H] or i = (Rand[j+1,6,H] + Rand[j+1,7,H-1] + 1) % H,
+and MT[i,j] is the zero element for all other values of i,
+and for j=K'+S-1, MT[i,j] = alpha^^i for i=0, ..., H-1.
+
+GAMMA denote a (K'+S) x (K'+S) matrix of octets, where
+	GAMMA[i,j] =
+		alpha ^^ (i-j) for i >= j,
+		0 otherwise.
+
+Then, the relationship between the first K'+S intermediate symbols
+C[0], ..., C[K'+S-1] and the H HDPC symbols C[K'+S], ..., C[K'+S+H-1]
+is given by:
+
+Transpose[C[K'+S], ..., C[K'+S+H-1]] + MT * GAMMA *
+Transpose[C[0], ..., C[K'+S-1]] = 0,
+
+where '*' represents standard matrix multiplication utilizing the
+octet multiplication to define the multiplication between a matrix of
+octets and a matrix of symbols (in particular, the column vector of
+symbols), and '+' denotes addition over octet vectors.
+ */
+static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
+{
+	matrix_t MT, GAMMA, CT;
+	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
+	matrix_zero(&MT);
+	for (int j = 0; j < rq->KP - 1; j++) {
+		for (int i = 0; i < MT.rows; i++) {
+			const uint8_t a = rq_rand(j + 1, 6, rq->H);
+			const uint8_t b = rq_rand(j + 1, 7, rq->H - 1);
+			const uint8_t c = (a + b + 1) % rq->H;
+			if (i == a || i == c) matrix_set(&MT, i, j, 1);
+		}
+	}
+	for (int i = 0; i < rq->H; i++) {
+		const uint8_t v = gf256_exp(i);
+		matrix_set(&MT, i, rq->KP + rq->S - 1, v);
+	}
+	fprintf(stderr, "MT:\n");
+	matrix_dump(&MT, stderr);
+	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL);
+	matrix_zero(&GAMMA);
+	for (int i = 0; i < GAMMA.rows; i++) {
+		for (int j = 0; j < GAMMA.cols; j++) {
+			if (i >= j) {
+				const uint8_t v = gf256_exp(i-j);
+				matrix_set(&GAMMA, i, j, v);
+			}
+		}
+	}
+	fprintf(stderr, "GAMMA:\n");
+	matrix_dump(&GAMMA, stderr);
+
+	CT = matrix_dup(C);
+	matrix_transpose(&CT);
+	matrix_dump(&CT, stderr);
+	matrix_free(&CT);
 }
 
 int main(void)
@@ -196,8 +266,9 @@ int main(void)
 		matrix_multiply_gf256(&A_dup, &C, &D2);
 		test_assert(memcmp(D.base, D2.base, D.size) == 0, "verify A*C=D");
 
-		/* TODO verify 5.3.3.3. Pre-Coding Relationships */
+		/* verify 5.3.3.3. Pre-Coding Relationships */
 		verify_LDPC_relations(rq, &C);
+		verify_HDPC_relations(rq, &C);
 
 		/* encoding (5.3.4) */
 		/* as per 5.3.2, the original source symbols C' can be generated

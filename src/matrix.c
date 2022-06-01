@@ -60,14 +60,9 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 {
 	uint8_t *i = mat->base;
 	fprintf(stream, "\n");
-	for (int r = 0; r < mat->rows; r++) {
-		for (int c = 0; c < mat->cols; c++) {
-			if (mat->trans) {
-				fprintf(stream, " %02x", i[mat->cols * c + r]);
-			}
-			else {
-				fprintf(stream, " %02x", *(i++));
-			}
+	for (int r = 0; r < matrix_rows(mat); r++) {
+		for (int c = 0; c < matrix_cols(mat); c++) {
+			fprintf(stream, " %02x", matrix_get(mat, r, c));
 		}
 		fprintf(stream, "\n");
 	}
@@ -78,8 +73,8 @@ uint8_t matrix_get(matrix_t *mat, int row, int col)
 {
 	long int r = (mat->trans) ? col : row;
 	long int c = (mat->trans) ? row : col;
-	assert(r < mat->rows);
-	assert(c < mat->cols);
+	assert(row < matrix_rows(mat));
+	assert(col < matrix_cols(mat));
 	return mat->base[c + r * mat->stride];
 }
 
