@@ -32,6 +32,67 @@ unsigned char *generate_source_object(size_t max, size_t *F)
 	return block;
 }
 
+/*
+The first set of pre-coding relations, called LDPC relations, is
+described below and requires that at the end of this process the set
+of symbols D[0] , ..., D[S-1] are all zero:
+
+Initialize the symbols D[0] = C[B], ..., D[S-1] = C[B+S-1].
+
+For i = 0, ..., B-1 do
+	a = 1 + floor(i/S)
+	b = i % S
+	D[b] = D[b] + C[i]
+	b = (b + a) % S
+	D[b] = D[b] + C[i]
+	b = (b + a) % S
+	D[b] = D[b] + C[i]
+
+For i = 0, ..., S-1 do
+	a = i % P
+	b = (i+1) % P
+	D[i] = D[i] + C[W+a] + C[W+b]
+*/
+static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
+{
+	matrix_t D = {0};
+	matrix_new(&D, rq->S, rq->T, NULL);
+
+	test_log("verifying LDPC coding relations\n");
+	for (int i = 0; i < rq->S; i++) {
+		matrix_row_copy(&D, i, C, i + rq->B);
+	}
+
+	matrix_dump(&D, stderr);
+
+	uint8_t a, b;
+	for (int i = 0; i < rq->B; i++) {
+		a = 1 + FLOOR(i, rq->S);
+		b = i % rq->S;
+		matrix_row_add(&D, b, C, i);
+		b = (b + a) % rq->S;
+		matrix_row_add(&D, b, C, i);
+		b = (b + a) % rq->S;
+		matrix_row_add(&D, b, C, i);
+	}
+	for (int i = 0; i < rq->S; i++) {
+		a = i % rq->P;
+		b = (i + 1) % rq->P;
+		matrix_row_add(&D, i, C, rq->W + a);
+		matrix_row_add(&D, i, C, rq->W + b);
+	}
+
+	/* all entries in D MUST be zero */
+	for (int i = 0; i < D.rows; i++) {
+		for (int j = 0; j < D.cols; j++) {
+			test_assert(!matrix_get(&D, i, j), "verifying D");
+		}
+	}
+
+	matrix_dump(&D, stderr);
+	matrix_free(&D);
+}
+
 int main(void)
 {
 	rq_t *rq;
@@ -115,6 +176,8 @@ int main(void)
 		test_assert(A.rows == A.cols, "Matrix A is square");
 		test_assert(A.rows == rq->L, "Matrix A has dimension L");
 
+		matrix_dump(&A, stderr);
+
 		test_log("generating matrix D\n");
 		D = rq_matrix_D(rq, srcblk);
 		test_assert(D.rows = rq->L, "D has L rows");
@@ -132,6 +195,9 @@ int main(void)
 		matrix_t D2 = {0};
 		matrix_multiply_gf256(&A_dup, &C, &D2);
 		test_assert(memcmp(D.base, D2.base, D.size) == 0, "verify A*C=D");
+
+		/* TODO verify 5.3.3.3. Pre-Coding Relationships */
+		verify_LDPC_relations(rq, &C);
 
 		/* encoding (5.3.4) */
 		/* as per 5.3.2, the original source symbols C' can be generated
