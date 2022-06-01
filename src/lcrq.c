@@ -187,8 +187,7 @@ void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 	I_H = matrix_submatrix(&H1, 0, rq->L - rq->H, rq->H, rq->H);
 
 	for (int j = 0; j < rq->H; j++) {
-		matrix_set(&H1, j, rq->KP + rq->S - 1, val);
-		val = gf256_mul(val, 2);
+		matrix_set(&H1, j, rq->KP + rq->S - 1, gf256_exp(j));
 	}
 	for (int j = rq->KP + rq->S - 2; j >= 0; j--) {
 		for (int i = 0; i < rq->H; i++) {

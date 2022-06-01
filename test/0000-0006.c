@@ -147,11 +147,9 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL);
 	matrix_zero(&GAMMA);
 	for (int i = 0; i < GAMMA.rows; i++) {
-		for (int j = 0; j < GAMMA.cols; j++) {
-			if (i >= j) {
-				const uint8_t v = gf256_exp(i-j);
-				matrix_set(&GAMMA, i, j, v);
-			}
+		for (int j = i; j < GAMMA.cols; j++) {
+			const uint8_t v = gf256_exp(i-j);
+			matrix_set(&GAMMA, i, j, v);
 		}
 	}
 	fprintf(stderr, "GAMMA:\n");
