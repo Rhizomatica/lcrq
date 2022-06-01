@@ -127,7 +127,7 @@ symbols), and '+' denotes addition over octet vectors.
  */
 static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 {
-	matrix_t MT, GAMMA, CT;
+	matrix_t MT, GAMMA, CT, CT1, CT2;
 	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
 	matrix_zero(&MT);
 	for (int j = 0; j < rq->KP - 1; j++) {
@@ -160,6 +160,13 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	CT = matrix_dup(C);
 	matrix_transpose(&CT);
 	matrix_dump(&CT, stderr);
+
+	CT1 = matrix_submatrix(&CT, 0, rq->KP + rq->S, rq->T, rq->H);
+	CT2 = matrix_submatrix(&CT, 0, 0, rq->T, rq->KP + rq->S);
+
+	matrix_dump(&CT1, stderr);
+	matrix_dump(&CT2, stderr);
+
 	matrix_free(&CT);
 }
 

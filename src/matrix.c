@@ -7,6 +7,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+int matrix_cols(matrix_t *mat)
+{
+	return (mat->trans) ? mat->rows : mat->cols;
+}
+
+int matrix_rows(matrix_t *mat)
+{
+	return (mat->trans) ? mat->cols : mat->rows;
+}
+
 matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 {
 	mat->rows = rows;
@@ -20,10 +30,15 @@ matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 
 matrix_t matrix_submatrix(matrix_t *A, int off_rows, int off_cols, int rows, int cols)
 {
-	assert(rows <= A->rows);
-	assert(cols <= A->cols);
+	long int r = (A->trans) ? cols : rows;
+	long int c = (A->trans) ? rows : cols;
+	long int roff = (A->trans) ? off_cols : off_rows;
+	long int coff = (A->trans) ? off_rows : off_cols;
+	assert(rows <= matrix_rows(A));
+	assert(cols <= matrix_cols(A));
 	matrix_t sub = {0};
-	matrix_new(&sub, rows, cols, A->base + off_rows * A->stride + off_cols);
+	matrix_new(&sub, r, c, A->base + roff * A->stride + coff);
+	sub.trans = A->trans;
 	sub.stride = A->stride;
 	return sub;
 }
@@ -34,16 +49,6 @@ matrix_t *matrix_zero(matrix_t *mat)
 		memset(mat->base + i * mat->stride, 0, mat->cols);
 	}
 	return mat;
-}
-
-int matrix_cols(matrix_t *mat)
-{
-	return (mat->trans) ? mat->rows : mat->cols;
-}
-
-int matrix_rows(matrix_t *mat)
-{
-	return (mat->trans) ? mat->cols : mat->rows;
 }
 
 matrix_t *matrix_identity(matrix_t *m)
@@ -58,7 +63,6 @@ matrix_t *matrix_identity(matrix_t *m)
 
 void matrix_dump(matrix_t *mat, FILE *stream)
 {
-	uint8_t *i = mat->base;
 	fprintf(stream, "\n");
 	for (int r = 0; r < matrix_rows(mat); r++) {
 		for (int c = 0; c < matrix_cols(mat); c++) {
@@ -82,8 +86,8 @@ uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
 {
 	long int r = (mat->trans) ? col : row;
 	long int c = (mat->trans) ? row : col;
-	assert(r < mat->rows);
-	assert(c < mat->cols);
+	assert(row < matrix_rows(mat));
+	assert(col < matrix_cols(mat));
 	mat->base[c + r * mat->stride] = val;
 	return val;
 }
