@@ -216,6 +216,34 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_free(&A);
 }
 
+/*
+Let G_ENC be the K' x L matrix such that
+
+	G_ENC * Transpose[(C[0], ..., C[L-1])] =
+	Transpose[(C'[0],C'[1], ...,C'[K'-1])],
+*/
+void verify_GENC(rq_t *rq, matrix_t *C, matrix_t *A)
+{
+	matrix_t G_ENC, CT, P = {0};
+
+	G_ENC = matrix_submatrix(A, rq->S + rq->H, 0, rq->KP, rq->L);
+
+	CT = matrix_dup(C);
+	/* RFC says transpose, but the dimensions are correct without */
+	//matrix_transpose(&CT);
+
+	matrix_dump(&G_ENC, stderr);
+	matrix_dump(&CT, stderr);
+
+	matrix_multiply_gf256(&G_ENC, &CT, &P);
+	matrix_dump(&P, stderr);
+
+	/* TODO compare with source block C' */
+
+	matrix_free(&CT);
+	matrix_free(&P);
+}
+
 int main(void)
 {
 	rq_t *rq;
@@ -322,6 +350,7 @@ int main(void)
 		/* verify 5.3.3.3. Pre-Coding Relationships */
 		verify_LDPC_relations(rq, &C);
 		verify_HDPC_relations(rq, &C);
+		verify_GENC(rq, &C, &A_dup);
 
 		/* encoding (5.3.4) */
 		/* as per 5.3.2, the original source symbols C' can be generated
