@@ -25,7 +25,8 @@ matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
 uint8_t matrix_get(matrix_t *mat, int row, int col);
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val);
-
+int matrix_cols(matrix_t *mat);
+int matrix_rows(matrix_t *mat);
 void matrix_col_copy(matrix_t *dst, int dcol, matrix_t *src, int scol);
 void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow);
 void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow);

@@ -9,6 +9,8 @@
 #include <sodium.h>
 #include <sys/param.h>
 
+void rq_generate_HDPC(rq_t *rq, matrix_t *A);
+
 static const size_t MAX_PAYLOAD = 4; /* MAX_PAYLOAD must be at least Al=4 bytes */
 //static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 10 + 0;// OK
 static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 0;// FIXME breaks if > 10 * T
@@ -128,6 +130,8 @@ symbols), and '+' denotes addition over octet vectors.
 static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 {
 	matrix_t MT, GAMMA, CT, CT1, CT2, P0, P1 = {0}, P2 = {0};
+
+	/* build the MT matrix */
 	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
 	matrix_zero(&MT);
 	for (int j = 0; j < rq->KP - 1; j++) {
@@ -144,6 +148,8 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	}
 	fprintf(stderr, "MT:\n");
 	matrix_dump(&MT, stderr);
+
+	/* build GAMMA */
 	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL);
 	matrix_zero(&GAMMA);
 	for (int i = 0; i < GAMMA.rows; i++) {
@@ -155,39 +161,59 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	fprintf(stderr, "GAMMA:\n");
 	matrix_dump(&GAMMA, stderr);
 
+	matrix_multiply_gf256(&MT, &GAMMA, &P1);
+	fprintf(stderr, "P1 (MT * GAMMA):\n");
+	matrix_dump(&P1, stderr);
+	// FIXME - P1 product is not the same as HDPC
+
+	/* ok, lets create the HDPC matrix another way */
+	matrix_t A, HDPC;
+	matrix_new(&A, rq->L, rq->L, NULL);
+	rq_generate_HDPC(rq, &A);
+	HDPC = matrix_submatrix(&A, rq->S, 0, rq->H, rq->KP + rq->S);
+	fprintf(stderr, "HDPC:\n");
+	matrix_dump(&HDPC, stderr);
+
+	/* Tranpose C */
 	CT = matrix_dup(C);
 	matrix_transpose(&CT);
+	fprintf(stderr, "Tranpose[C]:\n");
 	matrix_dump(&CT, stderr);
 
+	/* carve out submatricies from Tranpose[C] */
 	CT1 = matrix_submatrix(&CT, 0, rq->KP + rq->S, rq->T, rq->H);
 	CT2 = matrix_submatrix(&CT, 0, 0, rq->T, rq->KP + rq->S);
-
 
 	fprintf(stderr, "CT1:\n");
 	matrix_dump(&CT1, stderr);
 	fprintf(stderr, "CT2:\n");
 	matrix_dump(&CT2, stderr);
 
-	matrix_multiply_gf256(&MT, &GAMMA, &P1);
-	fprintf(stderr, "P1 (MT * GAMMA):\n");
-	matrix_dump(&P1, stderr);
-
-
-	matrix_transpose(&CT2); // FIXME? Is this right?
-	matrix_multiply_gf256(&P1, &CT2, &P2);
-	matrix_transpose(&P2); // FIXME? Is this right?
+	matrix_transpose(&CT2); // FIXME why the transpose here?
+	//matrix_multiply_gf256(&P1, &CT2, &P2);
+	matrix_multiply_gf256(&HDPC, &CT2, &P2);
+	matrix_transpose(&P2); // FIXME transpose back again seems wrong
 	fprintf(stderr, "P2:\n");
 	matrix_dump(&P2, stderr);
 
-	fprintf(stderr, "P0:\n");
+	fprintf(stderr, "CT1:\n");
+	matrix_dump(&CT1, stderr);
+
+	fprintf(stderr, "P0 (CT1 + P2):\n");
 	P0 = matrix_add(&CT1, &P2);
 	matrix_dump(&P0, stderr);
 
-	/* TODO verify == 0 */
+	/* verify == 0 */
+	for (int i = 0; i < matrix_rows(&P0); i++) {
+		for (int j = 0; j < matrix_cols(&P0); j++) {
+			test_assert(!matrix_get(&P0, i, j), "verifying zero relation");
+		}
+	}
 
 	matrix_free(&P1);
 	matrix_free(&P2);
 	matrix_free(&CT);
+	matrix_free(&A);
 }
 
 int main(void)
