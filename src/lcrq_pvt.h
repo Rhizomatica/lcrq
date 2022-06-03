@@ -273,6 +273,7 @@ static const int DEG[] = {
 	1017662,
 	1048576
 };
+static const int DEGMAX = sizeof DEG / sizeof DEG[0];
 
 /* Table 2 (5.6) */
 static const t2_t T2[] = {

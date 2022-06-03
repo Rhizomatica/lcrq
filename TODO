@@ -1,23 +1,8 @@
 # TODO
 
-## Generators:
-- (5.3.5.3) Encoding Symbol Generator
+## Encoding (5.3.4)
 
-## Encoding
-### Padding (5.3.2)
-### Generate Intermediate Symbols (5.3.3.4)
-
-Matrix A is formed from the sub-matrices:
-- G_LDPC,1
-- G_LDPC,2
-- G_HDPC
-- G_ENC
-- I_S
-- I_H
-
-From this the intermediate symbols are calculated: C = (A^^-1)*D
-
-### Encoding (5.3.4)
+Fix encoder such that source symbols can be generated from intermediate.
 
 ## Decoding (5.4)
 ### First Phase  - (5.4.2.2) Gaussian Elimination -> lower triangular form
@@ -25,3 +10,7 @@ From this the intermediate symbols are calculated: C = (A^^-1)*D
 ### Third Phase  - (5.4.2.4)
 ### Fourth Phase - (5.4.2.5)
 ### Fifth Phase  - (5.4.2.6)
+
+## Optimisation
+
+See discussion at https://github.com/cberner/raptorq/issues/84

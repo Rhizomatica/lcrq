@@ -33,9 +33,9 @@ int main(void)
 	deg = rq_deg(rq, v);
 	test_assert(deg == 15, "rq_deg(%i) == %i", v, deg);
 
-	v = 1048576;
+	v = (1 << 20) - 1;
 	deg = rq_deg(rq, v);
-	test_assert(deg == 31, "rq_deg(%i) == %i", v, deg);
+	test_assert(deg == 30, "rq_deg(%i) == %i", v, deg);
 
 	rq_free(rq);
 

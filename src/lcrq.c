@@ -42,12 +42,11 @@ uint64_t KL(uint64_t WS, uint16_t Al, uint16_t T, uint16_t n)
    Section 5.3.3.3. */
 int rq_deg(rq_t *rq, int v)
 {
-	assert(v >= 0);
-	assert(v <= (1 << 20));
-
 	int d;
 
-	for (d = 1; d <= 30; d++) {
+	assert(v >= 0); assert(v < (1 << 20));
+
+	for (d = 1; d <= DEGMAX; d++) {
 		if (DEG[d-1] <= v && v < DEG[d]) break;
 	}
 	return MIN(d, rq->W-2);
@@ -60,7 +59,7 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 	const uint8_t x2 = ((y >> 16) + i) % (1 << 8);
 	const uint8_t x3 = ((y >> 24) + i) % (1 << 8);
 	assert(m); /* must be positive */
-	return ((V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m);
+	return (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m;
 }
 
 /* Encoding Symbol Generator (5.3.5.3)
@@ -84,44 +83,68 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 
 	Return result
 */
-uint8_t *rq_encode(rq_t *rq, matrix_t *C, size_t isi)
+uint8_t *rq_encode(rq_t *rq, matrix_t *C, uint32_t isi)
 {
 	rq_tuple_t tup = rq_tuple(rq, isi);
-	uint16_t b = tup.b;
-	uint16_t b1 = tup.b1;
+	uint32_t b = tup.b;
+	uint32_t b1 = tup.b1;
 	matrix_t R;
+
 	matrix_new(&R, 1, rq->T, NULL);
 	matrix_zero(&R);
 
+	fprintf(stderr, "XORing rows (intermediate symbols)\n");
+	rq_dump_symbol(rq, R.base, stderr);
+
 	matrix_row_copy(&R, 0, C, b);
-	for (int j = 1; j < tup.d; j++) {
+	fprintf(stderr, "start by copying row b=%u\n", b);
+	rq_dump_symbol(rq, R.base, stderr);
+	for (uint32_t j = 1; j < tup.d; j++) {
 		b = (b + tup.a) % rq->W;
 		matrix_row_add(&R, 0, C, b);
+		fprintf(stderr, "XOR b=%u\n", b);
+		rq_dump_symbol(rq, R.base, stderr);
 	}
 	while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
 	matrix_row_add(&R, 0, C, rq->W + b1);
-	for (int j = 1; j < tup.d1; j++) {
+	fprintf(stderr, "XOR b1=%u\n", b1);
+	rq_dump_symbol(rq, R.base, stderr);
+	for (uint32_t j = 1; j < tup.d1; j++) {
 		b1 = (b1 + tup.a1) % rq->P1;
 		while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
 		matrix_row_add(&R, 0, C, rq->W + b1);
+		fprintf(stderr, "XOR W(%u) + b1(%u)=%u\n", rq->W, b1, rq->W + b1);
+		rq_dump_symbol(rq, R.base, stderr);
 	}
 	return R.base;
 }
 
-rq_tuple_t rq_tuple(rq_t *rq, size_t X)
+rq_tuple_t rq_tuple(rq_t *rq, uint32_t X)
 {
 	rq_tuple_t tup = {0};
-	size_t A = 53591 + rq->J * 997;
-	if (A % 2 == 0) A++;
-	size_t B = 10267 * (rq->J + 1);
-	size_t y = (B + X * A) & 0xffff;
-	size_t v = rq_rand(y, 0, 1048576);
-	size_t d = rq_deg(rq, v);
+	const uint32_t A = (53591 + rq->J * 997) | 0x1;
+	const uint32_t B = 10267 * (rq->J + 1);
+	const uint32_t y = B + X * A; /* mod 2^^32 */
+	const uint32_t v = rq_rand(y, 0, 1 << 20);
+
+	tup.d = rq_deg(rq, v);
 	tup.a = 1 + rq_rand(y, 1, rq->W-1);
 	tup.b = rq_rand(y, 2, rq->W);
-	tup.d1 = (d < 4) ? 2 + rq_rand(X, 3, 2) : 2;
+	tup.d1 = (tup.d < 4) ? 2 + rq_rand(X, 3, 2) : 2;
 	tup.a1 = 1 + rq_rand(X, 4, rq->P1 - 1);
 	tup.b1 = rq_rand(X, 5, rq->P1);
+
+	/* a is a positive integer between 1 and W-1 inclusive */
+	assert(tup.a >= 1 && tup.a < rq->W);
+	/* b is a non-negative integer between 0 and W-1 inclusive */
+	assert(tup.b < rq->W);
+	/* d1 is a positive integer that has value either 2 or 3 */
+	assert(tup.d1 == 2 || tup.d1 == 3);
+	/* a1 is a positive integer between 1 and P1-1 inclusive */
+	assert(tup.a1 >= 1 && tup.a1 < rq->P1);
+	/* b1 is a non-negative integer between 0 and P1-1 inclusive */
+	assert(tup.b1 < rq->P1);
+
 	return tup;
 }
 
@@ -214,17 +237,17 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 	matrix_t LT;
 	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L);
 	for (int row = 0; row < LT.rows; row++) {
-		uint32_t X = row - rq->S - rq->H;
+		uint32_t X = row;
 		rq_tuple_t tup = rq_tuple(rq, X);
 		matrix_set(&LT, row, tup.b, 1);
-		for (int j = 1; j < tup.d; j++) {
+		for (uint32_t j = 1; j < tup.d; j++) {
 			tup.b = (tup.b + tup.a) % rq->W;
 			matrix_set(&LT, row, tup.b, 1);
 		}
 		while (tup.b1 >= rq->P)
 			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
 		matrix_set(&LT, row, rq->W + tup.b1, 1);
-		for (int j = 1; j < tup.d1; j++) {
+		for (uint32_t j = 1; j < tup.d1; j++) {
 			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
 			while (tup.b1 >= rq->P)
 				tup.b1 = (tup.b1 + tup.a1) % rq->P1;
@@ -257,8 +280,8 @@ matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk)
 	matrix_zero(&D);
 	/* first S + H symbols are zero */
 	ptr = D.base + (rq->S + rq->H) * rq->T * sizeof(uint8_t);
-	/* copy K' symbols of size T into D */
-	memcpy(ptr, blk, rq->KP * rq->T);
+	/* copy K symbols of size T into D */
+	memcpy(ptr, blk, rq->K * rq->T);
 
 	return D;
 }
@@ -269,7 +292,7 @@ matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk)
  *   D denotes the column vector consisting of S+H zero symbols
  *   followed by the K' source symbols C'[0], C'[1], ..., C'[K'-1]
  */
-matrix_t rq_intermediate_symbols(matrix_t *A, matrix_t *D)
+matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 {
 	matrix_t A_inv = {0};
 	matrix_t C = {0};
@@ -305,10 +328,10 @@ void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
 	for (int r = 0; r < rq->S; r++) {
 		for (int c = 0; c < rq->L; c++) {
 			switch (matrix_get(A, r, c)) {
-			case 0:         fputc('0', stream); break;
-			case 1:         fputc('1', stream); break;
+			case 0: fputc('0', stream); break;
+			case 1: fputc('1', stream); break;
 			default:
-					fputc('-', stream); break;
+				fputc('-', stream); break;
 			}
 		}
 		fputc('\n', stream);
@@ -317,7 +340,7 @@ void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
 
 void rq_dump_symbol(rq_t *rq, uint8_t *sym, FILE *stream)
 {
-	fprintf(stream, "symbol (%p)\n", (void *)sym);
+	//fprintf(stream, "symbol (%p)\n", (void *)sym);
 	for (int i = 0; i < rq->T; i++) {
 		fprintf(stream, " %02x", sym[i]);
 	}

@@ -15,14 +15,18 @@ int main(void)
 
 	rq = rq_init(345893, 1024);
 
-	/* just run through the range and make sure nothing breaks */
-	for (size_t x = 0; x < UINT32_MAX; x *= 2) {
+	for (int x = 0; x < (1 << 31); x *= 2) {
 		tup = rq_tuple(rq, x);
-		assert(tup.a >= 0 && tup.a <= UINT32_MAX);
-		assert(tup.b >= 0 && tup.b <= UINT32_MAX);
-		assert(tup.d1 >= 0 && tup.d1 <= UINT32_MAX);
-		assert(tup.a1 >= 0 && tup.a1 <= UINT32_MAX);
-		assert(tup.b1 >= 0 && tup.b1 <= UINT32_MAX);
+		test_assert(tup.a >= 1 && tup.a < rq->W,
+			"a is a positive integer between 1 and W-1 inclusive");
+		test_assert(tup.b < rq->W,
+			"b is a non-negative integer between 0 and W-1 inclusive");
+		test_assert(tup.d1 == 2 || tup.d1 == 3,
+			"d1 is a positive integer that has value either 2 or 3");
+		test_assert(tup.a1 >= 1 && tup.a1 < rq->P1,
+			"a1 is a positive integer between 1 and P1-1 inclusive");
+		test_assert(tup.b1 < rq->P1,
+			"b1 is a non-negative integer between 0 and P1-1 inclusive");
 		x++;
 	}
 

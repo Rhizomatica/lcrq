@@ -7,12 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int matrix_cols(matrix_t *mat)
+int matrix_cols(const matrix_t *mat)
 {
 	return (mat->trans) ? mat->rows : mat->cols;
 }
 
-int matrix_rows(matrix_t *mat)
+int matrix_rows(const matrix_t *mat)
 {
 	return (mat->trans) ? mat->cols : mat->rows;
 }
@@ -73,7 +73,7 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	fprintf(stream, "\n");
 }
 
-uint8_t matrix_get(matrix_t *mat, int row, int col)
+uint8_t matrix_get(const matrix_t *mat, int row, int col)
 {
 	long int r = (mat->trans) ? col : row;
 	long int c = (mat->trans) ? row : col;
@@ -99,7 +99,7 @@ uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val)
 }
 
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
-matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p)
+matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p)
 {
 	int xrows = matrix_rows(x);
 	int yrows = matrix_rows(y);
@@ -151,7 +151,8 @@ matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2)
 
 void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow)
 {
-	for (int col = 0; col < dst->cols; col++) {
+	assert(matrix_cols(dst) == matrix_cols(src));
+	for (int col = 0; col < matrix_cols(dst); col++) {
 		const uint8_t a = matrix_get(dst, drow, col);
 		const uint8_t b = matrix_get(src, srow, col);
 		const uint8_t v = a ^ b;

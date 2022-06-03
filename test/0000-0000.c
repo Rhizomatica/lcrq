@@ -14,13 +14,8 @@ void test_parms(size_t F)
 	part_t src_blocks = rq_partition(rq->Kt, rq->Z);
 	part_t sub_blocks = rq_partition(rq->T/rq->Al, rq->N);
 
-	size_t KL = src_blocks.IL;
-	size_t KS = src_blocks.IS;
 	size_t ZL = src_blocks.JL;
 	size_t ZS = src_blocks.JS;
-
-	size_t TL = sub_blocks.IL;
-	size_t TS = sub_blocks.IS;
 	size_t NL = sub_blocks.JL;
 	size_t NS = sub_blocks.JS;
 

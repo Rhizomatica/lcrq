@@ -12,12 +12,7 @@
 void rq_generate_HDPC(rq_t *rq, matrix_t *A);
 
 static const size_t MAX_PAYLOAD = 4; /* MAX_PAYLOAD must be at least Al=4 bytes */
-//static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 10 + 0;// OK
-static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 0;// FIXME breaks if > 10 * T
-
-//#define MAX_SRCOBJ 1024 * 1024 * 1024
-//#define MAX_SRCOBJ 1538 * 420
-//static_assert(MAX_SRCOBJ > 1);
+static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 0;
 
 /* generate source object of data of random size and content up to max bytes */
 unsigned char *generate_source_object(size_t max, size_t *F)
@@ -28,9 +23,9 @@ unsigned char *generate_source_object(size_t max, size_t *F)
 	if (!sz) sz = max;
 	block = malloc(sz);
 	assert(block);
+	memset(block, 0, sz);
 	//randombytes_buf(block, sz);
-	for (unsigned char i = 0; i < 4; i++) block[i] = i + 42;
-	//memset(block, 0, sz);
+	for (unsigned char i = 0; i < MAX_SRCOBJ; i++) block[i] = i + 42;
 	*F = sz;
 	return block;
 }
@@ -65,7 +60,6 @@ static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 	for (int i = 0; i < rq->S; i++) {
 		matrix_row_copy(&D, i, C, i + rq->B);
 	}
-
 	matrix_dump(&D, stderr);
 
 	uint8_t a, b;
@@ -84,6 +78,7 @@ static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 		matrix_row_add(&D, i, C, rq->W + a);
 		matrix_row_add(&D, i, C, rq->W + b);
 	}
+	matrix_dump(&D, stderr);
 
 	/* all entries in D MUST be zero */
 	for (int i = 0; i < D.rows; i++) {
@@ -91,8 +86,6 @@ static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 			test_assert(!matrix_get(&D, i, j), "verifying D");
 		}
 	}
-
-	matrix_dump(&D, stderr);
 	matrix_free(&D);
 }
 
@@ -134,29 +127,31 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	/* build the MT matrix */
 	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
 	matrix_zero(&MT);
-	for (int j = 0; j < rq->KP - 1; j++) {
-		for (int i = 0; i < MT.rows; i++) {
-			const uint8_t a = rq_rand(j + 1, 6, rq->H);
-			const uint8_t b = rq_rand(j + 1, 7, rq->H - 1);
-			const uint8_t c = (a + b + 1) % rq->H;
-			if (i == a || i == c) matrix_set(&MT, i, j, 1);
-		}
+
+	for (int j = 0; j < rq->KP +rq->S - 1; j++) {
+		const uint32_t a = rq_rand(j + 1, 6, rq->H);
+		const uint32_t b = rq_rand(j + 1, 7, rq->H - 1);
+		const uint32_t c = (a + b + 1) % rq->H;
+		matrix_set(&MT, a, j, 1);
+		matrix_set(&MT, c, j, 1);
 	}
 	for (int i = 0; i < rq->H; i++) {
 		const uint8_t v = gf256_exp(i);
 		matrix_set(&MT, i, rq->KP + rq->S - 1, v);
 	}
+
 	fprintf(stderr, "MT:\n");
 	matrix_dump(&MT, stderr);
 
 	/* build GAMMA */
 	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL);
 	matrix_zero(&GAMMA);
+	uint8_t v = 1;
 	for (int i = 0; i < GAMMA.rows; i++) {
 		for (int j = i; j < GAMMA.cols; j++) {
-			const uint8_t v = gf256_exp(i-j);
-			matrix_set(&GAMMA, i, j, v);
+			matrix_set(&GAMMA, j, j - i, v);
 		}
+		v = gf256_mul(v, 2);
 	}
 	fprintf(stderr, "GAMMA:\n");
 	matrix_dump(&GAMMA, stderr);
@@ -164,7 +159,6 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_multiply_gf256(&MT, &GAMMA, &P1);
 	fprintf(stderr, "P1 (MT * GAMMA):\n");
 	matrix_dump(&P1, stderr);
-	// FIXME - P1 product is not the same as HDPC
 
 	/* ok, lets create the HDPC matrix another way */
 	matrix_t A, HDPC;
@@ -184,16 +178,39 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	CT1 = matrix_submatrix(&CT, 0, rq->KP + rq->S, rq->T, rq->H);
 	CT2 = matrix_submatrix(&CT, 0, 0, rq->T, rq->KP + rq->S);
 
-	fprintf(stderr, "CT1:\n");
+	fprintf(stderr, "CT1 = Transpose[C[K'+S], ..., C[K'+S+H-1]]:\n");
 	matrix_dump(&CT1, stderr);
-	fprintf(stderr, "CT2:\n");
+	fprintf(stderr, "CT2 = Transpose[C[0], ..., C[K'+S-1]]:\n");
 	matrix_dump(&CT2, stderr);
 
-	matrix_transpose(&CT2); // FIXME why the transpose here?
-	//matrix_multiply_gf256(&P1, &CT2, &P2);
-	matrix_multiply_gf256(&HDPC, &CT2, &P2);
-	matrix_transpose(&P2); // FIXME transpose back again seems wrong
-	fprintf(stderr, "P2:\n");
+/* RFC says:
+	Transpose[C[K'+S], ..., C[K'+S+H-1]] + MT * GAMMA *
+	Transpose[C[0], ..., C[K'+S-1]] = 0,
+
+but, MT x GAMMA has dimensions (H x K'+S)
+and Transpose[C[0], ..., C[K'+S-1]] has (T x K'+S)
+
+For multiplication the columns of the first matrix MUST == rows of the second,
+
+so we need to multiply the untransposed C[0], ..., C[K'+S-1] (K'+S x T)
+
+(H x K'+S) x (K'+S x T) = (H x T)
+
+which gives us a matrix P2(H x T)
+
+and *then* transpose it to (T x K'+S) so we can add it to
+
+Transpose[C[K'+S], ..., C[K'+S+H-1]] (T x H)
+
+so why did we bother transposing either matrix?
+
+we could have just added the two untransposed (H x T) matrices...?
+
+*/
+	matrix_transpose(&CT2); // we (re)transpose here ready to multiply
+	matrix_multiply_gf256(&P1, &CT2, &P2);
+	matrix_transpose(&P2);  // just so we can transpose back again to add
+	fprintf(stderr, "P2 = (MT * GAMMA) * CT2:\n");
 	matrix_dump(&P2, stderr);
 
 	fprintf(stderr, "CT1:\n");
@@ -210,9 +227,12 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 		}
 	}
 
+	matrix_free(&P0);
 	matrix_free(&P1);
 	matrix_free(&P2);
 	matrix_free(&CT);
+	matrix_free(&MT);
+	matrix_free(&GAMMA);
 	matrix_free(&A);
 }
 
@@ -232,16 +252,39 @@ void verify_GENC(rq_t *rq, matrix_t *C, matrix_t *A)
 	/* RFC says transpose, but the dimensions are correct without */
 	//matrix_transpose(&CT);
 
+	fprintf(stderr, "G_ENC:");
 	matrix_dump(&G_ENC, stderr);
+	fprintf(stderr, "C: (intermediate symbols)");
 	matrix_dump(&CT, stderr);
 
 	matrix_multiply_gf256(&G_ENC, &CT, &P);
+	fprintf(stderr, "C': (source symbols)");
 	matrix_dump(&P, stderr);
 
 	/* TODO compare with source block C' */
 
 	matrix_free(&CT);
 	matrix_free(&P);
+}
+
+/* as per 5.3.2, the original source symbols C' can be generated
+ * using the encoding process where 0 < ISI < K'
+ * we will use this to test the encoder before generating repair
+ * symbols */
+void verify_encoder(rq_t *rq, matrix_t *C, uint8_t *src)
+{
+	uint8_t *sym;
+	for (uint32_t isi = 0; isi < rq->K; isi++) {
+		test_log("encoding ISI %zu\n", isi);
+		sym = rq_encode(rq, C, isi);
+		test_assert(!memcmp(sym, src, rq->T), "verify ISI %zu", isi);
+
+		rq_dump_symbol(rq, src, stderr);
+		rq_dump_symbol(rq, sym, stderr);
+
+		free(sym);
+		src += rq->T;
+	}
 }
 
 int main(void)
@@ -256,11 +299,10 @@ int main(void)
 	unsigned char *srcblk;
 	size_t F, len; /* F requires 40 bits */
 	uint8_t SBN;
-	//uint32_t ESI; 24 bit unsigned
 	size_t blklen;
 
 	loginit();
-	test_name("5.3.3.4 Intermediate Symbol Generation");
+	test_name("5.3.3.4 Intermediate Symbol Generation + 5.3.4 Encoding");
 
 	/* generate random source block for test */
 	srcobj = generate_source_object(MAX_SRCOBJ, &F);
@@ -274,17 +316,6 @@ int main(void)
 
 	test_log("ZL = %zu\n", rq->src_part.JL);
 	test_log("ZS = %zu\n", rq->src_part.JS);
-
-	/* NB: the mth symbol of a source block consists of the
-	   concatenation of the mth sub-symbol from each of the N sub-blocks.
-	   Note that this implies that when N > 1, a symbol is NOT a contiguous
-	   portion of the object */
-
-	/* Note that the value of K is not necessarily the same for each source
-	   block of an object, and the value of T' may not necessarily be the
-	   same for each sub-block of a source block.  However, the symbol size
-	   T is the same for all source blocks of an object, and the number of
-	   symbols K is the same for every sub-block of a source block. */
 
 	/* encode blocks */
 	for (SBN = 0; SBN < rq->Z; SBN++) {
@@ -345,7 +376,14 @@ int main(void)
 		test_log("verifying A*C=D ... \n");
 		matrix_t D2 = {0};
 		matrix_multiply_gf256(&A_dup, &C, &D2);
+		test_assert(D.rows == D2.rows, "rows of D match D2");
+		test_assert(D.cols == D2.cols, "cols of D match D2");
 		test_assert(memcmp(D.base, D2.base, D.size) == 0, "verify A*C=D");
+
+		test_log("D:");
+		matrix_dump(&D, stderr);
+		test_log("D2:");
+		matrix_dump(&D2, stderr);
 
 		/* verify 5.3.3.3. Pre-Coding Relationships */
 		verify_LDPC_relations(rq, &C);
@@ -353,23 +391,8 @@ int main(void)
 		verify_GENC(rq, &C, &A_dup);
 
 		/* encoding (5.3.4) */
-		/* as per 5.3.2, the original source symbols C' can be generated
-		 * using the encoding process where 0 < ISI < K'
-		 * we will use this to test the encoder before generating repair
-		 * symbols */
-		uint8_t *sym;
-		uint8_t *src = srcblk;
-		for (size_t isi = 0; isi < rq->K; isi++) {
-			test_log("encoding ISI %zu\n", isi);
-			sym = rq_encode(rq, &C, isi);
-			test_assert(!memcmp(sym, src, rq->T), "verify ISI %zu", isi);
+		verify_encoder(rq, &C, srcblk);
 
-			rq_dump_symbol(rq, src, stderr);
-			rq_dump_symbol(rq, sym, stderr);
-
-			free(sym);
-			src += rq->T;
-		}
 		/* TODO: repair symbols */
 		//for (size_t isi = rq->KP; isi < rq->KP + 5; isi++) {
 		//}

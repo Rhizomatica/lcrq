@@ -23,10 +23,10 @@ void matrix_free(matrix_t *mat);
 matrix_t *matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
-uint8_t matrix_get(matrix_t *mat, int row, int col);
+uint8_t matrix_get(const matrix_t *mat, int row, int col);
 uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val);
-int matrix_cols(matrix_t *mat);
-int matrix_rows(matrix_t *mat);
+int matrix_cols(const matrix_t *mat);
+int matrix_rows(const matrix_t *mat);
 void matrix_col_copy(matrix_t *dst, int dcol, matrix_t *src, int scol);
 void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow);
 void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow);
@@ -38,7 +38,7 @@ matrix_t matrix_add(matrix_t *x, matrix_t *y);
 uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val);
 
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
-matrix_t *matrix_multiply_gf256(matrix_t *x, matrix_t *y, matrix_t *p);
+matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p);
 
 /* swap rows/cols in place */
 matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2);
