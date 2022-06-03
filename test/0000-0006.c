@@ -12,7 +12,7 @@
 void rq_generate_HDPC(rq_t *rq, matrix_t *A);
 
 static const size_t MAX_PAYLOAD = 4; /* MAX_PAYLOAD must be at least Al=4 bytes */
-static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 0;
+static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 40;
 
 /* generate source object of data of random size and content up to max bytes */
 unsigned char *generate_source_object(size_t max, size_t *F)
@@ -24,8 +24,8 @@ unsigned char *generate_source_object(size_t max, size_t *F)
 	block = malloc(sz);
 	assert(block);
 	memset(block, 0, sz);
-	//randombytes_buf(block, sz);
-	for (unsigned char i = 0; i < MAX_SRCOBJ; i++) block[i] = i + 42;
+	randombytes_buf(block, sz);
+	//for (unsigned char i = 0; i < MAX_SRCOBJ; i++) block[i] = i + 42;
 	*F = sz;
 	return block;
 }
@@ -81,11 +81,16 @@ static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_dump(&D, stderr);
 
 	/* all entries in D MUST be zero */
+	int checksum = 0;
 	for (int i = 0; i < D.rows; i++) {
 		for (int j = 0; j < D.cols; j++) {
-			test_assert(!matrix_get(&D, i, j), "verifying D");
+			if (matrix_get(&D, i, j)) {
+				checksum++;
+				break;
+			}
 		}
 	}
+	test_assert(checksum == 0, "verify LDPC relations");
 	matrix_free(&D);
 }
 
@@ -221,11 +226,16 @@ we could have just added the two untransposed (H x T) matrices...?
 	matrix_dump(&P0, stderr);
 
 	/* verify == 0 */
+	int checksum = 0;
 	for (int i = 0; i < matrix_rows(&P0); i++) {
 		for (int j = 0; j < matrix_cols(&P0); j++) {
-			test_assert(!matrix_get(&P0, i, j), "verifying zero relation");
+			if (matrix_get(&P0, i, j)) {
+				checksum++;
+				break;
+			}
 		}
 	}
+	test_assert(checksum == 0, "verify HDPC relations");
 
 	matrix_free(&P0);
 	matrix_free(&P1);
