@@ -16,13 +16,14 @@ int main(void)
 	 * the two matrices is the identity matrix */
 
 	uint8_t v0[] = {
-		3, 17, 4,
-		12, 4,19,
-		2, 1, 3
+		0, 17, 4,  5,
+		12, 1,19, 14,
+		2,  1, 3,  2,
+		5,  9, 6, 11
 	};
-	matrix_new(&A, 3, 3, v0);
+	matrix_new(&A, 4, 4, v0);
 	A_orig = matrix_dup(&A);
-	matrix_new(&I_A, 3, 3, NULL);
+	matrix_new(&I_A, 4, 4, NULL);
 	matrix_identity(&I_A);
 
 	matrix_inverse(&A, &I);

@@ -234,6 +234,7 @@ matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 	for (int j = 0; j < A->cols; j++) {
 		/* first, reduce the pivot row so jj = 1 */
 		uint8_t jj = matrix_get(A, j, j);
+		assert(jj); /* without row swaps, cannot proceed */
 		if (jj != 1) {
 			matrix_row_div(A, j, jj);
 			matrix_row_div(I, j, jj);
