@@ -17,7 +17,7 @@ int matrix_rows(const matrix_t *mat)
 	return (mat->trans) ? mat->cols : mat->rows;
 }
 
-matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
+matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base)
 {
 	mat->rows = rows;
 	mat->cols = cols;
@@ -28,12 +28,13 @@ matrix_t *matrix_new(matrix_t *mat, int rows, int cols, uint8_t *base)
 	return mat;
 }
 
-matrix_t matrix_submatrix(matrix_t *A, int off_rows, int off_cols, int rows, int cols)
+matrix_t matrix_submatrix(matrix_t *A, const int off_rows, const int off_cols,
+		const int rows, const int cols)
 {
-	long int r = (A->trans) ? cols : rows;
-	long int c = (A->trans) ? rows : cols;
-	long int roff = (A->trans) ? off_cols : off_rows;
-	long int coff = (A->trans) ? off_rows : off_cols;
+	const long int r = (A->trans) ? cols : rows;
+	const long int c = (A->trans) ? rows : cols;
+	const long int roff = (A->trans) ? off_cols : off_rows;
+	const long int coff = (A->trans) ? off_rows : off_cols;
 	assert(rows <= matrix_rows(A));
 	assert(cols <= matrix_cols(A));
 	matrix_t sub = {0};
@@ -73,38 +74,38 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	fprintf(stream, "\n");
 }
 
-uint8_t matrix_get(const matrix_t *mat, int row, int col)
+uint8_t matrix_get(const matrix_t *mat, const int row, const int col)
 {
-	long int r = (mat->trans) ? col : row;
-	long int c = (mat->trans) ? row : col;
+	const long int r = (mat->trans) ? col : row;
+	const long int c = (mat->trans) ? row : col;
 	assert(row < matrix_rows(mat));
 	assert(col < matrix_cols(mat));
 	return mat->base[c + r * mat->stride];
 }
 
-uint8_t matrix_set(matrix_t *mat, int row, int col, uint8_t val)
+uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
-	long int r = (mat->trans) ? col : row;
-	long int c = (mat->trans) ? row : col;
+	const long int r = (mat->trans) ? col : row;
+	const long int c = (mat->trans) ? row : col;
 	assert(row < matrix_rows(mat));
 	assert(col < matrix_cols(mat));
 	mat->base[c + r * mat->stride] = val;
 	return val;
 }
 
-uint8_t matrix_inc_gf256(matrix_t *mat, int row, int col, uint8_t val)
+uint8_t matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
-	uint8_t sum = gf256_add(matrix_get(mat, row, col), val);
+	const uint8_t sum = gf256_add(matrix_get(mat, row, col), val);
 	return matrix_set(mat, row, col, sum);
 }
 
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p)
 {
-	int xrows = matrix_rows(x);
-	int yrows = matrix_rows(y);
-	int xcols = matrix_cols(x);
-	int ycols = matrix_cols(y);
+	const int xrows = matrix_rows(x);
+	const int yrows = matrix_rows(y);
+	const int xcols = matrix_cols(x);
+	const int ycols = matrix_cols(y);
 	assert(xcols == yrows);
 	if (!p->base) {
 		matrix_new(p, xrows, ycols, NULL);
@@ -129,7 +130,7 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 	return p;
 }
 
-matrix_t *matrix_swap_rows(matrix_t *m, int r1, int r2)
+matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2)
 {
 	for (int i = 0; i < matrix_cols(m); i++) {
 		const uint8_t tmp = matrix_get(m, r1, i);
@@ -139,7 +140,7 @@ matrix_t *matrix_swap_rows(matrix_t *m, int r1, int r2)
 	return m;
 }
 
-matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2)
+matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2)
 {
 	for (int i = 0; i < matrix_rows(m); i++) {
 		const uint8_t tmp = matrix_get(m, i, c1);
@@ -149,7 +150,7 @@ matrix_t *matrix_swap_cols(matrix_t *m, int c1, int c2)
 	return m;
 }
 
-void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow)
+void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	assert(matrix_cols(dst) == matrix_cols(src));
 	for (int col = 0; col < matrix_cols(dst); col++) {
@@ -160,7 +161,7 @@ void matrix_row_add(matrix_t *dst, int drow, matrix_t *src, int srow)
 	}
 }
 
-matrix_t matrix_add(matrix_t *x, matrix_t *y)
+matrix_t matrix_add(const matrix_t *x, const matrix_t *y)
 {
 	assert(matrix_rows(x) == matrix_rows(y));
 	assert(matrix_cols(x) == matrix_cols(y));
@@ -173,21 +174,21 @@ matrix_t matrix_add(matrix_t *x, matrix_t *y)
 	return p;
 }
 
-void matrix_row_add_val(matrix_t *m, int row, uint8_t val)
+void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
 		matrix_set(m, row, col, gf256_add(matrix_get(m, row, col), val));
 	}
 }
 
-void matrix_row_mul(matrix_t *m, int row, uint8_t val)
+void matrix_row_mul(matrix_t *m, const int row, const uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
 		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), val));
 	}
 }
 
-void matrix_row_div(matrix_t *m, int row, uint8_t val)
+void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
 		uint8_t a = matrix_get(m, row, col);
@@ -197,7 +198,7 @@ void matrix_row_div(matrix_t *m, int row, uint8_t val)
 	}
 }
 
-void matrix_row_mul_byrow(matrix_t *m, int rdst, int rsrc, uint8_t factor)
+void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int rsrc, const uint8_t factor)
 {
 	for (int col = 0; col < m->cols; col++) {
 		uint8_t dv = matrix_get(m, rdst, col);
@@ -209,14 +210,14 @@ void matrix_row_mul_byrow(matrix_t *m, int rdst, int rsrc, uint8_t factor)
 	}
 }
 
-void matrix_col_copy(matrix_t *dst, int dcol, matrix_t *src, int scol)
+void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol)
 {
 	for (int row = 0; row < src->rows; row++) {
 		matrix_set(dst, row, dcol, matrix_get(src, row, scol));
 	}
 }
 
-void matrix_row_copy(matrix_t *dst, int drow, matrix_t *src, int srow)
+void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	uint8_t *dptr, *sptr;
 	dptr = dst->base + drow * dst->stride;
@@ -260,7 +261,7 @@ matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 	return I;
 }
 
-matrix_t *matrix_copy(matrix_t *dst, matrix_t *src)
+matrix_t *matrix_copy(matrix_t *dst, const matrix_t *src)
 {
 	memcpy(dst->base, src->base, src->size);
 	dst->rows = src->rows;
@@ -271,7 +272,7 @@ matrix_t *matrix_copy(matrix_t *dst, matrix_t *src)
 	return dst;
 }
 
-matrix_t matrix_dup(matrix_t *src)
+matrix_t matrix_dup(const matrix_t *src)
 {
 	matrix_t m;
 	m.base = malloc(src->size);
