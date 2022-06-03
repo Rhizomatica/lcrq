@@ -18,7 +18,7 @@ typedef struct matrix_s {
 } matrix_t;
 
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base);
-matrix_t matrix_submatrix(matrix_t *A, const int off_rows, const int off_cols,
+matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
 matrix_t *matrix_zero(matrix_t *mat);

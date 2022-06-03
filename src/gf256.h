@@ -9,16 +9,16 @@
 /* GF(256) operations as per RFC6330 (5.7) */
 
 /* add (or subtract) in GF(256) */
-uint8_t gf256_add(uint8_t a, uint8_t b);
+uint8_t gf256_add(const uint8_t a, const uint8_t b);
 
-uint8_t gf256_exp(int e);
+uint8_t gf256_exp(const int e);
 
-uint8_t gf256_log(uint8_t v);
+uint8_t gf256_log(const uint8_t v);
 
-uint8_t gf256_inv(uint8_t v);
+uint8_t gf256_inv(const uint8_t v);
 
-uint8_t gf256_mul(uint8_t a, uint8_t b);
+uint8_t gf256_mul(const uint8_t a, const uint8_t b);
 
-uint8_t gf256_div(uint8_t u, uint8_t v);
+uint8_t gf256_div(const uint8_t u, const uint8_t v);
 
 #endif /* GF256_H */

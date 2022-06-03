@@ -10,7 +10,7 @@
 #include <sys/param.h>
 #include <time.h>
 
-int isprime(int n)
+static int isprime(const int n)
 {
 	if (n <= 1) return 0;
 	if (n % 2 == 0) return 0;
@@ -24,7 +24,7 @@ int isprime(int n)
 	that K' <= WS/(Al*(ceil(T/(Al*n))))
 	NB: this will always return K'_max = 56403 unless we have
 	a small working memory (WS) */
-uint64_t KL(uint64_t WS, uint16_t Al, uint16_t T, uint16_t n)
+static uint64_t KL(const uint64_t WS, const uint16_t Al, const uint16_t T, const uint16_t n)
 {
 	uint64_t v;
 	for (int i = T2LEN - 1; i >= 0 ; i--) {
@@ -40,7 +40,7 @@ uint64_t KL(uint64_t WS, uint16_t Al, uint16_t T, uint16_t n)
    index d in Table 1 such that f[d-1] <= v < f[d], and set Deg[v] =
    min(d, W-2).  Recall that W is derived from K' as described in
    Section 5.3.3.3. */
-int rq_deg(rq_t *rq, int v)
+int rq_deg(const rq_t *rq, const int v)
 {
 	int d;
 
@@ -83,7 +83,7 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 
 	Return result
 */
-uint8_t *rq_encode(rq_t *rq, matrix_t *C, uint32_t isi)
+uint8_t *rq_encode(const rq_t *rq, const matrix_t *C, const uint32_t isi)
 {
 	rq_tuple_t tup = rq_tuple(rq, isi);
 	uint32_t b = tup.b;
@@ -119,7 +119,7 @@ uint8_t *rq_encode(rq_t *rq, matrix_t *C, uint32_t isi)
 	return R.base;
 }
 
-rq_tuple_t rq_tuple(rq_t *rq, uint32_t X)
+rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X)
 {
 	rq_tuple_t tup = {0};
 	const uint32_t A = (53591 + rq->J * 997) | 0x1;
@@ -154,7 +154,7 @@ rq_tuple_t rq_tuple(rq_t *rq, uint32_t X)
    blocks of length IS.  The output of Partition[I, J] is the sequence
    (IL, IS, JL, JS), where IL = ceil(I/J), IS = floor(I/J), JL = I - IS
    * J, and JS = J - JL.  */
-part_t rq_partition(size_t I, uint16_t J)
+part_t rq_partition(const size_t I, const uint16_t J)
 {
 	part_t p = {0};
 	assert(J > 0);
@@ -168,7 +168,7 @@ part_t rq_partition(size_t I, uint16_t J)
 /* The first row of Matrix A consists of three sub-matrices:
  * G_LDPC1, the identity matrix I_S and G_LDPC2
  * See RFC 6330 (5.3.3.3) p23 */
-void rq_generate_LDPC(rq_t *rq, matrix_t *A)
+void rq_generate_LDPC(const rq_t *rq, matrix_t *A)
 {
 	matrix_t L1, I_S;
 
@@ -201,7 +201,7 @@ void rq_generate_LDPC(rq_t *rq, matrix_t *A)
 /* The second row of Matrix A has the HDPC codes followed by
  * the identity matrix I_H
  * See RFC 6330 (5.3.3.3) p25 */
-void rq_generate_HDPC(rq_t *rq, matrix_t *A)
+void rq_generate_HDPC(const rq_t *rq, matrix_t *A)
 {
 	matrix_t H1, I_H;
 	uint8_t val = 1;
@@ -232,7 +232,7 @@ void rq_generate_HDPC(rq_t *rq, matrix_t *A)
 	matrix_identity(&I_H);
 }
 
-static void rq_generate_LT(rq_t *rq, matrix_t *A)
+static void rq_generate_LT(const rq_t *rq, matrix_t *A)
 {
 	matrix_t LT;
 	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L);
@@ -256,7 +256,7 @@ static void rq_generate_LT(rq_t *rq, matrix_t *A)
 	}
 }
 
-void rq_generate_matrix_A(rq_t *rq, matrix_t *A)
+void rq_generate_matrix_A(const rq_t *rq, matrix_t *A)
 {
 	matrix_new(A, rq->L, rq->L, NULL);
 	matrix_zero(A);
@@ -270,7 +270,7 @@ void rq_generate_matrix_A(rq_t *rq, matrix_t *A)
 /* 5.3.3.4.2
  * D denote the column vector consisting of S+H zero symbols followed
 	by the K' source symbols C'[0], C'[1], ..., C'[K'-1] */
-matrix_t rq_matrix_D(rq_t *rq, unsigned char *blk)
+matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk)
 {
 	uint8_t *ptr;
 	matrix_t D = {0};
@@ -304,13 +304,13 @@ matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 	return C;
 }
 
-void *rq_intermediate_symbols_alloc(rq_t *rq)
+void *rq_intermediate_symbols_alloc(const rq_t *rq)
 {
 	fprintf(stderr, "Matrix A: allocating %zu bytes\n", (size_t)rq->L * rq->L);
 	return calloc(rq->L, rq->L);
 }
 
-void rq_dump_hdpc(rq_t *rq, matrix_t *A, FILE *stream)
+void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)
 {
 	matrix_t H;
 	H = matrix_submatrix(A, rq->S, 0, rq->H, rq->L);
@@ -323,7 +323,7 @@ void rq_dump_hdpc(rq_t *rq, matrix_t *A, FILE *stream)
 	}
 }
 
-void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
+void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream)
 {
 	for (int r = 0; r < rq->S; r++) {
 		for (int c = 0; c < rq->L; c++) {
@@ -338,7 +338,7 @@ void rq_dump_ldpc(rq_t *rq, matrix_t *A, FILE *stream)
 	}
 }
 
-void rq_dump_symbol(rq_t *rq, uint8_t *sym, FILE *stream)
+void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream)
 {
 	//fprintf(stream, "symbol (%p)\n", (void *)sym);
 	for (int i = 0; i < rq->T; i++) {
@@ -353,7 +353,7 @@ void rq_free(rq_t *rq)
 }
 
 /* dump all rq_t values to stream */
-void rq_dump(rq_t *rq, FILE *stream)
+void rq_dump(const rq_t *rq, FILE *stream)
 {
 	fprintf(stream, "%s\t= %zu\n", "F", rq->F);
 	fprintf(stream, "%s\t= %zu\n", "WS", rq->WS);
@@ -414,7 +414,7 @@ void rq_block(rq_t *rq)
 	assert(isprime(rq->W));
 }
 
-rq_t *rq_init(size_t F, uint16_t T)
+rq_t *rq_init(const size_t F, const uint16_t T)
 {
 	rq_t *rq = malloc(sizeof(rq_t));
 	memset(rq, 0, sizeof(rq_t));

@@ -28,7 +28,7 @@ matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *bas
 	return mat;
 }
 
-matrix_t matrix_submatrix(matrix_t *A, const int off_rows, const int off_cols,
+matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols)
 {
 	const long int r = (A->trans) ? cols : rows;

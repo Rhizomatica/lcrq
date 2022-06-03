@@ -12,7 +12,7 @@
 void rq_generate_HDPC(rq_t *rq, matrix_t *A);
 
 static const size_t MAX_PAYLOAD = 4; /* MAX_PAYLOAD must be at least Al=4 bytes */
-static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 1 + 40;
+static const size_t MAX_SRCOBJ = MAX_PAYLOAD * 10 + 1;
 
 /* generate source object of data of random size and content up to max bytes */
 unsigned char *generate_source_object(size_t max, size_t *F)
@@ -24,8 +24,8 @@ unsigned char *generate_source_object(size_t max, size_t *F)
 	block = malloc(sz);
 	assert(block);
 	memset(block, 0, sz);
-	randombytes_buf(block, sz);
-	//for (unsigned char i = 0; i < MAX_SRCOBJ; i++) block[i] = i + 42;
+	//randombytes_buf(block, sz);
+	for (unsigned char i = 0; i < MAX_SRCOBJ; i++) block[i] = i + 42;
 	*F = sz;
 	return block;
 }
