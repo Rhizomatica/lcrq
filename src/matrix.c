@@ -285,6 +285,7 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	int n = matrix_rows(LU);
 
 	assert(n == matrix_cols(LU));
+	if (!IA->base) matrix_new(IA, matrix_rows(LU), matrix_cols(LU), NULL);
 
 	for (int j = 0; j < n; j++) {
 		for (int i = 0; i < n; i++) {

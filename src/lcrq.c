@@ -295,12 +295,17 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk)
 matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 {
 	matrix_t A_inv = {0};
+	matrix_t LU = {0};
 	matrix_t C = {0};
-	fprintf(stderr, "%li: calculating A^^-1\n", clock());
-	matrix_inverse(A, &A_inv);
-	fprintf(stderr, "%li: multiplying (A^^-1).D => C\n", clock());
+	int P[matrix_rows(A)];
+
+	LU = matrix_dup(A);
+	matrix_LU_decompose(&LU, P);
+	matrix_inverse_LU(&A_inv, &LU, P);
 	matrix_multiply_gf256(&A_inv, D, &C);
 	matrix_free(&A_inv);
+	matrix_free(&LU);
+
 	return C;
 }
 
