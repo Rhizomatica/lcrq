@@ -9,14 +9,16 @@ int main(void)
 {
 	matrix_t A = {0};
 	matrix_t LU = {0};
-	int Pr[4] = {0};
+	matrix_t IA = {0};
+	int P[4] = {0};
 
 	loginit();
-	test_name("Matrix LU Decompose");
+	test_name("Matrix LU Decompose + Inverse");
 
-	/* A . (A^^-1) == I_A
+	/* A . (A^^-1) == IA
 	 * generate the inverse of a matrix, then verify that the dot product of
-	 * the two matrices is the identity matrix */
+	 * the two matrices is the identity matrix. We have a zero on the main
+	 * diagonal here (0,0) so row swaps are required. */
 	uint8_t v0[] = {
 		0x00, 0x11, 0x04, 0x05,
 		0x0c, 0x01, 0x23, 0xef,
@@ -26,7 +28,7 @@ int main(void)
 	matrix_new(&A, 4, 4, v0);
 
 	LU = matrix_dup(&A);
-	matrix_LU_decompose(&LU, Pr);
+	matrix_LU_decompose(&LU, P);
 
 	fprintf(stderr, "A:");
 	matrix_dump(&A, stderr);
@@ -34,47 +36,46 @@ int main(void)
 	matrix_dump(&LU, stderr);
 
 	fprintf(stderr, "Pr[]:");
-	for (int i = 0; i < (int)(sizeof Pr / sizeof Pr[0]); i++) {
-		fprintf(stderr, " %i", Pr[i]);
+	for (int i = 0; i < (int)(sizeof P / sizeof P[0]); i++) {
+		fprintf(stderr, " %i", P[i]);
 	}
 	fputc('\n', stderr);
 
-#if 0
-	A_orig = matrix_dup(&A);
-	matrix_new(&I_A, 4, 4, NULL);
-	matrix_identity(&I_A);
+	/* invert using LU */
+	IA = matrix_dup(&A);
+	matrix_inverse_LU(&IA, &LU, P);
 
-	matrix_inverse(&A, &I);
+	fprintf(stderr, "\nA^^-1:");
+	matrix_dump(&IA, stderr);
 
-	test_log("inverse done, A, I:\n");
+	/* verify A x (A^^-1) = identity matrix */
+	matrix_t R = {0};
+	matrix_t I = {0};
+	matrix_new(&I, 4, 4, NULL);
+	matrix_identity(&I);
 
-	matrix_dump(&A, stderr);
-	matrix_dump(&I, stderr);
+	matrix_multiply_gf256(&A, &IA, &R);
 
-	/* the inverse of A has the same dimensions */
-	test_assert(A.rows == I.rows, "I row count matches");
-	test_assert(A.cols == I.cols, "I col count matches");
-	test_assert(A.size == I.size, "I size matches");
+	fprintf(stderr, "R = A x A^^-1 = Identity Matrix:");
+	matrix_dump(&R, stderr);
 
-	matrix_dump(&A_orig, stderr);
-	matrix_dump(&I, stderr);
+	int cmp = 1;
+	for (int i = 0; i < I.rows; i++) {
+		for (int j = 0; j < I.cols; j++) {
+			const uint8_t x = matrix_get(&I, i, j);
+			const uint8_t y = (i == j) ? 1 : 0;
+			if (x != y) {
+				cmp = 0;
+				fprintf(stderr, "(%i, %i): x=%u, y=%u\n", i, j, x, y);
+				break;
+			}
+		}
+	}
+	test_assert(cmp, "result is identity matrix");
 
-	/* multiply A by it's inverse I into P. */
-	matrix_multiply_gf256(&A_orig, &I, &P);
-
-	/* verify P == I_A */
-	test_assert(P.rows == I_A.rows, "I_A row count matches");
-	test_assert(P.cols == I_A.cols, "I_A col count matches");
-	test_assert(P.size == I_A.size, "I_A size matches");
-	test_assert(!memcmp(P.base, I_A.base, P.size), "data matches");
-
-	matrix_dump(&P, stderr);
-
-	mrtrix_free(&I);
-	matrix_free(&I_A);
-	matrix_free(&P);
-	matrix_free(&A_orig);
-#endif
+	matrix_free(&I);
+	matrix_free(&IA);
+	matrix_free(&R);
 	matrix_free(&LU);
 
 	return fails;

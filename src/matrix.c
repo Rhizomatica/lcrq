@@ -237,7 +237,7 @@ void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const i
 	i = (j); \
 	j = tmp;
 
-int matrix_LU_decompose(matrix_t *A, int Pr[])
+int matrix_LU_decompose(matrix_t *A, int P[])
 {
 	int rank = 0;
 	int pr;
@@ -246,7 +246,7 @@ int matrix_LU_decompose(matrix_t *A, int Pr[])
 	assert(n == matrix_cols(A));
 
 	/* initialize permutations matrix */
-	for (int i = 0; i < n; i++) Pr[i] = i;
+	for (int i = 0; i < n; i++) P[i] = i;
 
 	for (int j = 0; j < n; j++) {
 		/* find pivot */
@@ -262,20 +262,53 @@ int matrix_LU_decompose(matrix_t *A, int Pr[])
 			/* move pivot into place */
 			matrix_swap_rows(A, pr, j);
 			/* update permutation matrix */
-			SWAP_INT(Pr[pr], Pr[j]);
+			SWAP_INT(P[pr], P[j]);
 		}
 
 		for (int i = j + 1; i < n; i++) {
-			matrix_set(A, i, j, gf256_mul(matrix_get(A,i,j), matrix_get(A,j,j)));
+			const uint8_t a = matrix_get(A, i, j);
+			const uint8_t b = matrix_get(A, j, j);
+			matrix_set(A, i, j, gf256_div(a, b));
 			for (int k = j + 1; k < n; k++) {
-				const uint8_t a = matrix_get(A, i, k);
-				const uint8_t b = gf256_mul(matrix_get(A,i,j), matrix_get(A,j,k));
-				matrix_set(A, i, k, (a ^ b));
+				const uint8_t a = matrix_get(A, i, j);
+				const uint8_t b = matrix_get(A, j, k);
+				matrix_inc_gf256(A, i, k, gf256_mul(a, b));
 			}
 		}
 		rank++;
 	}
 	return rank;
+}
+
+void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
+{
+	int n = matrix_rows(LU);
+
+	assert(n == matrix_cols(LU));
+
+	for (int j = 0; j < n; j++) {
+		for (int i = 0; i < n; i++) {
+			uint8_t v = (P[i] == j) ? 1 : 0;
+			matrix_set(IA, i, j, v);
+			for (int k = 0; k < i; k++) {
+				const uint8_t a = matrix_get(LU, i, k);
+				const uint8_t b = matrix_get(IA, k, j);
+				const uint8_t ab = gf256_mul(a, b);
+				matrix_inc_gf256(IA, i, j, ab);
+			}
+		}
+
+		for (int i = n - 1; i >= 0; i--) {
+			for (int k = i + 1; k < n; k++) {
+				const uint8_t a = matrix_get(LU, i, k);
+				const uint8_t b = matrix_get(IA, k, j);
+				const uint8_t ab = gf256_mul(a, b);
+				matrix_inc_gf256(IA, i, j, ab);
+			}
+			const uint8_t v = gf256_div(matrix_get(IA, i, j), matrix_get(LU, i, i));
+			matrix_set(IA, i, j, v);
+		}
+	}
 }
 
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
