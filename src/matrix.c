@@ -181,9 +181,9 @@ void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val)
 	}
 }
 
-void matrix_row_mul(matrix_t *m, const int row, const uint8_t val)
+void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val)
 {
-	for (int col = 0; col < m->cols; col++) {
+	for (int col = off; col < m->cols; col++) {
 		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), val));
 	}
 }
@@ -198,15 +198,22 @@ void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 	}
 }
 
-void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int rsrc, const uint8_t factor)
+void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
-	for (int col = 0; col < m->cols; col++) {
+	for (int col = off; col < m->cols; col++) {
 		uint8_t dv = matrix_get(m, rdst, col);
 		uint8_t sv = matrix_get(m, rsrc, col);
 		uint8_t f = gf256_mul(sv, factor);
 		if (f != 0) {
 			matrix_set(m, rdst, col, gf256_add(dv, f));
 		}
+	}
+}
+
+void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v)
+{
+	for (int row = off; row < matrix_rows(m); row++) {
+		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), v));
 	}
 }
 
@@ -223,6 +230,52 @@ void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const i
 	dptr = dst->base + drow * dst->stride;
 	sptr = src->base + srow * src->stride;
 	memcpy(dptr, sptr, src->stride);
+}
+
+#define SWAP_INT(i, j) \
+	int tmp = (i); \
+	i = (j); \
+	j = tmp;
+
+int matrix_LU_decompose(matrix_t *A, int Pr[])
+{
+	int rank = 0;
+	int pr;
+	int n = matrix_rows(A);
+
+	assert(n == matrix_cols(A));
+
+	/* initialize permutations matrix */
+	for (int i = 0; i < n; i++) Pr[i] = i;
+
+	for (int j = 0; j < n; j++) {
+		/* find pivot */
+		for (pr = j; pr < n; pr++) {
+			if (matrix_get(A, pr, j)) {
+				break;
+			}
+		}
+		if (pr == A->rows) break; /* no pivot found */
+
+		/* pivot found */
+		if (pr != j) {
+			/* move pivot into place */
+			matrix_swap_rows(A, pr, j);
+			/* update permutation matrix */
+			SWAP_INT(Pr[pr], Pr[j]);
+		}
+
+		for (int i = j + 1; i < n; i++) {
+			matrix_set(A, i, j, gf256_mul(matrix_get(A,i,j), matrix_get(A,j,j)));
+			for (int k = j + 1; k < n; k++) {
+				const uint8_t a = matrix_get(A, i, k);
+				const uint8_t b = gf256_mul(matrix_get(A,i,j), matrix_get(A,j,k));
+				matrix_set(A, i, k, (a ^ b));
+			}
+		}
+		rank++;
+	}
+	return rank;
 }
 
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
@@ -244,8 +297,8 @@ matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 			jj = matrix_get(A, j, j);
 			const uint8_t ij = matrix_get(A, i, j);
 			const uint8_t f = gf256_div(ij, jj);
-			matrix_row_mul_byrow(A, i, j, f);
-			matrix_row_mul_byrow(I, i, j, f);
+			matrix_row_mul_byrow(A, i, 0, j, f);
+			matrix_row_mul_byrow(I, i, 0, j, f);
 		}
 	}
 	/* finish upper triangle */
@@ -254,8 +307,8 @@ matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 			const uint8_t ij = matrix_get(A, i, j);
 			const uint8_t jj = matrix_get(A, j, j);
 			const uint8_t f = gf256_div(ij, jj);
-			matrix_row_mul_byrow(A, i, j, f);
-			matrix_row_mul_byrow(I, i, j, f);
+			matrix_row_mul_byrow(A, i, 0, j, f);
+			matrix_row_mul_byrow(I, i, 0, j, f);
 		}
 	}
 

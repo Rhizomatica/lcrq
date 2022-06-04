@@ -32,6 +32,7 @@ void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const i
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val);
+void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
 
 matrix_t matrix_add(const matrix_t *x, const matrix_t *y);
 
@@ -44,6 +45,10 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 /* swap rows/cols in place */
 matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2);
 matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2);
+
+/* peform LU decomposition on matrix A, storing combined LU factors in LU and
+ * row permutations in P. Return matrix rank */
+int matrix_LU_decompose(matrix_t *A, int Pr[]);
 
 /* I = (A^^-1) - set I to the inverse of A, allocating if required */
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I);

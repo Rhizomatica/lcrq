@@ -7,21 +7,39 @@
 
 int main(void)
 {
-	matrix_t A, A_orig, I = {0}, I_A, P = {0};
+	matrix_t A = {0};
+	matrix_t LU = {0};
+	int Pr[4] = {0};
+
 	loginit();
-	test_name("Matrix Inverse");
+	test_name("Matrix LU Decompose");
 
 	/* A . (A^^-1) == I_A
 	 * generate the inverse of a matrix, then verify that the dot product of
 	 * the two matrices is the identity matrix */
-
 	uint8_t v0[] = {
-		1, 17, 4,  5,
-		12, 1,19, 14,
-		2,  1, 3,  2,
-		5,  9, 6, 11
+		0x00, 0x11, 0x04, 0x05,
+		0x0c, 0x01, 0x23, 0xef,
+		0x02, 0x01, 0x03, 0x02,
+		0x05, 0x09, 0x06, 0x0e
 	};
 	matrix_new(&A, 4, 4, v0);
+
+	LU = matrix_dup(&A);
+	matrix_LU_decompose(&LU, Pr);
+
+	fprintf(stderr, "A:");
+	matrix_dump(&A, stderr);
+	fprintf(stderr, "LU:");
+	matrix_dump(&LU, stderr);
+
+	fprintf(stderr, "Pr[]:");
+	for (int i = 0; i < (int)(sizeof Pr / sizeof Pr[0]); i++) {
+		fprintf(stderr, " %i", Pr[i]);
+	}
+	fputc('\n', stderr);
+
+#if 0
 	A_orig = matrix_dup(&A);
 	matrix_new(&I_A, 4, 4, NULL);
 	matrix_identity(&I_A);
@@ -52,10 +70,12 @@ int main(void)
 
 	matrix_dump(&P, stderr);
 
-	matrix_free(&I);
+	mrtrix_free(&I);
 	matrix_free(&I_A);
 	matrix_free(&P);
 	matrix_free(&A_orig);
+#endif
+	matrix_free(&LU);
 
 	return fails;
 }
