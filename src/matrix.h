@@ -21,6 +21,10 @@ matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *bas
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
+
+/* Zero matrix row. Ignores transposition. Returns pointer to row */
+uint8_t *matrix_zero_row(matrix_t *m, int row);
+
 matrix_t *matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);

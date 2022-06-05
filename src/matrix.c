@@ -45,12 +45,15 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 	return sub;
 }
 
-matrix_t *matrix_zero(matrix_t *mat)
+uint8_t *matrix_zero_row(matrix_t *m, int row)
 {
-	for (int i = 0; i < mat->rows; i++) {
-		memset(mat->base + i * mat->stride, 0, mat->cols);
-	}
-	return mat;
+	return memset(m->base + row * m->stride, 0, m->cols);
+}
+
+matrix_t *matrix_zero(matrix_t *m)
+{
+	for (int i = 0; i < m->rows; i++) matrix_zero_row(m, i);
+	return m;
 }
 
 matrix_t *matrix_identity(matrix_t *m)
