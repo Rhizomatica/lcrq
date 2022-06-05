@@ -56,6 +56,8 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[]);
 
 void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[]);
 
+void matrix_solve_LU(matrix_t *X, matrix_t *Y, const matrix_t *LU, const int P[], const int Q[]);
+
 /* I = (A^^-1) - set I to the inverse of A, allocating if required */
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I);
 

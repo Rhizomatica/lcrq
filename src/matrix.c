@@ -324,6 +324,27 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	}
 }
 
+void matrix_solve_LU(matrix_t *X, matrix_t *Y, const matrix_t *LU, const int P[], const int Q[])
+{
+	int n = MIN(matrix_rows(LU), matrix_cols(LU));
+
+	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(LU), NULL);
+
+	for (int i = 0; i < n; i++) {
+		matrix_row_copy(X, Q[i], Y, P[i]);
+		for (int j = 0; j < i; j++) {
+			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get(LU, i, j));
+		}
+	}
+	for (int i = n - 1; i >= 0; i--) {
+		for (int j = i + 1; j < matrix_cols(LU); j++) {
+			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get(LU, i, j));
+		}
+		matrix_row_mul(X, Q[i], 0, gf256_inv(matrix_get(LU, i, i)));
+	}
+}
+
+
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 {
 	matrix_new(I, A->rows, A->cols, NULL);
