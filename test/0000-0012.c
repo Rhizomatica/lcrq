@@ -11,6 +11,7 @@ int main(void)
 	matrix_t LU = {0};
 	matrix_t IA = {0};
 	int P[4] = {0};
+	int Q[4] = {0};
 
 	loginit();
 	test_name("Matrix LU Decompose + Inverse");
@@ -28,7 +29,7 @@ int main(void)
 	matrix_new(&A, 4, 4, v0);
 
 	LU = matrix_dup(&A);
-	matrix_LU_decompose(&LU, P);
+	matrix_LU_decompose(&LU, P, Q);
 
 	fprintf(stderr, "A:");
 	matrix_dump(&A, stderr);
@@ -50,9 +51,6 @@ int main(void)
 
 	/* verify A x (A^^-1) = identity matrix */
 	matrix_t R = {0};
-	matrix_t I = {0};
-	matrix_new(&I, 4, 4, NULL);
-	matrix_identity(&I);
 
 	matrix_multiply_gf256(&A, &IA, &R);
 
@@ -60,9 +58,9 @@ int main(void)
 	matrix_dump(&R, stderr);
 
 	int cmp = 1;
-	for (int i = 0; i < I.rows; i++) {
-		for (int j = 0; j < I.cols; j++) {
-			const uint8_t x = matrix_get(&I, i, j);
+	for (int i = 0; i < R.rows; i++) {
+		for (int j = 0; j < R.cols; j++) {
+			const uint8_t x = matrix_get(&R, i, j);
 			const uint8_t y = (i == j) ? 1 : 0;
 			if (x != y) {
 				cmp = 0;
@@ -73,7 +71,6 @@ int main(void)
 	}
 	test_assert(cmp, "result is identity matrix");
 
-	matrix_free(&I);
 	matrix_free(&IA);
 	matrix_free(&R);
 	matrix_free(&LU);

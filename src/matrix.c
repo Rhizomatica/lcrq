@@ -6,6 +6,7 @@
 #include <gf256.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 
 int matrix_cols(const matrix_t *mat)
 {
@@ -237,42 +238,49 @@ void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const i
 	i = (j); \
 	j = tmp;
 
-int matrix_LU_decompose(matrix_t *A, int P[])
+static inline int pivot(matrix_t *A, int j, int P[], int Q[])
+{
+	for (int col = j; col < matrix_cols(A); col++) {
+		for (int row = j; row < matrix_rows(A); row++) {
+			if (matrix_get(A, row, j)) {
+				/* pivot found, move in place, update P+Q */
+				if (row != j) {
+					matrix_swap_rows(A, row, j);
+					SWAP_INT(P[row], P[j]);
+				}
+				if (col != j) {
+					matrix_swap_cols(A, col, j);
+					SWAP_INT(Q[col], Q[j]);
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 {
 	int rank = 0;
-	int pr;
-	int n = matrix_rows(A);
+	int n = MIN(matrix_rows(A), matrix_cols(A));
 
 	assert(n == matrix_cols(A));
 
-	/* initialize permutations matrix */
-	for (int i = 0; i < n; i++) P[i] = i;
+	/* initialize permutations matricies */
+	for (int i = 0; i < matrix_rows(A); i++) P[i] = i;
+	for (int i = 0; i < matrix_cols(A); i++) Q[i] = i;
 
-	for (int j = 0; j < n; j++) {
-		/* find pivot */
-		for (pr = j; pr < n; pr++) {
-			if (matrix_get(A, pr, j)) {
-				break;
-			}
-		}
-		if (pr == A->rows) break; /* no pivot found */
-
-		/* pivot found */
-		if (pr != j) {
-			/* move pivot into place */
-			matrix_swap_rows(A, pr, j);
-			/* update permutation matrix */
-			SWAP_INT(P[pr], P[j]);
-		}
-
-		for (int i = j + 1; i < n; i++) {
-			const uint8_t a = matrix_get(A, i, j);
-			const uint8_t b = matrix_get(A, j, j);
-			matrix_set(A, i, j, gf256_div(a, b));
-			for (int k = j + 1; k < n; k++) {
-				const uint8_t a = matrix_get(A, i, j);
-				const uint8_t b = matrix_get(A, j, k);
-				matrix_inc_gf256(A, i, k, gf256_mul(a, b));
+	/* LU decomposition */
+	for (int i = 0; i < n; i++) {
+		if (!pivot(A, i, P, Q)) break;
+		for (int j = i + 1; j < matrix_rows(A); j++) {
+			const uint8_t a = matrix_get(A, j, i);
+			const uint8_t b = matrix_get(A, i, i);
+			matrix_set(A, j, i, gf256_div(a, b));
+			for (int k = i + 1; k < matrix_cols(A); k++) {
+				const uint8_t a = matrix_get(A, j, i);
+				const uint8_t b = matrix_get(A, i, k);
+				matrix_inc_gf256(A, j, k, gf256_mul(a, b));
 			}
 		}
 		rank++;
@@ -282,9 +290,10 @@ int matrix_LU_decompose(matrix_t *A, int P[])
 
 void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 {
-	int n = matrix_rows(LU);
+	int n = MIN(matrix_rows(LU), matrix_cols(LU));
 
 	assert(n == matrix_cols(LU));
+
 	if (!IA->base) matrix_new(IA, matrix_rows(LU), matrix_cols(LU), NULL);
 
 	for (int j = 0; j < n; j++) {
@@ -300,7 +309,7 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 		}
 
 		for (int i = n - 1; i >= 0; i--) {
-			for (int k = i + 1; k < n; k++) {
+			for (int k = i + 1; k < matrix_cols(IA); k++) {
 				const uint8_t a = matrix_get(LU, i, k);
 				const uint8_t b = matrix_get(IA, k, j);
 				const uint8_t ab = gf256_mul(a, b);

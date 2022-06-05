@@ -298,9 +298,10 @@ matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 	matrix_t LU = {0};
 	matrix_t C = {0};
 	int P[matrix_rows(A)];
+	int Q[matrix_cols(A)];
 
 	LU = matrix_dup(A);
-	matrix_LU_decompose(&LU, P);
+	matrix_LU_decompose(&LU, P, Q);
 	matrix_inverse_LU(&A_inv, &LU, P);
 	matrix_multiply_gf256(&A_inv, D, &C);
 	matrix_free(&A_inv);

@@ -47,8 +47,8 @@ matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2);
 matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2);
 
 /* peform LU decomposition on matrix A, storing combined LU factors in LU and
- * row permutations in P. Return matrix rank */
-int matrix_LU_decompose(matrix_t *A, int P[]);
+ * row and col permutations in P + Q. Return matrix rank */
+int matrix_LU_decompose(matrix_t *A, int P[], int Q[]);
 
 void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[]);
 
