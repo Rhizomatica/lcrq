@@ -22,6 +22,9 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
 
+/* return pointer to start of matrix row */
+uint8_t *matrix_ptr_row(matrix_t *m, int row);
+
 /* Zero matrix row. Ignores transposition. Returns pointer to row */
 uint8_t *matrix_zero_row(matrix_t *m, int row);
 
