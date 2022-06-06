@@ -324,9 +324,13 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	}
 }
 
-void matrix_solve_LU(matrix_t *X, matrix_t *Y, const matrix_t *LU, const int P[], const int Q[])
+void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const int P[], const int Q[])
 {
 	int n = MIN(matrix_rows(LU), matrix_cols(LU));
+
+	assert(matrix_cols(LU) == matrix_rows(X));
+	assert(matrix_rows(LU) == matrix_rows(Y));
+	assert(matrix_cols(X) == matrix_cols(Y));
 
 	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(LU), NULL);
 
