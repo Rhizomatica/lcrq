@@ -232,27 +232,30 @@ void rq_generate_HDPC(const rq_t *rq, matrix_t *A)
 	matrix_identity(&I_H);
 }
 
-static void rq_generate_LT(const rq_t *rq, matrix_t *A)
+static void rq_generate_LT(const rq_t *rq, uint8_t lt[rq->L], uint32_t isi)
+{
+	rq_tuple_t tup = rq_tuple(rq, isi);
+
+	lt[tup.b] = 1;
+	for (uint32_t j = 1; j < tup.d; j++) {
+		tup.b = (tup.b + tup.a) % rq->W;
+		lt[tup.b] = 1;
+	}
+	while (tup.b1 >= rq->P) tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+	lt[rq->W + tup.b1] = 1;
+	for (uint32_t j = 1; j < tup.d1; j++) {
+		tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+		while (tup.b1 >= rq->P) tup.b1 = (tup.b1 + tup.a1) % rq->P1;
+		lt[rq->W + tup.b1] = 1;
+	}
+}
+
+static void rq_generate_GENC(const rq_t *rq, matrix_t *A)
 {
 	matrix_t LT;
 	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L);
-	for (int row = 0; row < LT.rows; row++) {
-		uint32_t X = row;
-		rq_tuple_t tup = rq_tuple(rq, X);
-		matrix_set(&LT, row, tup.b, 1);
-		for (uint32_t j = 1; j < tup.d; j++) {
-			tup.b = (tup.b + tup.a) % rq->W;
-			matrix_set(&LT, row, tup.b, 1);
-		}
-		while (tup.b1 >= rq->P)
-			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
-		matrix_set(&LT, row, rq->W + tup.b1, 1);
-		for (uint32_t j = 1; j < tup.d1; j++) {
-			tup.b1 = (tup.b1 + tup.a1) % rq->P1;
-			while (tup.b1 >= rq->P)
-				tup.b1 = (tup.b1 + tup.a1) % rq->P1;
-			matrix_set(&LT, row, rq->W + tup.b1, 1);
-		}
+	for (int isi = 0; isi < LT.rows; isi++) {
+		rq_generate_LT(rq, matrix_ptr_row(&LT, isi), isi);
 	}
 }
 
@@ -264,7 +267,7 @@ void rq_generate_matrix_A(const rq_t *rq, matrix_t *A)
 	assert(rq->L == rq->W + rq->P);          /* L = W+P (5.3.3.3) */
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
-	rq_generate_LT(rq, A);
+	rq_generate_GENC(rq, A);
 }
 
 /* 5.3.3.4.2
