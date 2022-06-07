@@ -193,13 +193,14 @@ void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
+	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
+	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
 	for (int col = off; col < m->cols; col++) {
-		uint8_t dv = matrix_get(m, rdst, col);
-		uint8_t sv = matrix_get(m, rsrc, col);
-		uint8_t f = gf256_mul(sv, factor);
-		if (f != 0) {
-			matrix_set(m, rdst, col, gf256_add(dv, f));
+		if (*sptr && factor) {
+			uint8_t f = gf256_mul(*sptr, factor);
+			if (f) *dptr ^= f;
 		}
+		dptr++; sptr++;
 	}
 }
 
