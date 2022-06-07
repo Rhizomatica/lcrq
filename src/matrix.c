@@ -128,11 +128,11 @@ matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2)
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	assert(matrix_cols(dst) == matrix_cols(src));
-	for (int col = 0; col < matrix_cols(dst); col++) {
-		const uint8_t a = matrix_get(dst, drow, col);
-		const uint8_t b = matrix_get(src, srow, col);
-		const uint8_t v = a ^ b;
-		matrix_set(dst, drow, col, v);
+	uint8_t *dptr = matrix_ptr_row(dst, drow);
+	const int mcols = matrix_cols(dst);
+	for (int col = 0; col < mcols; col++) {
+		*dptr ^= matrix_get(src, srow, col);
+		dptr++;
 	}
 }
 
@@ -173,19 +173,6 @@ void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 	}
 }
 
-void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
-{
-	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
-	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
-	for (int col = off; col < m->cols; col++) {
-		if (*sptr && factor) {
-			uint8_t f = GF256MUL(*sptr, factor);
-			if (f) *dptr ^= f;
-		}
-		dptr++; sptr++;
-	}
-}
-
 void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v)
 {
 	for (int row = off; row < matrix_rows(m); row++) {
@@ -215,8 +202,10 @@ void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const i
 
 static inline int pivot(matrix_t *A, int j, int P[], int Q[])
 {
-	for (int col = j; col < matrix_cols(A); col++) {
-		for (int row = j; row < matrix_rows(A); row++) {
+	const int Arows = matrix_rows(A);
+	const int Acols = matrix_cols(A);
+	for (int col = j; col < Acols; col++) {
+		for (int row = j; row < Arows; row++) {
 			if (matrix_get(A, row, j)) {
 				/* pivot found, move in place, update P+Q */
 				if (row != j) {
@@ -236,24 +225,27 @@ static inline int pivot(matrix_t *A, int j, int P[], int Q[])
 
 int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 {
+	const int Arows = matrix_rows(A);
+	const int Acols = matrix_cols(A);
+	const int n = MIN(matrix_rows(A), matrix_cols(A));
 	int i;
-	int n = MIN(matrix_rows(A), matrix_cols(A));
 
 	/* initialize permutations matricies */
-	for (i = 0; i < matrix_rows(A); i++) P[i] = i;
-	for (i = 0; i < matrix_cols(A); i++) Q[i] = i;
+	for (i = 0; i < Arows; i++) P[i] = i;
+	for (i = 0; i < Acols; i++) Q[i] = i;
 
 	/* LU decomposition */
 	for (i = 0; i < n; i++) {
 		if (!pivot(A, i, P, Q)) break;
-		for (int j = i + 1; j < matrix_rows(A); j++) {
+		for (int j = i + 1; j < Arows; j++) {
 			uint8_t *Aji =  &A->base[i + j * A->stride];
 			const uint8_t b = matrix_get(A, i, i);
 			*Aji = GF256DIV(*Aji, b);
-			for (int k = i + 1; k < matrix_cols(A); k++) {
+			if (*Aji) for (int k = i + 1; k < Acols; k++) {
 				const uint8_t b = matrix_get(A, i, k);
 				A->base[k + j * A->stride] ^= GF256MUL(*Aji, b);
 			}
+			Aji += A->stride;
 		}
 	}
 	return i;
@@ -289,6 +281,19 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 			const uint8_t v = gf256_div(matrix_get(IA, i, j), matrix_get(LU, i, i));
 			matrix_set(IA, i, j, v);
 		}
+	}
+}
+
+void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
+{
+	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
+	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
+	for (int col = off; col < m->cols; col++) {
+		if (*sptr && factor) {
+			uint8_t f = GF256MUL(*sptr, factor);
+			if (f) *dptr ^= f;
+		}
+		dptr++; sptr++;
 	}
 }
 
