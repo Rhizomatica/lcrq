@@ -35,11 +35,6 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 	return sub;
 }
 
-uint8_t *matrix_ptr_row(matrix_t *m, int row)
-{
-	return m->base + row * m->stride;
-}
-
 uint8_t *matrix_zero_row(matrix_t *m, int row)
 {
 	return memset(matrix_ptr_row(m, row), 0, m->cols);

@@ -22,6 +22,8 @@
 	else \
 		(M)->base[(col) + (row) * (M)->stride] = val
 
+#define matrix_ptr_row(M, row) (M)->base + (row) * (M)->stride
+
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
@@ -38,9 +40,6 @@ matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *bas
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
-
-/* return pointer to start of matrix row */
-uint8_t *matrix_ptr_row(matrix_t *m, int row);
 
 /* Zero matrix row. Ignores transposition. Returns pointer to row */
 uint8_t *matrix_zero_row(matrix_t *m, int row);
