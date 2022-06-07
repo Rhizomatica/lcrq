@@ -259,13 +259,12 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 	for (i = 0; i < n; i++) {
 		if (!pivot(A, i, P, Q)) break;
 		for (int j = i + 1; j < matrix_rows(A); j++) {
-			const uint8_t a = matrix_get(A, j, i);
+			uint8_t *Aji =  &A->base[i + j * A->stride];
 			const uint8_t b = matrix_get(A, i, i);
-			matrix_set(A, j, i, GF256DIV(a, b));
+			*Aji = GF256DIV(*Aji, b);
 			for (int k = i + 1; k < matrix_cols(A); k++) {
-				const uint8_t a = matrix_get(A, j, i);
 				const uint8_t b = matrix_get(A, i, k);
-				matrix_inc_gf256(A, j, k, GF256MUL(a, b));
+				A->base[k + j * A->stride] ^= GF256MUL(*Aji, b);
 			}
 		}
 	}
