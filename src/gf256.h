@@ -87,6 +87,8 @@ static_assert(sizeof(OCT_LOG) == 255 + 1, "OCT_LOG table has wrong size.");
 
 #define GF256LOG(v) OCT_LOG[(v)]
 
+#define GF256INV(v) OCT_EXP[255 - OCT_LOG[(v)]]
+
 #define GF256MUL(a, b) ((a) == 0 || (b) == 0) ? 0 : (GF256EXP((int)GF256LOG(a) + (int)GF256LOG(b)))
 
 #define GF256DIV(a, b) ((a) == 0) ? 0 : OCT_EXP[OCT_LOG[(a)] - OCT_LOG[(b)] + 255]

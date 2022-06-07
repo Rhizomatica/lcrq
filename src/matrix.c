@@ -164,7 +164,7 @@ matrix_t matrix_add(const matrix_t *x, const matrix_t *y)
 void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
-		matrix_set(m, row, col, gf256_add(matrix_get(m, row, col), val));
+		matrix_set(m, row, col, matrix_get(m, row, col) ^ val);
 	}
 }
 
@@ -326,7 +326,7 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 		for (int j = i + 1; j < matrix_cols(LU); j++) {
 			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get(LU, i, j));
 		}
-		matrix_row_mul(X, Q[i], 0, gf256_inv(matrix_get(LU, i, i)));
+		matrix_row_mul(X, Q[i], 0, GF256INV(matrix_get(LU, i, i)));
 	}
 }
 
