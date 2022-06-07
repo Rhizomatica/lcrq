@@ -195,26 +195,21 @@ void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const i
 	memcpy(dptr, sptr, src->stride);
 }
 
-#define SWAP_INT(i, j) \
-	int tmp = (i); \
-	i = (j); \
-	j = tmp;
-
 static inline int pivot(matrix_t *A, int j, int P[], int Q[])
 {
 	const int Arows = matrix_rows(A);
 	const int Acols = matrix_cols(A);
 	for (int col = j; col < Acols; col++) {
 		for (int row = j; row < Arows; row++) {
-			if (matrix_get(A, row, j)) {
+			if (matrix_get_s(A, row, j)) {
 				/* pivot found, move in place, update P+Q */
 				if (row != j) {
 					matrix_swap_rows(A, row, j);
-					SWAP_INT(P[row], P[j]);
+					SWAP(P[row], P[j]);
 				}
 				if (col != j) {
 					matrix_swap_cols(A, col, j);
-					SWAP_INT(Q[col], Q[j]);
+					SWAP(Q[col], Q[j]);
 				}
 				return 1;
 			}
@@ -242,7 +237,7 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 			uint8_t *Aji = &A->base[i + j * A->stride];
 			*Aji = GF256DIV(*Aji, *Aii);
 			if (*Aji) for (int k = i + 1; k < Acols; k++) {
-				const uint8_t b = matrix_get(A, i, k);
+				const uint8_t b = matrix_get_s(A, i, k);
 				A->base[k + j * A->stride] ^= GF256MUL(*Aji, b);
 			}
 			Aji += A->stride;
@@ -313,14 +308,14 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 	for (int i = 0; i < n; i++) {
 		matrix_row_copy(X, Q[i], Y, P[i]);
 		for (int j = 0; j < i; j++) {
-			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get(LU, i, j));
+			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get_s(LU, i, j));
 		}
 	}
 	for (int i = n - 1; i >= 0; i--) {
 		for (int j = i + 1; j < matrix_cols(LU); j++) {
-			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get(LU, i, j));
+			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get_s(LU, i, j));
 		}
-		matrix_row_mul(X, Q[i], 0, GF256INV(matrix_get(LU, i, i)));
+		matrix_row_mul(X, Q[i], 0, GF256INV(matrix_get_s(LU, i, i)));
 	}
 }
 
