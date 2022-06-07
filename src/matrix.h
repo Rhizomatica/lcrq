@@ -8,6 +8,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define MCOL(m) (((m)->trans) ? (m)->rows : (m)->cols)
+#define MROW(m) (((m)->trans) ? (m)->cols : (m)->rows)
+
+#define matrix_cols MCOL
+#define matrix_rows MROW
+
 typedef struct matrix_s {
 	int      rows;
 	int      cols;
@@ -33,8 +39,6 @@ matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
 uint8_t matrix_get(const matrix_t *mat, const int row, const int col);
 uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val);
-int matrix_cols(const matrix_t *mat);
-int matrix_rows(const matrix_t *mat);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);

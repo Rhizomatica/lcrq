@@ -8,16 +8,6 @@
 #include <string.h>
 #include <sys/param.h>
 
-int matrix_cols(const matrix_t *mat)
-{
-	return (mat->trans) ? mat->rows : mat->cols;
-}
-
-int matrix_rows(const matrix_t *mat)
-{
-	return (mat->trans) ? mat->cols : mat->rows;
-}
-
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base)
 {
 	mat->rows = rows;
