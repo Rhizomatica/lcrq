@@ -73,17 +73,10 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	fprintf(stream, "\n");
 }
 
-uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val)
-{
-	if (mat->trans) mat->base[row + col * mat->stride] = val;
-	else mat->base[col + row * mat->stride] = val;
-	return val;
-}
-
-uint8_t matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val)
+void matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
 	const uint8_t sum = matrix_get(mat, row, col) ^ val;
-	return matrix_set(mat, row, col, sum);
+	matrix_set(mat, row, col, sum);
 }
 
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */

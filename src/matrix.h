@@ -16,6 +16,12 @@
 	? (M)->base[row + col * (M)->stride] \
 	: (M)->base[col + row * (M)->stride]
 
+#define matrix_set(M, row, col, val) \
+	if ((M)->trans) \
+		(M)->base[(row) + (col) * (M)->stride] = val; \
+	else \
+		(M)->base[(col) + (row) * (M)->stride] = val
+
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
@@ -42,7 +48,6 @@ uint8_t *matrix_zero_row(matrix_t *m, int row);
 matrix_t *matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
-uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
@@ -52,7 +57,7 @@ void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
 matrix_t matrix_add(const matrix_t *x, const matrix_t *y);
 
 /* increment element by val using GF(256) addition */
-uint8_t matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val);
+void matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val);
 
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p);
