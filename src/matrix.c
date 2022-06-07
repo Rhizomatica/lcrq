@@ -88,7 +88,7 @@ uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t va
 
 uint8_t matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
-	const uint8_t sum = gf256_add(matrix_get(mat, row, col), val);
+	const uint8_t sum = matrix_get(mat, row, col) ^ val;
 	return matrix_set(mat, row, col, sum);
 }
 
@@ -114,7 +114,7 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 			for (int k = 0; k < xcols; k++) {
 				const uint8_t a = matrix_get(x, i, k);
 				const uint8_t b = matrix_get(y, k, j);
-				v = gf256_add(v, gf256_mul(a, b));
+				v ^= GF256MUL(a, b);
 			}
 			matrix_set(p, i, j, v);
 		}
@@ -177,7 +177,7 @@ void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val)
 void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val)
 {
 	for (int col = off; col < m->cols; col++) {
-		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), val));
+		matrix_set(m, row, col, GF256MUL(matrix_get(m, row, col), val));
 	}
 }
 
@@ -186,7 +186,7 @@ void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 	for (int col = 0; col < m->cols; col++) {
 		uint8_t a = matrix_get(m, row, col);
 		uint8_t b = val;
-		uint8_t v = gf256_div(a, b);
+		uint8_t v = GF256DIV(a, b);
 		matrix_set(m, row, col, v);
 	}
 }
@@ -197,7 +197,7 @@ void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int 
 	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
 	for (int col = off; col < m->cols; col++) {
 		if (*sptr && factor) {
-			uint8_t f = gf256_mul(*sptr, factor);
+			uint8_t f = GF256MUL(*sptr, factor);
 			if (f) *dptr ^= f;
 		}
 		dptr++; sptr++;
@@ -207,7 +207,7 @@ void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int 
 void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v)
 {
 	for (int row = off; row < matrix_rows(m); row++) {
-		matrix_set(m, row, col, gf256_mul(matrix_get(m, row, col), v));
+		matrix_set(m, row, col, GF256MUL(matrix_get(m, row, col), v));
 	}
 }
 
@@ -257,8 +257,6 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 	int i;
 	int n = MIN(matrix_rows(A), matrix_cols(A));
 
-	//assert(n == matrix_cols(A));
-
 	/* initialize permutations matricies */
 	for (i = 0; i < matrix_rows(A); i++) P[i] = i;
 	for (i = 0; i < matrix_cols(A); i++) Q[i] = i;
@@ -269,11 +267,11 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 		for (int j = i + 1; j < matrix_rows(A); j++) {
 			const uint8_t a = matrix_get(A, j, i);
 			const uint8_t b = matrix_get(A, i, i);
-			matrix_set(A, j, i, gf256_div(a, b));
+			matrix_set(A, j, i, GF256DIV(a, b));
 			for (int k = i + 1; k < matrix_cols(A); k++) {
 				const uint8_t a = matrix_get(A, j, i);
 				const uint8_t b = matrix_get(A, i, k);
-				matrix_inc_gf256(A, j, k, gf256_mul(a, b));
+				matrix_inc_gf256(A, j, k, GF256MUL(a, b));
 			}
 		}
 	}
@@ -295,7 +293,7 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 			for (int k = 0; k < i; k++) {
 				const uint8_t a = matrix_get(LU, i, k);
 				const uint8_t b = matrix_get(IA, k, j);
-				const uint8_t ab = gf256_mul(a, b);
+				const uint8_t ab = GF256MUL(a, b);
 				matrix_inc_gf256(IA, i, j, ab);
 			}
 		}
@@ -304,7 +302,7 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 			for (int k = i + 1; k < matrix_cols(IA); k++) {
 				const uint8_t a = matrix_get(LU, i, k);
 				const uint8_t b = matrix_get(IA, k, j);
-				const uint8_t ab = gf256_mul(a, b);
+				const uint8_t ab = GF256MUL(a, b);
 				matrix_inc_gf256(IA, i, j, ab);
 			}
 			const uint8_t v = gf256_div(matrix_get(IA, i, j), matrix_get(LU, i, i));
