@@ -11,6 +11,11 @@
 #define MCOL(m) (((m)->trans) ? (m)->rows : (m)->cols)
 #define MROW(m) (((m)->trans) ? (m)->cols : (m)->rows)
 
+#define matrix_get(M, row, col) \
+	((M)->trans) \
+	? (M)->base[row + col * (M)->stride] \
+	: (M)->base[col + row * (M)->stride]
+
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
@@ -37,7 +42,6 @@ uint8_t *matrix_zero_row(matrix_t *m, int row);
 matrix_t *matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
-uint8_t matrix_get(const matrix_t *mat, const int row, const int col);
 uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);

@@ -73,12 +73,6 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	fprintf(stream, "\n");
 }
 
-uint8_t matrix_get(const matrix_t *mat, const int row, const int col)
-{
-	if (mat->trans) return mat->base[row + col * mat->stride];
-	return mat->base[col + row * mat->stride];
-}
-
 uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
 	if (mat->trans) mat->base[row + col * mat->stride] = val;
