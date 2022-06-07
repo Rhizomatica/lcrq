@@ -75,20 +75,14 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 
 uint8_t matrix_get(const matrix_t *mat, const int row, const int col)
 {
-	const long int r = (mat->trans) ? col : row;
-	const long int c = (mat->trans) ? row : col;
-	assert(row < matrix_rows(mat));
-	assert(col < matrix_cols(mat));
-	return mat->base[c + r * mat->stride];
+	if (mat->trans) return mat->base[row + col * mat->stride];
+	return mat->base[col + row * mat->stride];
 }
 
 uint8_t matrix_set(matrix_t *mat, const int row, const int col, const uint8_t val)
 {
-	const long int r = (mat->trans) ? col : row;
-	const long int c = (mat->trans) ? row : col;
-	assert(row < matrix_rows(mat));
-	assert(col < matrix_cols(mat));
-	mat->base[c + r * mat->stride] = val;
+	if (mat->trans) mat->base[row + col * mat->stride] = val;
+	else mat->base[col + row * mat->stride] = val;
 	return val;
 }
 
