@@ -38,6 +38,7 @@ build:
 
 0000-0001.%: LDFLAGS += -lsodium
 0000-0006.%: LDFLAGS += -lsodium
+0000-0013.%: LDFLAGS += -lsodium
 
 
 %.test %.clang: %.c $(OBJS)

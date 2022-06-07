@@ -20,6 +20,20 @@ static int isprime(const int n)
 	return 1;
 }
 
+/* return number of bits set in bitmap (Hamming Weight / popcount) */
+static unsigned int hamm(unsigned char *map, size_t len)
+{
+	unsigned int c = 0;
+	while (len--) for (char v = map[len]; v; c++) v &= v - 1;
+	return c;
+}
+
+/* convert ESI to ISI (5.3.1) */
+static inline uint32_t esi2isi(rq_t *rq, uint32_t esi)
+{
+	return (esi < rq->K) ? esi : esi + rq->KP - rq->K;
+}
+
 /* KL(n) is the maximum K' value in Table 2 in Section 5.6 such
 	that K' <= WS/(Al*(ceil(T/(Al*n))))
 	NB: this will always return K'_max = 56403 unless we have
@@ -83,40 +97,37 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 
 	Return result
 */
-uint8_t *rq_encode(const rq_t *rq, const matrix_t *C, const uint32_t isi)
+uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym)
 {
 	rq_tuple_t tup = rq_tuple(rq, isi);
 	uint32_t b = tup.b;
 	uint32_t b1 = tup.b1;
 	matrix_t R;
 
-	matrix_new(&R, 1, rq->T, NULL);
+	matrix_new(&R, 1, rq->T, sym);
 	matrix_zero(&R);
-
-	fprintf(stderr, "XORing rows (intermediate symbols)\n");
-	rq_dump_symbol(rq, R.base, stderr);
-
 	matrix_row_copy(&R, 0, C, b);
-	fprintf(stderr, "start by copying row b=%u\n", b);
-	rq_dump_symbol(rq, R.base, stderr);
 	for (uint32_t j = 1; j < tup.d; j++) {
 		b = (b + tup.a) % rq->W;
 		matrix_row_add(&R, 0, C, b);
-		fprintf(stderr, "XOR b=%u\n", b);
-		rq_dump_symbol(rq, R.base, stderr);
 	}
 	while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
 	matrix_row_add(&R, 0, C, rq->W + b1);
-	fprintf(stderr, "XOR b1=%u\n", b1);
-	rq_dump_symbol(rq, R.base, stderr);
 	for (uint32_t j = 1; j < tup.d1; j++) {
 		b1 = (b1 + tup.a1) % rq->P1;
 		while (b1 >= rq->P) b1 = (b1 + tup.a1) % rq->P1;
 		matrix_row_add(&R, 0, C, rq->W + b1);
-		fprintf(stderr, "XOR W(%u) + b1(%u)=%u\n", rq->W, b1, rq->W + b1);
-		rq_dump_symbol(rq, R.base, stderr);
 	}
 	return R.base;
+}
+
+uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk, uint32_t from, uint32_t n)
+{
+	for (uint32_t isi = from; isi < (from + n); isi++) {
+		rq_encode_symbol(rq, C, isi, blk);
+		blk += rq->T;
+	}
+	return blk;
 }
 
 rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X)
@@ -259,9 +270,9 @@ static void rq_generate_GENC(const rq_t *rq, matrix_t *A)
 	}
 }
 
-void rq_generate_matrix_A(const rq_t *rq, matrix_t *A)
+void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt)
 {
-	matrix_new(A, rq->L, rq->L, NULL);
+	matrix_new(A, rq->S + rq->H + lt, rq->L, NULL);
 	matrix_zero(A);
 	assert(rq->L == rq->KP + rq->S + rq->H); /* L = K'+S+H (5.3.3.3) */
 	assert(rq->L == rq->W + rq->P);          /* L = W+P (5.3.3.3) */
@@ -297,17 +308,18 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk)
  */
 matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 {
-	matrix_t A_inv = {0};
 	matrix_t LU = {0};
 	matrix_t C = {0};
 	int P[matrix_rows(A)];
 	int Q[matrix_cols(A)];
+	int rank;
 
 	LU = matrix_dup(A);
-	matrix_LU_decompose(&LU, P, Q);
-	matrix_inverse_LU(&A_inv, &LU, P);
-	matrix_multiply_gf256(&A_inv, D, &C);
-	matrix_free(&A_inv);
+	rank = matrix_LU_decompose(&LU, P, Q);
+	if (rank >= LU.cols) {
+		LU.rows = rank;
+		matrix_solve_LU(&C, D, &LU, P, Q);
+	}
 	matrix_free(&LU);
 
 	return C;
@@ -315,8 +327,129 @@ matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D)
 
 void *rq_intermediate_symbols_alloc(const rq_t *rq)
 {
-	fprintf(stderr, "Matrix A: allocating %zu bytes\n", (size_t)rq->L * rq->L);
 	return calloc(rq->L, rq->L);
+}
+
+static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
+		rq_blkmap_t *sym, rq_blkmap_t *rep)
+{
+	uint32_t lt = 0;
+	int rank;
+
+	/* create Matrix A (Directors extended cut) */
+
+	matrix_new(A, rq->S + rq->H + rq->Nesi, rq->L, NULL);
+	matrix_zero(A);
+	rq_generate_LDPC(rq, A);
+	rq_generate_HDPC(rq, A);
+
+	/* append LT rows */
+
+	/* first, any source symbols we have + padding rows */
+	for (uint32_t isi = 0; isi < rq->KP; isi++) {
+		if (isi < rq->K && !isset(sym->map, isi)) continue;
+		const int row = rq->S + rq->H + lt++;
+		rq_generate_LT(rq, matrix_ptr_row(A, row), isi);
+	}
+	/* repair symbols (K ... K + nrep) */
+	for (int i = 0; i < rq->nrep; i++) {
+		const uint32_t isi = esi2isi(rq, rep->ESI[i]);
+		const uint32_t row = rq->S + rq->H + lt++;
+		rq_generate_LT(rq, matrix_ptr_row(A, row), isi);
+	}
+
+	/* LU decompose A */
+	if ((rank = matrix_LU_decompose(A, P, Q)) < rq->L) {
+		matrix_free(A);
+		return -1;
+	}
+	A->rows = rank; /* discard extraneous rows */
+
+	return 0;
+}
+
+static void rq_pack_LT_symbols(rq_t *rq, matrix_t *D, int P[], rq_blkmap_t *sym, rq_blkmap_t *rep)
+{
+	uint32_t gap = 0;
+	uint32_t off = rq->S + rq->H;
+	matrix_new(D, rq->L, rq->T, NULL);
+	matrix_zero(D);
+	for (int drow = 0, r = 0; drow < rq->KP; drow++) {
+		const uint32_t srow = P[drow];
+		if (drow < rq->nsrc + rq->nrep) {
+			uint8_t *rptr;
+			if (drow < rq->nsrc) {
+				while (!isset(sym->map, srow + gap)) gap++;
+				rptr = sym->p + rq->T * (srow + gap);
+			}
+			else if (drow < rq->nsrc + rq->KP - rq->K) {
+				continue;
+			}
+			else {  /* repair symbol */
+				assert(r < (int)rq->nrep);
+				rptr = rep->p + rq->T * r++;
+			}
+			memcpy(matrix_ptr_row(D, drow + off), rptr, rq->T);
+		}
+	}
+}
+
+static int rq_decode_intermediate_symbols(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep, matrix_t *C)
+{
+	const uint32_t M = rq->S + rq->H + rq->Nesi;
+	matrix_t A, D;
+	int P[M], Q[rq->L];
+
+	/* Build decoding schedule */
+	if (rq_decoding_schedule(rq, &A, P, Q, sym, rep)) return -1;
+
+	/* copy LT symbols into matrix */
+	rq_pack_LT_symbols(rq, &D, P, sym, rep);
+
+	/* solve to find intermediate symbols */
+	matrix_new(C, rq->L, rq->T, NULL);
+	matrix_solve_LU(C, &D, &A, P, Q);
+
+	matrix_free(&D);
+	matrix_free(&A);
+
+	return 0;
+}
+
+/* symbols will be written to sym directly as received. If the full set have
+ * arrived, no decoding is required and they are already in place. If we are
+ * missing any symbols, these symbols are added to the repair symbols and
+ * decoding begins. We solve to find the intermediate symbols, then generate the
+ * missing source symbols. */
+int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep)
+{
+	rq->nsrc = hamm(sym->map, sym->len);
+	rq->nrep = (rep) ? hamm(rep->map, rep->len) : 0;
+	rq->Nesi = rq->nsrc + rq->nrep + rq->KP - rq->K;
+	matrix_t C = {0};
+
+	/* if we have all of the first K symbols, no decoding required */
+	if (rq->nsrc >= rq->K) return 0;
+
+	/* check if we have enough symbols (including repair symbols) */
+	if (rq->nsrc + rq->nrep < rq->K) return -1;
+
+	/* generate intermediate symbols */
+	if (rq_decode_intermediate_symbols(rq, sym, rep, &C) == -1) return -1;
+
+	/* generate missing source symbols */
+	for (int esi = 0; esi < rq->K; esi++) {
+		if (!isset(sym->map, esi)) {
+			uint8_t *rsym = rq_encode_symbol(rq, &C, esi, sym->p + rq->T * esi);
+			fprintf(stderr, "recovered symbol (esi=%i):\n", esi);
+			rq_dump_symbol(rq, rsym, stderr);
+			setbit(sym->map, esi);
+		}
+	}
+
+	matrix_free(&C);
+
+	return 0;
 }
 
 void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)

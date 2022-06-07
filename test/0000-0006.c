@@ -286,7 +286,7 @@ void verify_encoder(rq_t *rq, matrix_t *C, uint8_t *src)
 	uint8_t *sym;
 	for (uint32_t isi = 0; isi < rq->K; isi++) {
 		test_log("encoding ISI %zu\n", isi);
-		sym = rq_encode(rq, C, isi);
+		sym = rq_encode_symbol(rq, C, isi, NULL);
 		test_assert(!memcmp(sym, src, rq->T), "verify ISI %zu", isi);
 
 		rq_dump_symbol(rq, src, stderr);
@@ -358,7 +358,7 @@ int main(void)
 		test_log("SBN %zu: K' (%u) * T (%u) = %zu\n", SBN, rq->KP, rq->T, rq->KP * rq->T);
 
 		test_log("generating matrix A\n");
-		rq_generate_matrix_A(rq, &A);
+		rq_generate_matrix_A(rq, &A, rq->KP);
 
 		//rq_dump_ldpc(rq, &A, stderr);
 		//rq_dump_hdpc(rq, &A, stderr);

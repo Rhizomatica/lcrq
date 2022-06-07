@@ -269,17 +269,17 @@ static inline int pivot(matrix_t *A, int j, int P[], int Q[])
 
 int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 {
-	int rank = 0;
+	int i;
 	int n = MIN(matrix_rows(A), matrix_cols(A));
 
-	assert(n == matrix_cols(A));
+	//assert(n == matrix_cols(A));
 
 	/* initialize permutations matricies */
-	for (int i = 0; i < matrix_rows(A); i++) P[i] = i;
-	for (int i = 0; i < matrix_cols(A); i++) Q[i] = i;
+	for (i = 0; i < matrix_rows(A); i++) P[i] = i;
+	for (i = 0; i < matrix_cols(A); i++) Q[i] = i;
 
 	/* LU decomposition */
-	for (int i = 0; i < n; i++) {
+	for (i = 0; i < n; i++) {
 		if (!pivot(A, i, P, Q)) break;
 		for (int j = i + 1; j < matrix_rows(A); j++) {
 			const uint8_t a = matrix_get(A, j, i);
@@ -291,9 +291,8 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 				matrix_inc_gf256(A, j, k, gf256_mul(a, b));
 			}
 		}
-		rank++;
 	}
-	return rank;
+	return i;
 }
 
 void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
@@ -304,8 +303,8 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 
 	if (!IA->base) matrix_new(IA, matrix_rows(LU), matrix_cols(LU), NULL);
 
-	for (int j = 0; j < n; j++) {
-		for (int i = 0; i < n; i++) {
+	for (int j = 0; j < matrix_cols(IA); j++) {
+		for (int i = 0; i < matrix_cols(IA); i++) {
 			uint8_t v = (P[i] == j) ? 1 : 0;
 			matrix_set(IA, i, j, v);
 			for (int k = 0; k < i; k++) {
@@ -332,6 +331,8 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const int P[], const int Q[])
 {
 	int n = MIN(matrix_rows(LU), matrix_cols(LU));
+
+	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(Y), NULL);
 
 	assert(matrix_cols(LU) == matrix_rows(X));
 	assert(matrix_rows(LU) == matrix_rows(Y));

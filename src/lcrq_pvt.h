@@ -795,6 +795,9 @@ struct rq_s {
 	uint16_t P1;
 	uint16_t U;
 	uint16_t B;
+	uint32_t Nesi;
+	int nsrc; /* number of source symbols received (ESI < K) */
+	int nrep; /* number of repair symbols received (ESI >= K) */
 };
 
 static const int T2LEN = sizeof T2 / sizeof T2[0];
