@@ -40,10 +40,12 @@ uint8_t *matrix_zero_row(matrix_t *m, int row)
 	return memset(matrix_ptr_row(m, row), 0, m->cols);
 }
 
-matrix_t *matrix_zero(matrix_t *m)
+/* A submatrix needs to be zeroed row by row.
+ * A full matrix has a size which can be passed to memset */
+void matrix_zero(matrix_t *m)
 {
-	for (int i = 0; i < m->rows; i++) matrix_zero_row(m, i);
-	return m;
+	if (!m->size) memset(m->base, 0, m->size);
+	else for (int i = 0; i < m->rows; i++) matrix_zero_row(m, i);
 }
 
 matrix_t *matrix_identity(matrix_t *m)

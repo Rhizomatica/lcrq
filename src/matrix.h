@@ -49,7 +49,7 @@ void matrix_free(matrix_t *mat);
 /* Zero matrix row. Ignores transposition. Returns pointer to row */
 uint8_t *matrix_zero_row(matrix_t *m, int row);
 
-matrix_t *matrix_zero(matrix_t *mat);
+void matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
 void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
