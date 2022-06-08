@@ -321,7 +321,6 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 	}
 }
 
-
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 {
 	matrix_new(I, A->rows, A->cols, NULL);

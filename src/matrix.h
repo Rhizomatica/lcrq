@@ -11,16 +11,18 @@
 #define SWAP(a, b) (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b)))
 #define MCOL(m) (((m)->trans) ? (m)->rows : (m)->cols)
 #define MROW(m) (((m)->trans) ? (m)->cols : (m)->rows)
-
 #define MADDR(M, row, col) (M)->base + (row) * (M)->stride + (col)
+#define MSET(M, row, col) (M)->base[(row) * (M)->stride + (col)]
 
 #define matrix_get_s(M, row, col) (M)->base[(col) + (row) * (M)->stride]
-
+#define matrix_get_t(M, row, col) (M)->base[(row) + (col) * (M)->stride]
 #define matrix_get(M, row, col) \
 	((M)->trans) \
 	? (M)->base[(row) + (col) * (M)->stride] \
 	: (M)->base[(col) + (row) * (M)->stride]
 
+#define matrix_set_s(M, row, col, val) (M)->base[(col) + (row) * (M)->stride] = (val)
+#define matrix_set_t(M, row, col, val) (M)->base[(row) + (col) * (M)->stride] = (val)
 #define matrix_set(M, row, col, val) \
 	if ((M)->trans) \
 		(M)->base[(row) + (col) * (M)->stride] = val; \
