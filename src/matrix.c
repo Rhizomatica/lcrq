@@ -225,19 +225,17 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 	for (i = 0; i < Acols; i++) Q[i] = i;
 
 	/* LU decomposition */
-	uint8_t *Aii = A->base;
 	for (i = 0; i < n; i++) {
+		uint8_t *Aii = MADDR(A, i, i);
 		if (!pivot(A, i, P, Q)) break;
 		for (int j = i + 1; j < Arows; j++) {
-			uint8_t *Aji = &A->base[i + j * A->stride];
+			uint8_t *Aji = MADDR(A, j, i);
 			*Aji = GF256DIV(*Aji, *Aii);
 			if (*Aji) for (int k = i + 1; k < Acols; k++) {
 				const uint8_t b = matrix_get_s(A, i, k);
 				A->base[k + j * A->stride] ^= GF256MUL(*Aji, b);
 			}
-			Aji += A->stride;
 		}
-		Aii += A->stride + 1;
 	}
 	return i;
 }
