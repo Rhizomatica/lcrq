@@ -158,13 +158,6 @@ void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val)
 	}
 }
 
-void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val)
-{
-	for (int col = off; col < m->cols; col++) {
-		matrix_set(m, row, col, GF256MUL(matrix_get(m, row, col), val));
-	}
-}
-
 void matrix_row_div(matrix_t *m, const int row, const uint8_t val)
 {
 	for (int col = 0; col < m->cols; col++) {
@@ -282,6 +275,13 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	}
 }
 
+void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val)
+{
+	for (int col = off; col < m->cols; col++) {
+		matrix_set(m, row, col, GF256MUL(matrix_get(m, row, col), val));
+	}
+}
+
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
 	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
@@ -310,12 +310,14 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 	for (int i = 0; i < n; i++) {
 		matrix_row_copy(X, Q[i], Y, P[i]);
 		for (int j = 0; j < i; j++) {
-			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get_s(LU, i, j));
+			const uint8_t LUij = matrix_get_s(LU, i, j);
+			if (LUij) matrix_row_mul_byrow(X, Q[i], 0, Q[j], LUij);
 		}
 	}
 	for (int i = n - 1; i >= 0; i--) {
 		for (int j = i + 1; j < matrix_cols(LU); j++) {
-			matrix_row_mul_byrow(X, Q[i], 0, Q[j], matrix_get_s(LU, i, j));
+			const uint8_t LUij = matrix_get_s(LU, i, j);
+			if (LUij) matrix_row_mul_byrow(X, Q[i], 0, Q[j], LUij);
 		}
 		matrix_row_mul(X, Q[i], 0, GF256INV(matrix_get_s(LU, i, i)));
 	}
