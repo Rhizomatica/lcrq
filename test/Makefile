@@ -6,7 +6,7 @@ CAPS = ""
 CFLAGS += -Og -Wall -Wextra -Wpedantic -g -fno-builtin-malloc -fno-builtin-calloc -I../src -I ../include
 NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
 OBJS := test.o log.o misc.o falloc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
-LDFLAGS := -lm -ldl -lpthread -llibrecast
+LDFLAGS := -lm -ldl -lpthread -llibrecast -lsodium
 BOLD := "\\e[0m\\e[2m"
 RESET := "\\e[0m"
 PASS = "\\e[0m\\e[32mOK\\e[0m" # end bold, green text
@@ -39,6 +39,8 @@ build:
 0000-0001.%: LDFLAGS += -lsodium
 0000-0006.%: LDFLAGS += -lsodium
 0000-0013.%: LDFLAGS += -lsodium
+0000-0018.%: LDFLAGS += -lsodium
+0000-0019.%: LDFLAGS += -lsodium
 
 
 %.test %.clang: %.c $(OBJS)

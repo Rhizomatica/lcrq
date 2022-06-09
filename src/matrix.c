@@ -217,7 +217,7 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 {
 	const int Arows = matrix_rows(A);
 	const int Acols = matrix_cols(A);
-	const int n = MIN(matrix_rows(A), matrix_cols(A));
+	const int n = MIN(Arows, Acols);
 	int i;
 
 	/* initialize permutations matricies */

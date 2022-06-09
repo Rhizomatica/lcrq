@@ -759,6 +759,12 @@ static const t2_t T2[] = {
 struct rq_s {
 	part_t src_part;
 	part_t sub_part;
+	uint8_t *obj; /* pointer to source object data */
+	uint8_t *sym; /* pointer to current symbol */
+	uint8_t *rep; /* pointer to last repair symbol */
+	uint8_t *C; /* storage for intermediate symbols for all blocks (LxTxZ) */
+	uint8_t  SBN; /* next SBI to return by rq_symbol_next() */
+	uint32_t ESI; /* next symbol to return by rq_symbol_next() */
 	/* F: the transfer length of the source object, in octets (40 bits) */
 	uint64_t F;
 	/* WS: the maximum size block that is decodable in working memory */

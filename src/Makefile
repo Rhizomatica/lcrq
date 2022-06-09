@@ -23,7 +23,7 @@ LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 OBJECTS := gf256.o lcrq.o matrix.o
 
-LIBS :=
+LIBS := -lsodium
 SOFILES := lib$(LIBNAME).so
 SOVFILES := $(foreach f,$(SOFILES),$f.$(VERSION))
 ABIFILES := $(foreach f,$(SOFILES),$f.$(ABIVERS))
@@ -34,7 +34,7 @@ lib$(LIBNAME).so: $(OBJECTS)
 	$(CC) -shared -O3 -fPIC -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h $(HEADERS)
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $< $(LIBS)
 
 install: $(SOFILES)
 	$(INSTALL) -d $(LIBDIR)

@@ -159,7 +159,7 @@ int main(void)
 		matrix_dump(&D, stderr);
 
 		test_log("generating intermediate symbols\n");
-		C = rq_intermediate_symbols(&A, &D);
+		C = rq_intermediate_symbols(&A, &D, NULL);
 		matrix_dump(&C, stderr);
 
 		/* verify A*C=D */

@@ -37,10 +37,13 @@ void test_assert(int condition, char *msg, ...)
 	b = malloc(_vscprintf(msg, argp) + 1);
 	vsprintf(b, msg, argp);
 	va_end(argp);
-	test_log("%s(): %s\n", __func__, b);
 	va_start(argp, msg);
 	if (!condition) {
 		vfail_msg(msg, argp);
+		test_log("%s(): %s FAIL\n", __func__, b);
+	}
+	else {
+		test_log("%s(): %s OK\n", __func__, b);
 	}
 	va_end(argp);
 	free(b);
