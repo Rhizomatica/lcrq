@@ -642,7 +642,7 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 }
 
 /*
-	5.4.2.2.  First Phase
+	Phase 1 (5.4.2.2)
 	+-----------+-----------------+---------+
 	|           |                 |         |
 	|     I     |    All Zeros    |         |
@@ -659,13 +659,8 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
 {
-	/* Phase 1 (5.4.2.2)
-	 * what can we verify at the end of this phase?
-	 * matrix X is created.  This matrix has as many rows and columns as A,
-	 * and it will be a lower triangular matrix throughout the first phase */
 	*i = 0;
 	*u = rq->P;
-
 	*X = matrix_dup(A);
 
 	return 0;

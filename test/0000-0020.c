@@ -71,11 +71,12 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	matrix_t Z1 = matrix_submatrix(&A, i, 0, A.rows - i, i);
 	test_assert(matrix_is_zero(&Z1), "matrix Z1 is zero");
 
-	/* TODO The phase ends successfully when i + u = L, i.e., when V and the
+	/* The phase ends successfully when i + u = L, i.e., when V and the
 	 * all zeros submatrix above V have disappeared, and A consists of I,
 	 * the all zeros submatrix below I, and U.  The phase ends
 	 * unsuccessfully in decoding failure if at some step before V
 	 * disappears there is no nonzero row in V to choose in that step. */
+	test_assert(i + u == rq->L, "i + u == L");
 
 	//if (!rc) rc = memcmp(dec, src, F);
 
