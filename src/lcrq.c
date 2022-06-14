@@ -666,7 +666,8 @@ static int is_HDPC(matrix_t *A, int row)
 	return 0;
 }
 
-int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[])
+int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
+		unsigned char comp[], int cmax, size_t mapsz)
 {
 	//matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
 	int row = A->rows;
@@ -689,38 +690,91 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[])
 		}
 	}
 
-	/* TODO If r != 2, then choose a row with exactly r nonzeros in V with
-	 * minimum original degree among all such rows, except that HDPC
-	 * rows should not be chosen until all non-HDPC rows have been
-	 * processed. TODO exclude HDPC */
-
 	/* TODO If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
 
 	if (*r == 2) {
+
 	}
 
 	return (row == A->rows) ? -1 : row;
+}
+
+/* track components in graph using a bitmap */
+static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
+		size_t mapsz, int i, int u)
+{
+	memset(comp, 0, mapsz * cmax);
+	/* we're only interested in rows with exactly two nonzero elements */
+	for (int x = i; x < A->rows; x++) {
+		int r = 0;
+		uint8_t a, b;
+		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
+		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue; /* skip zeros */
+		for (int y = i; y < A->cols - u; y++) {
+			b = matrix_get_s(A, x, y);
+			if (b) {
+				if (r == 0) a = b;
+				r++;
+			}
+			if (r > 2) continue; /* too high */
+		}
+		if (r == 2) { /* row with r == 2, add to component bitmap */
+			/* the two nonzero elements (a,b) are vertices. Setting the
+			 * bits lets us find the largest component(s) by popcount */
+			int c[2] = { -1, -1};
+			int v;
+			unsigned char *cv, *c0, *c1;
+			for (v = 0; v < cmax; v++) {
+				cv = comp + v * mapsz;
+				if (!hamm(cv, mapsz)) break; /* last component */
+				if (isset(cv, a)) {
+					c[0] = v;
+					setbit(cv, b);
+					if (c[1] > 0) break;
+				}
+				if (isset(cv, b)) {
+					c[1] = v;
+					setbit(cv, a);
+					if (c[0] > 0) break;
+				}
+			}
+			if (c[0] == -1 && c[1] == -1) {
+				/* new component */
+				setbit(cv, a);
+				setbit(cv, b);
+				continue;
+			}
+			if (c[0] == c[1]) continue;
+			if (c[0] > 0 && c[1] > 0) {
+				/* merge two components into the first */
+				c0 = comp + c[0] * mapsz;
+				c1 = comp + c[1] * mapsz;
+				cv = comp + c[v] * mapsz;
+				for (size_t x = 0; x < mapsz; x++) {
+					c0[x] |= c1[x];
+					c1[x] = 0;
+					/* swap deleted component to end */
+					SWAP(c1[x], cv[x]);
+				}
+			}
+		}
+	}
 }
 
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
 	int row, r;
+	int cmax = A->rows - rq->P;
+	const size_t mapsz = howmany(cmax, CHAR_BIT);
+	unsigned char *comp = malloc(cmax * mapsz);
 
 	*i = 0;
 	*u = rq->P;
 	*X = matrix_dup(A);
-
-	// TODO calculate graph components
-#if 0
-	int cmax = A->rows - *u - *i;
-	const size_t mapsz = howmany(cmax, CHAR_BIT);
-	unsigned char comp[cmax][mapsz];
-	memset(comp, 0, sizeof comp);
-#endif
 
 	/* save original degree of each row */
 	for (int i = 0; i < A->rows; i++) odeg[i] = matrix_row_degree(A, i);
@@ -729,8 +783,9 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 	putchar('\n');
 
 	while (*i < A->rows && *i < A->cols && *i + *u < rq->L) {
+		rq_graph_components(A, comp, cmax, mapsz, *i, *u);
 		/* all entries of V are zero => FAIL */
-		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg)) == -1) return -1;
+		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg, comp, cmax, mapsz)) == -1) return -1;
 
 		fprintf(stdout, "row %i chosen with r=%i\n", row, r);
 
@@ -797,6 +852,8 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		*u += r - 1;
 		fprintf(stdout, "i=%i, u=%i\n", *i, *u);
 	}
+
+	free(comp);
 
 	return 0;
 }
