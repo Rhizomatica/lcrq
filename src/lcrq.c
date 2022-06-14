@@ -657,11 +657,38 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
+int rq_phase1_choose_row(matrix_t *A, int i, int u)
+{
+	/* Let r be the minimum integer such that at least one row of A has
+	 * exactly r nonzeros in V */
+	matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
+	int r = INT_MAX, row = -1;
+
+	for (int i = 0; i < V.rows; i++) {
+		int rp = 0;
+		if (!hamm(matrix_ptr_row(&V, i), V.stride)) continue;
+		for (int j = 0; j < V.cols; j++) {
+			if (matrix_get_s(&V, i, j)) rp++;
+			if (rp > r) break; /* too high */
+		}
+		if (rp < r) row = i, r = rp;
+	}
+
+	fprintf(stdout, "\n row %i chosen with r=%i\n", row, r);
+	return row;
+}
+
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
 {
+	int row;
+
 	*i = 0;
 	*u = rq->P;
 	*X = matrix_dup(A);
+
+	/* all entries of V are zero => FAIL */
+	if ((row = rq_phase1_choose_row(A, *i, *u)) == -1) return -1;
+
 
 	return 0;
 }

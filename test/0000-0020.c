@@ -48,6 +48,8 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	int i = 0, u = rq->P;
 	rc = rq_decoder_rfc6330_phase1(rq, &X, &A, &i, &u);
 
+	test_assert(rc == 0, "rq_decoder_rfc6330_phase1 returned 0");
+
 	/* Tests at the end of the First Phase: */
 	test_assert(X.rows == A.rows, "X.rows == A.rows");
 	test_assert(X.cols == A.cols, "X.cols == A.cols");
