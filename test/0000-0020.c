@@ -10,10 +10,10 @@
 #include <sys/param.h>
 
 #define REPS 1
-#define FMIN 1237
-#define FMAX 1237
-#define TMIN 4
-#define TMAX 4
+#define FMIN 42
+#define FMAX 42
+#define TMIN 8
+#define TMAX 8
 #define OMIN 1
 #define OMAX 1
 
@@ -43,6 +43,9 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	/* prepare Matrix A */
 	matrix_t A = {0};
 	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
+
+	fprintf(stderr, "Matrix A (%i x %i)\n", A.rows, A.cols);
+	matrix_dump(&A, stderr);
 
 	matrix_t X = {0};
 	int i = 0, u = rq->P;

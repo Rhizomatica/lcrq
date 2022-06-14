@@ -657,38 +657,67 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
-int rq_phase1_choose_row(matrix_t *A, int i, int u)
+int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[])
 {
+	matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
+	int row = A->rows;
+
 	/* Let r be the minimum integer such that at least one row of A has
 	 * exactly r nonzeros in V */
-	matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
-	int r = INT_MAX, row = -1;
-
+	*r = INT_MAX;
 	for (int i = 0; i < V.rows; i++) {
 		int rp = 0;
 		if (!hamm(matrix_ptr_row(&V, i), V.stride)) continue;
 		for (int j = 0; j < V.cols; j++) {
 			if (matrix_get_s(&V, i, j)) rp++;
-			if (rp > r) break; /* too high */
+			if (rp > *r) break; /* too high */
 		}
-		if (rp < r) row = i, r = rp;
+		if (rp < *r) {
+			if (odeg[row] > rp) row = i;
+			*r = rp;
+		}
 	}
 
-	fprintf(stdout, "\n row %i chosen with r=%i\n", row, r);
+	/* TODO If r != 2, then choose a row with exactly r nonzeros in V with
+	 * minimum original degree among all such rows, except that HDPC
+	 * rows should not be chosen until all non-HDPC rows have been
+	 * processed. */
+
+	/* TODO If r = 2 and there is a row with exactly 2 ones in V, then
+	 * choose any row with exactly 2 ones in V that is part of a
+	 * maximum size component in the graph described above that is
+	 * defined by V. */
+
+	/* TODO If r = 2 and there is no row with exactly 2 ones in V, then
+	 * choose any row with exactly 2 nonzeros in V. */
+
 	return row;
 }
 
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
 {
-	int row;
+	int odeg[A->rows + 1];
+	int row, r;
 
 	*i = 0;
 	*u = rq->P;
 	*X = matrix_dup(A);
 
-	/* all entries of V are zero => FAIL */
-	if ((row = rq_phase1_choose_row(A, *i, *u)) == -1) return -1;
+	/* save original degree of each row */
+	for (int i = 0; i < A->rows; i++) odeg[i] = matrix_row_degree(A, i);
+	odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
 
+	putchar('\n');
+
+	while (*i < A->rows && *i < A->cols && *i + *u < rq->L) {
+		/* all entries of V are zero => FAIL */
+		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg)) == -1) return -1;
+
+		fprintf(stdout, "row %i chosen with r=%i\n", row, r);
+		// i is incremented by 1 and u is incremented by r-1
+		(*i)++;
+		*u += r - 1;
+	}
 
 	return 0;
 }
