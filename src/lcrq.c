@@ -657,23 +657,34 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
+/* quick hack - HDPC rows are the only ones with values > 1 */
+static int is_HDPC(matrix_t *A, int row)
+{
+	for (int j = 0; j < A->cols; j++) {
+		if (matrix_get_s(A, row, j) > 1) return -1;
+	}
+	return 0;
+}
+
 int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[])
 {
-	matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
+	//matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
 	int row = A->rows;
 
 	/* Let r be the minimum integer such that at least one row of A has
 	 * exactly r nonzeros in V */
 	*r = INT_MAX;
-	for (int i = 0; i < V.rows; i++) {
+	for (int x = i; x < A->rows; x++) {
 		int rp = 0;
-		if (!hamm(matrix_ptr_row(&V, i), V.stride)) continue;
-		for (int j = 0; j < V.cols; j++) {
-			if (matrix_get_s(&V, i, j)) rp++;
+		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
+		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue;
+		for (int y = i; y < A->cols - u; y++) {
+			if (matrix_get_s(A, x, y)) rp++;
 			if (rp > *r) break; /* too high */
 		}
-		if (rp < *r) {
-			if (odeg[row] > rp) row = i;
+		if (rp && rp < *r) {
+			/* choose row with minimum original degree */
+			if (odeg[row] > rp) row = x;
 			*r = rp;
 		}
 	}
@@ -681,17 +692,17 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[])
 	/* TODO If r != 2, then choose a row with exactly r nonzeros in V with
 	 * minimum original degree among all such rows, except that HDPC
 	 * rows should not be chosen until all non-HDPC rows have been
-	 * processed. */
+	 * processed. TODO exclude HDPC */
 
 	/* TODO If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
 
-	/* TODO If r = 2 and there is no row with exactly 2 ones in V, then
-	 * choose any row with exactly 2 nonzeros in V. */
+	if (*r == 2) {
+	}
 
-	return row;
+	return (row == A->rows) ? -1 : row;
 }
 
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
@@ -702,6 +713,14 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 	*i = 0;
 	*u = rq->P;
 	*X = matrix_dup(A);
+
+	// TODO calculate graph components
+#if 0
+	int cmax = A->rows - *u - *i;
+	const size_t mapsz = howmany(cmax, CHAR_BIT);
+	unsigned char comp[cmax][mapsz];
+	memset(comp, 0, sizeof comp);
+#endif
 
 	/* save original degree of each row */
 	for (int i = 0; i < A->rows; i++) odeg[i] = matrix_row_degree(A, i);
@@ -714,9 +733,69 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg)) == -1) return -1;
 
 		fprintf(stdout, "row %i chosen with r=%i\n", row, r);
-		// i is incremented by 1 and u is incremented by r-1
+
+		/* the first row of A that intersects V is exchanged with the
+		 * chosen row so that the chosen row is the first row that
+		 * intersects V. */
+		if (*i != row) {
+			fprintf(stdout, "swapping row %i with %i\n", *i, row);
+			matrix_swap_rows(A, *i, row);
+			matrix_swap_rows(X, *i, row);
+			SWAP(odeg[*i], odeg[row]);
+		}
+
+		/* The columns of A among those that intersect V are
+		 * reordered so that one of the r nonzeros in the chosen row
+		 * appears in the first column of V and so that the remaining
+		 * r-1 nonzeros appear in the last columns of V.  The same row
+		 * and column operations are also performed on the matrix X. */
+		int col = *i;
+		if (!matrix_get_s(A, *i, *i)) {
+			for (int j = col + 1; j < A->cols - *u; j++) {
+				if (matrix_get_s(A, *i, j)) {
+					fprintf(stdout, "swapping col %i with %i\n", col, j);
+					matrix_swap_cols(A, col, j);
+					matrix_swap_cols(X, col, j);
+					break;
+				}
+			}
+		}
+		col = A->cols - *u - 1;
+		for (int k = r - 1; k > 0; k--, col--) {
+			if (matrix_get_s(A, *i, col)) continue;
+			for (int j = col + 1; j < A->cols - *u; j++) {
+				if (matrix_get_s(A, *i, j)) {
+					fprintf(stdout, "swapping end col %i with %i\n", col, j);
+					matrix_swap_cols(A, col, j);
+					matrix_swap_cols(X, col, j);
+				}
+			}
+		}
+
+		/* Then, an appropriate multiple of the chosen row is added
+		 * to all the other rows of A below the chosen row that have a
+		 * nonzero entry in the first column of V.  Specifically, if a
+		 * row below the chosen row has entry beta in the first column
+		 * of V, and the chosen row has entry alpha in the first column
+		 * of V, then beta/alpha multiplied by the chosen row is added
+		 * to this row to leave a zero value in the first column of V.
+		 * */
+		const uint8_t alpha = matrix_get_s(A, *i, *i);
+		fprintf(stdout, "alpha = %u\n", alpha);
+		assert(alpha);
+		for (int x = (*i) + 1; x < A->rows; x++) {
+			const uint8_t beta = matrix_get_s(A, x, *i);
+			if (beta) {
+				const uint8_t v = GF256DIV(beta, alpha);
+				matrix_row_add_val(A, x, v);
+				matrix_row_add_val(X, x, v);
+			}
+		}
+
+		/* i is incremented by 1 and u is incremented by r-1 */
 		(*i)++;
 		*u += r - 1;
+		fprintf(stdout, "i=%i, u=%i\n", *i, *u);
 	}
 
 	return 0;

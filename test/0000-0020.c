@@ -58,6 +58,10 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	test_assert(X.cols == A.cols, "X.cols == A.cols");
 	test_assert(matrix_is_lower(&X), "X is lower triangular");
 
+	matrix_dump(&A, stderr);
+
+	test_log("i = %i, u = %i\n", i, u);
+
 	/* The submatrix I defined by the intersection of the first i rows
 	 * and first i columns.  This is the identity matrix at the end of each
 	 * step in the phase. */
