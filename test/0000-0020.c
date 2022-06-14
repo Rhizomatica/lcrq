@@ -66,13 +66,17 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	matrix_t I = matrix_submatrix(&A, 0, 0, i, i);
 	test_assert(matrix_is_identity(&I), "matrix I is identity matrix");
 
-	/* TODO The submatrix defined by the intersection of the first i rows
+	/* The submatrix defined by the intersection of the first i rows
 	 * and all but the first i columns and last u columns.  All entries of
 	 * this submatrix are zero. */
+	matrix_t Z0 = matrix_submatrix(&A, 0, i, i, A.cols - u - i);
+	test_assert(matrix_is_zero(&Z0), "matrix Z0 is zero");
 
-	/* TODO The submatrix defined by the intersection of the first i columns
+	/* The submatrix defined by the intersection of the first i columns
 	 * and all but the first i rows.  All entries of this submatrix are
 	 * zero. */
+	matrix_t Z1 = matrix_submatrix(&A, i, 0, A.rows - i, i);
+	test_assert(matrix_is_zero(&Z1), "matrix Z1 is zero");
 
 	/* TODO The phase ends successfully when i + u = L, i.e., when V and the
 	 * all zeros submatrix above V have disappeared, and A consists of I,

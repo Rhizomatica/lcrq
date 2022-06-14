@@ -57,6 +57,9 @@ matrix_t *matrix_identity(matrix_t *mat);
 /* return nonzero if m is an identity matrix */
 int matrix_is_identity(matrix_t *m);
 
+/* return nonzero if all m elements are zero */
+int matrix_is_zero(matrix_t *m);
+
 void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);

@@ -72,6 +72,15 @@ int matrix_is_identity(matrix_t *m)
 	return id;
 }
 
+/* return nonzero if all m elements are zero */
+int matrix_is_zero(matrix_t *m)
+{
+	size_t len = m->size;
+	int c = 0;
+	while (len--) for (char v = m->base[len]; v; c++) v &= v - 1;
+	return !c;
+}
+
 void matrix_dump(matrix_t *mat, FILE *stream)
 {
 	fprintf(stream, "\n");
