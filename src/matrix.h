@@ -57,6 +57,9 @@ matrix_t *matrix_identity(matrix_t *mat);
 /* return nonzero if m is an identity matrix */
 int matrix_is_identity(matrix_t *m);
 
+/* return nonzero if all the entries above the main diagonal are zero */
+int matrix_is_lower(matrix_t *m);
+
 /* return nonzero if all m elements are zero */
 int matrix_is_zero(matrix_t *m);
 

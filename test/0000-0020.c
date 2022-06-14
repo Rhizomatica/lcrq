@@ -31,13 +31,6 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
-/* return nonzero if X is lower triangular */
-int is_lower_triangular(matrix_t *X)
-{
-	// TODO
-	return 0;
-}
-
 int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F, uint16_t T)
 {
 	rq_t *rq; /* separate rq context to ensure no stale data */
@@ -58,7 +51,7 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	/* Tests at the end of the First Phase: */
 	test_assert(X.rows == A.rows, "X.rows == A.rows");
 	test_assert(X.cols == A.cols, "X.cols == A.cols");
-	test_assert(is_lower_triangular(&X), "X is lower triangular");
+	test_assert(matrix_is_lower(&X), "X is lower triangular");
 
 	/* The submatrix I defined by the intersection of the first i rows
 	 * and first i columns.  This is the identity matrix at the end of each

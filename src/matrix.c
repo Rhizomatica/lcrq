@@ -72,6 +72,17 @@ int matrix_is_identity(matrix_t *m)
 	return id;
 }
 
+/* return nonzero if all the entries above the main diagonal are zero */
+int matrix_is_lower(matrix_t *m)
+{
+	for (int i = 0; i < m->rows; i++) {
+		for (int j = i + 1; j < m->cols; j++) {
+			if (matrix_get(m, i, j)) return 0;
+		}
+	}
+	return -1;
+}
+
 /* return nonzero if all m elements are zero */
 int matrix_is_zero(matrix_t *m)
 {
