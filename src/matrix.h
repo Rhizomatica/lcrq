@@ -53,6 +53,10 @@ uint8_t *matrix_zero_row(matrix_t *m, int row);
 
 void matrix_zero(matrix_t *mat);
 matrix_t *matrix_identity(matrix_t *mat);
+
+/* return nonzero if m is an identity matrix */
+int matrix_is_identity(matrix_t *m);
+
 void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);

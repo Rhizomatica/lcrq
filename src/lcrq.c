@@ -657,14 +657,14 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
-int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A)
+int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
 {
 	/* Phase 1 (5.4.2.2)
 	 * what can we verify at the end of this phase?
 	 * matrix X is created.  This matrix has as many rows and columns as A,
 	 * and it will be a lower triangular matrix throughout the first phase */
-	int i = 0;
-	int u = rq->P;
+	*i = 0;
+	*u = rq->P;
 
 	*X = matrix_dup(A);
 

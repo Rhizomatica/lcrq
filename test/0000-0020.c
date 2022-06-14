@@ -52,16 +52,19 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
 
 	matrix_t X = {0};
-	rc = rq_decoder_rfc6330_phase1(rq, &X, &A);
+	int i = 0, u = rq->P;
+	rc = rq_decoder_rfc6330_phase1(rq, &X, &A, &i, &u);
 
 	/* Tests at the end of the First Phase: */
 	test_assert(X.rows == A.rows, "X.rows == A.rows");
 	test_assert(X.cols == A.cols, "X.cols == A.cols");
 	test_assert(is_lower_triangular(&X), "X is lower triangular");
 
-	/* TODO The submatrix I defined by the intersection of the first i rows
+	/* The submatrix I defined by the intersection of the first i rows
 	 * and first i columns.  This is the identity matrix at the end of each
 	 * step in the phase. */
+	matrix_t I = matrix_submatrix(&A, 0, 0, i, i);
+	test_assert(matrix_is_identity(&I), "matrix I is identity matrix");
 
 	/* TODO The submatrix defined by the intersection of the first i rows
 	 * and all but the first i columns and last u columns.  All entries of

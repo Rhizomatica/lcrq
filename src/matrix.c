@@ -58,6 +58,20 @@ matrix_t *matrix_identity(matrix_t *m)
 	return m;
 }
 
+/* return nonzero if m is an identity matrix */
+int matrix_is_identity(matrix_t *m)
+{
+	int id = 1;
+	for (int i = 0; i < m->rows; i++) {
+		for (int j = 0; j < m->cols; j++) {
+			const uint8_t x = matrix_get(m, i, j);
+			const uint8_t y = (i == j) ? 1 : 0;
+			if (x != y) id = 0;
+		}
+	}
+	return id;
+}
+
 void matrix_dump(matrix_t *mat, FILE *stream)
 {
 	fprintf(stream, "\n");
