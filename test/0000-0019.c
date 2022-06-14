@@ -9,20 +9,19 @@
 #include <sodium.h>
 #include <sys/param.h>
 
-#define REPS 1000
+#define REPS 100
 #define FMIN 328183
 #define FMAX 328183
 #define TMIN 1024
 #define TMAX 1024
-#define OMIN 0
-#define OMAX 5
+#define OMIN 1
+#define OMAX 1
 
 static_assert(TMIN % RQ_AL == 0);
 static_assert(TMAX % RQ_AL == 0);
 
 // FIXME - T varies when == UINT16_MAX (or just large)
 
-//static const uint32_t OVERHEAD = 2; /* number of symbols more than K' to generate */
 static uint32_t overhead;
 
 uint8_t *generate_source_object(size_t F)
@@ -41,19 +40,10 @@ int decode_and_verify(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi,
 	int rc = 0;
 
 	rq = rq_init(F, T); assert(rq);
-
 	dec = malloc(rq->K * rq->T);
-
 	rc = rq_decode_block_f(rq, dec, enc, ESI, nesi);
-	//test_assert(rc == 0, "decoded symbols");
-
-	if (!rc) {
-		rc = memcmp(dec, src, F);
-		//test_assert(!rc, "source and decoded data match");
-	}
-
+	if (!rc) rc = memcmp(dec, src, F);
 	free(dec);
-
 	rq_free(rq);
 
 	return rc;
@@ -65,22 +55,16 @@ uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	uint8_t sbn = 0; /* FIXME - hardcoded SBN */
 	rq_sym_t sym = {0};
 
-	enc = malloc(nesi * rq->T);
-
 	assert(rq->Z == 1); /* FIXME - only one block supported by this test */
+	enc = malloc(nesi * rq->T);
 
 	/* generate random repair symbols */
 	sym.sym = enc;
 	for (int i = 0; i < nesi; i++) {
-		//rq_symbol_generate(rq, &sym, sbn, (uint32_t)i); // source symbols
 		rq_symbol_random(rq, &sym, sbn); /* repair symbols, random order */
-		//rq_symbol_repair_next(rq, &sym, sbn); /* repair symbols */
-		//rq_symbol_repair_prev(rq, &sym, sbn); /* repair symbols, reverse order */
-		fprintf(stderr, "generated symbol ESI %u\n", sym.ESI);
 		ESI[i] = sym.ESI;
 		sym.sym += rq->T;
 	}
-
 	return enc;
 }
 
@@ -143,7 +127,7 @@ int main(void)
 			}
 		}
 	}
-test_done:
+//test_done:
 	test_log("test done\n");
 
 	return fails;
