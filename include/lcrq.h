@@ -108,6 +108,12 @@ int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
 
 int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
+void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep);
+void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
+		uint32_t nesi);
+int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A);
+int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+
 void rq_block(rq_t *rq); /* calculate params based on K */
 rq_t *rq_init(const size_t F, const uint16_t T);
 void rq_free(rq_t *rq);

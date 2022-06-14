@@ -472,11 +472,9 @@ void *rq_intermediate_symbols_alloc(const rq_t *rq)
 	return calloc(rq->L, rq->L);
 }
 
-static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
-		rq_blkmap_t *sym, rq_blkmap_t *rep)
+void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep)
 {
 	uint32_t lt = 0;
-	int rank;
 
 	/* create Matrix A (Directors extended cut) */
 
@@ -499,6 +497,14 @@ static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
 		const uint32_t row = rq->S + rq->H + lt++;
 		rq_generate_LT(rq, matrix_ptr_row(A, row), isi);
 	}
+}
+
+static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
+		rq_blkmap_t *sym, rq_blkmap_t *rep)
+{
+	int rank;
+
+	rq_decoding_matrix_A(rq, A, sym, rep);
 
 	/* LU decompose A */
 	if ((rank = matrix_LU_decompose(A, P, Q)) < rq->L) {
@@ -581,7 +587,7 @@ int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep)
 
 	/* check if we have enough symbols (including repair symbols) */
 	/* NB: overhead is over and above K', not K */
-	if (rq->nsrc + rq->nrep < rq->KP) return -1;
+	if (rq->Nesi < rq->KP) return -1;
 
 	/* generate intermediate symbols */
 	if (rq_decode_intermediate_symbols(rq, sym, rep, &C) == -1) return -1;
@@ -613,6 +619,64 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 
 	return rq_decode_block(rq, &sym, &rep);
 }
+
+void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
+		uint32_t nesi)
+{
+	const size_t maplen = howmany(rq->K, CHAR_BIT);
+	unsigned char symmap[maplen];
+	unsigned char repmap[maplen];
+	rq_blkmap_t sym = { .map = symmap, .len = maplen, .p = dec };
+	rq_blkmap_t rep = { .map = repmap, .len = maplen, .p = enc, .ESI = ESI };
+
+	memset(symmap, 0, maplen);
+	memset(repmap, 0, maplen);
+
+	for (uint32_t i = 0; i < nesi; i++) setbit(repmap, i);
+
+	rq->nsrc = 0;
+	rq->nrep = nesi;
+	rq->Nesi = nesi + rq->KP - rq->K;
+
+	rq_decoding_matrix_A(rq, A, &sym, &rep);
+}
+
+/*
+	5.4.2.2.  First Phase
+	+-----------+-----------------+---------+
+	|           |                 |         |
+	|     I     |    All Zeros    |         |
+	|           |                 |         |
+	+-----------+-----------------+    U    |
+	|           |                 |         |
+	|           |                 |         |
+	| All Zeros |       V         |         |
+	|           |                 |         |
+	|           |                 |         |
+	+-----------+-----------------+---------+
+	Figure 6: Submatrices of A in the First Phase
+*/
+
+int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A)
+{
+	/* Phase 1 (5.4.2.2)
+	 * what can we verify at the end of this phase?
+	 * matrix X is created.  This matrix has as many rows and columns as A,
+	 * and it will be a lower triangular matrix throughout the first phase */
+	int i = 0;
+	int u = rq->P;
+
+	*X = matrix_dup(A);
+
+	return 0;
+}
+
+#if 0
+int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
+{
+	return 0;
+}
+#endif
 
 void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)
 {
