@@ -669,7 +669,6 @@ static int is_HDPC(matrix_t *A, int row)
 int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		unsigned char comp[], int cmax, size_t mapsz)
 {
-	//matrix_t V = matrix_submatrix(A, i, i, A->rows - i, A->cols - u - i);
 	int row = A->rows;
 
 	/* Let r be the minimum integer such that at least one row of A has
@@ -690,13 +689,28 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		}
 	}
 
-	/* TODO If r = 2 and there is a row with exactly 2 ones in V, then
+	/* If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
-
 	if (*r == 2) {
-
+		unsigned char *cv;
+		unsigned int component_sz = 0, sz;
+		for (int v = 0; v < cmax; v++) {
+			cv = comp + v * mapsz;
+			sz = hamm(cv, mapsz); /* bits set => component size */
+			if (sz == 0) break;   /* last component reached */
+			if (sz > component_sz) {
+				/* larger component found, choose row */
+				component_sz = sz;
+				for (int x = 0; x < cmax; x++) {
+					if (isset(cv, x)) {
+						row = x;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	return (row == A->rows) ? -1 : row;
