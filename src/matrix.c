@@ -61,15 +61,14 @@ matrix_t *matrix_identity(matrix_t *m)
 /* return nonzero if m is an identity matrix */
 int matrix_is_identity(matrix_t *m)
 {
-	int id = 1;
 	for (int i = 0; i < m->rows; i++) {
 		for (int j = 0; j < m->cols; j++) {
 			const uint8_t x = matrix_get(m, i, j);
 			const uint8_t y = (i == j) ? 1 : 0;
-			if (x != y) id = 0;
+			if (x != y) return 0;
 		}
 	}
-	return id;
+	return -1;
 }
 
 /* return nonzero if all the entries above the main diagonal are zero */
@@ -83,13 +82,14 @@ int matrix_is_lower(matrix_t *m)
 	return -1;
 }
 
-/* return nonzero if all m elements are zero */
 int matrix_is_zero(matrix_t *m)
 {
-	size_t len = m->size;
-	int c = 0;
-	while (len--) for (char v = m->base[len]; v; c++) v &= v - 1;
-	return !c;
+	for (int i = 0; i < m->rows; i++) {
+		for (int j = 0; j < m->cols; j++) {
+			if (matrix_get_s(m, i, j)) return 0;
+		}
+	}
+	return -1;
 }
 
 int matrix_row_degree(matrix_t *m, int row)

@@ -67,6 +67,7 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	 * step in the phase. */
 	matrix_t I = matrix_submatrix(&A, 0, 0, i, i);
 	test_assert(matrix_is_identity(&I), "matrix I is identity matrix");
+	matrix_dump(&I, stderr);
 
 	/* The submatrix defined by the intersection of the first i rows
 	 * and all but the first i columns and last u columns.  All entries of
@@ -88,6 +89,9 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	test_assert(i + u == rq->L, "i + u == L");
 
 	//if (!rc) rc = memcmp(dec, src, F);
+	//
+	fprintf(stderr, "X:\n");
+	matrix_dump(&X, stderr);
 
 	matrix_free(&X);
 	matrix_free(&A);

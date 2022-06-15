@@ -669,31 +669,36 @@ static int is_HDPC(matrix_t *A, int row)
 int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		unsigned char comp[], int cmax, size_t mapsz)
 {
+	int rp = INT_MAX;
 	int row = A->rows;
 
 	/* Let r be the minimum integer such that at least one row of A has
 	 * exactly r nonzeros in V */
-	*r = INT_MAX;
 	for (int x = i; x < A->rows; x++) {
-		int rp = 0;
+		int r_row = 0;
 		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
 		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue;
 		for (int y = i; y < A->cols - u; y++) {
-			if (matrix_get_s(A, x, y)) rp++;
-			if (rp > *r) break; /* too high */
+			if (matrix_get_s(A, x, y)) r_row++;
+			//if (r_row > rp) break; /* too high */
 		}
-		if (rp && rp < *r) {
+		if (r_row > 0 && r_row < rp) {
 			/* choose row with minimum original degree */
-			if (odeg[row] > rp) row = x;
-			*r = rp;
+			//if (odeg[row] > r_row) row = x;
+			row = x;
+			rp = r_row;
+			fprintf(stderr, "selecting row %i with r=%i\n", row, rp);
 		}
+		fprintf(stderr, "row %i, r = %i\n", x, r_row);
 	}
-
+	*r = rp; /* r is now known */
+#if 0
+	FIXME - component chooser
 	/* If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
-	if (*r == 2) {
+	if (rp == 2) {
 		unsigned char *cv;
 		unsigned int component_sz = 0, sz;
 		for (int v = 0; v < cmax; v++) {
@@ -703,7 +708,7 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 			if (sz > component_sz) {
 				/* larger component found, choose row */
 				component_sz = sz;
-				for (int x = 0; x < cmax; x++) {
+				for (int x = i; x < cmax; x++) {
 					if (isset(cv, x)) {
 						row = x;
 						break;
@@ -712,7 +717,9 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 			}
 		}
 	}
+#endif
 
+	fprintf(stderr, "row %i was very much chosen with r=%i\n", row, *r);
 	return (row == A->rows) ? -1 : row;
 }
 
@@ -796,50 +803,61 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 
 	putchar('\n');
 
-	while (*i < A->rows && *i < A->cols && *i + *u < rq->L) {
+	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
 		rq_graph_components(A, comp, cmax, mapsz, *i, *u);
 		/* all entries of V are zero => FAIL */
 		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg, comp, cmax, mapsz)) == -1) return -1;
+		assert(row >= *i);
 
-		fprintf(stdout, "row %i chosen with r=%i\n", row, r);
+		fprintf(stderr, "row %i chosen with r=%i (i = %u, u = %i)\n", row, r, *i, *u);
 
 		/* the first row of A that intersects V is exchanged with the
 		 * chosen row so that the chosen row is the first row that
 		 * intersects V. */
 		if (*i != row) {
-			fprintf(stdout, "swapping row %i with %i\n", *i, row);
+			fprintf(stderr, "swapping row %i with %i\n", *i, row);
 			matrix_swap_rows(A, *i, row);
 			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
 		}
+
+		fprintf(stderr, "row swaps done:\n");
+		matrix_dump(A, stderr);
 
 		/* The columns of A among those that intersect V are
 		 * reordered so that one of the r nonzeros in the chosen row
 		 * appears in the first column of V and so that the remaining
 		 * r-1 nonzeros appear in the last columns of V.  The same row
 		 * and column operations are also performed on the matrix X. */
-		int col = *i;
+		int col = *i, j, rr = 0;
 		if (!matrix_get_s(A, *i, *i)) {
-			for (int j = col + 1; j < A->cols - *u; j++) {
+			for (j = col; j < A->cols - *u; j++) {
 				if (matrix_get_s(A, *i, j)) {
-					fprintf(stdout, "swapping col %i with %i\n", col, j);
+					fprintf(stderr, "swapping col %i with %i\n", col, j);
 					matrix_swap_cols(A, col, j);
 					matrix_swap_cols(X, col, j);
-					break;
+					if (r == ++rr) break;
+					if (rr == 1) {
+						/* move remaining ones to end of V */
+						fprintf(stderr, "move remaining %i ones to end of V\n", r - rr);
+						col = A->cols - *u - 1;
+					}
+					fprintf(stderr, "rr = %i, finding r to swap with col %i\n",
+							rr, col);
+					fprintf(stderr, "(i = %u, u = %i)\n", *i, *u);
+
+					/* find zero column to swap with */
+					while (matrix_get_s(A, *i, col)) col--;
 				}
 			}
 		}
-		col = A->cols - *u - 1;
-		for (int k = r - 1; k > 0; k--, col--) {
-			if (matrix_get_s(A, *i, col)) continue;
-			for (int j = col + 1; j < A->cols - *u; j++) {
-				if (matrix_get_s(A, *i, j)) {
-					fprintf(stdout, "swapping end col %i with %i\n", col, j);
-					matrix_swap_cols(A, col, j);
-					matrix_swap_cols(X, col, j);
-				}
-			}
-		}
+
+		fprintf(stderr, "col swaps done (i = %u, u = %i)\n", *i, *u);
+
+		matrix_t tmp = matrix_submatrix(A, 0, 0, *i, A->cols - *u);
+		matrix_dump(&tmp, stderr);
+
+		matrix_dump(A, stderr);
 
 		/* Then, an appropriate multiple of the chosen row is added
 		 * to all the other rows of A below the chosen row that have a
@@ -850,22 +868,25 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		 * to this row to leave a zero value in the first column of V.
 		 * */
 		const uint8_t alpha = matrix_get_s(A, *i, *i);
-		fprintf(stdout, "alpha = %u\n", alpha);
-		assert(alpha);
-		for (int x = (*i) + 1; x < A->rows; x++) {
-			const uint8_t beta = matrix_get_s(A, x, *i);
-			if (beta) {
-				const uint8_t v = GF256DIV(beta, alpha);
-				matrix_row_add_val(A, x, v);
-				matrix_row_add_val(X, x, v);
+		const int ip = *i;
+		for (int x = ip + 1; x < A->rows; x++) {
+			const uint8_t beta = matrix_get_s(A, x, ip);
+			if (beta > 0u) {
+				const uint8_t f = GF256DIV(beta, alpha);
+				matrix_row_mul_byrow(A, x, ip, ip, f);
+				matrix_row_mul_byrow(X, x, ip, ip, f);
 			}
 		}
 
+		fprintf(stderr, "multiples added:\n");
+		matrix_dump(A, stderr);
+
 		/* i is incremented by 1 and u is incremented by r-1 */
 		(*i)++;
-		*u += r - 1;
-		fprintf(stdout, "i=%i, u=%i\n", *i, *u);
+		(*u) += r - 1;
+		fprintf(stderr, "i=%i, u=%i\n", *i, *u);
 	}
+	fprintf(stderr, "i=%i, u=%i, L = %u\n", *i, *u, rq->L);
 
 	free(comp);
 
