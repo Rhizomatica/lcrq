@@ -87,17 +87,24 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	 * disappears there is no nonzero row in V to choose in that step. */
 	test_assert(i + u == rq->L, "i + u == L");
 
-	//if (!rc) rc = memcmp(dec, src, F);
-	//
 	fprintf(stderr, "X:\n");
 	matrix_dump(&X, stderr);
 
 	/* X is supposed to be "lower triangular throughout the first phase",
-	 * but it is a straight copy of A which is NOT lower triangular. X
-	 * doesn't become lower triangular until we trim off the rows and cols
-	 * outside i */
+	 * but it is a straight copy of A which is NOT lower triangular. Only
+	 * the i x i portion of X is lower triangular. */
 	matrix_t X_trim = matrix_submatrix(&X, 0, 0, i, i);
 	test_assert(matrix_is_lower(&X_trim), "X (trimmed to i x i) is lower triangular");
+	fprintf(stderr, "X (i x i):\n");
+	matrix_dump(&X_trim, stderr);
+
+	matrix_t U_upper = matrix_submatrix(&A, 0, i, i, u);
+	fprintf(stderr, "U (upper):\n");
+	matrix_dump(&U_upper, stderr);
+
+	matrix_t U_lower = matrix_submatrix(&A, i, i, A.rows - i, u);
+	fprintf(stderr, "U (lower):\n");
+	matrix_dump(&U_lower, stderr);
 
 	matrix_free(&X);
 	matrix_free(&A);
