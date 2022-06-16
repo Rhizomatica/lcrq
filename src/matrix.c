@@ -225,12 +225,12 @@ void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const i
 	}
 }
 
-void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
+uint8_t * matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	uint8_t *dptr, *sptr;
-	dptr = dst->base + drow * dst->stride;
-	sptr = src->base + srow * src->stride;
-	memcpy(dptr, sptr, src->stride);
+	dptr = matrix_ptr_row(dst, drow);
+	sptr = matrix_ptr_row(src, srow);
+	return memcpy(dptr, sptr, src->stride);
 }
 
 static inline int pivot(matrix_t *A, int j, int P[], int Q[])
@@ -413,10 +413,6 @@ matrix_t *matrix_copy(matrix_t *dst, const matrix_t *src)
 			matrix_row_copy(dst, i, src, i);
 		}
 	}
-	dst->rows = src->rows;
-	dst->cols = src->cols;
-	dst->trans = src->trans;
-	if (!dst->stride) dst->stride = src->stride;
 	return dst;
 }
 
