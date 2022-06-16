@@ -622,10 +622,17 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
-int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
+int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
 {
-	X->rows = *i;
-	X->cols = *i;
+	/* trim X */
+	X->rows = *i; X->cols = *i;
+
+	matrix_t U_lower = matrix_submatrix(A, *i, *i, A->rows - *i, *u);
+	int rank = matrix_gauss_elim(&U_lower);
+	matrix_free(&U_lower);
+	if (rank < *u) return -1; /* decoding failure */
+	A->rows = rq->L; /* discard surplus rows */
+
 	return 0;
 }
 
@@ -649,6 +656,7 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	rq->Nesi = nesi + rq->KP - rq->K;
 
 	rq_decoding_matrix_A(rq, A, &sym, &rep);
+	matrix_schedule_init(A, rq->S + rq->H + rq->Nesi, rq->L);
 }
 
 /*
@@ -852,6 +860,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			matrix_swap_rows(A, *i, row);
 			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
+			SCHED_ROWSWAP(A, *i, row);
 		}
 
 #if TEST_DEBUG
@@ -877,6 +886,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 				}
 				matrix_swap_cols(A, col, j);
 				matrix_swap_cols(X, col, j);
+				SCHED_COLSWAP(A, col, j);
 				if (r == ++rr) break;
 			}
 		}
@@ -908,9 +918,10 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		const int ip = *i;
 		for (int x = ip + 1; x < A->rows; x++) {
 			const uint8_t beta = matrix_get_s(A, x, ip);
-			if (beta > 0u) {
+			if (beta) {
 				const uint8_t f = GF256DIV(beta, alpha);
 				matrix_row_mul_byrow(A, x, ip, ip, f);
+				SCHED_ROWMUL(A, x, ip, f);
 			}
 		}
 
@@ -930,10 +941,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 #if TEST_DEBUG
 	fprintf(stderr, "i=%i, u=%i, L = %u\n", *i, *u, rq->L);
 #endif
-
-	/* trim X  - this is Phase 2 */
-	//X->rows = *i;
-	//X->cols = *i;
 
 	free(comp);
 

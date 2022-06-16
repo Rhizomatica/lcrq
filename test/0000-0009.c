@@ -18,13 +18,15 @@
 int main(void)
 {
 	matrix_t A = {0}, B = {0};
+	const int row_off = 0;
+	const int col_off = 0;
 
 	loginit();
 	test_name("Matrix Submatrix");
 
 	matrix_new(&A, 3, 12, NULL);
 	matrix_zero(&A);
-	B = matrix_submatrix(&A, 0, 9, 3, 3);
+	B = matrix_submatrix(&A, row_off, col_off, 3, 3);
 
 	for (int i = 0; i < B.rows; i++) {
 		for (int j = 0; j < B.cols; j++) {
@@ -37,14 +39,12 @@ int main(void)
 
 	matrix_identity(&B);
 
+	uint8_t a, b;
 	for (int i = 0; i < A.rows; i++) {
 		for (int j = 0; j < A.cols; j++) {
-			uint8_t v =
-			((i == 0 && j == 9) ||
-			(i == 1 && j == 10) ||
-			(i == 2 && j == 11)) ? 1 : 0;
-			test_assert(matrix_get(&A, i, j) == v,
-					"A[%i,%i] == %u", i, j, v);
+			b = (i < row_off || j < col_off) ? 0 : matrix_get(&B, i, j);
+			a = matrix_get(&A, i, j);
+			test_assert(a == b, "A[%i,%i]=%i", i, j, a);
 		}
 	}
 

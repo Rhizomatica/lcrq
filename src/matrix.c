@@ -13,6 +13,7 @@ matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *bas
 	mat->rows = rows;
 	mat->cols = cols;
 	mat->trans = 0;
+	mat->sched = NULL;
 	mat->stride = (size_t)cols * sizeof(uint8_t);
 	mat->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
 	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
@@ -28,10 +29,19 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 	const long int coff = (A->trans) ? off_rows : off_cols;
 	assert(rows <= matrix_rows(A));
 	assert(cols <= matrix_cols(A));
-	matrix_t sub = {0};
-	matrix_new(&sub, r, c, A->base + roff * A->stride + coff);
-	sub.trans = A->trans;
-	sub.stride = A->stride;
+	matrix_t sub = {
+		.rows = r,
+		.cols = c,
+		.base = A->base + roff * A->stride + coff,
+		.trans = A->trans,
+		.stride = A->stride
+	};
+	if (A->sched) {
+		sub.sched = calloc(1, sizeof(matrix_sched_t));
+		sub.sched->P = A->sched->P + off_rows;
+		sub.sched->Q = A->sched->Q + off_cols;
+		sub.sched->op = A->sched->op + off_rows;
+	}
 	return sub;
 }
 
@@ -233,7 +243,7 @@ uint8_t * matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, co
 	return memcpy(dptr, sptr, src->stride);
 }
 
-static inline int pivot(matrix_t *A, int j, int P[], int Q[])
+int matrix_pivot(matrix_t *A, int j, int P[], int Q[])
 {
 	const int Arows = matrix_rows(A);
 	const int Acols = matrix_cols(A);
@@ -270,7 +280,7 @@ int matrix_LU_decompose(matrix_t *A, int P[], int Q[])
 	/* LU decomposition */
 	for (i = 0; i < n; i++) {
 		uint8_t *Aii = MADDR(A, i, i);
-		if (!pivot(A, i, P, Q)) break;
+		if (!matrix_pivot(A, i, P, Q)) break;
 		for (int j = i + 1; j < Arows; j++) {
 			uint8_t *Aji = MADDR(A, j, i);
 			*Aji = GF256DIV(*Aji, *Aii);
@@ -364,6 +374,44 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 	}
 }
 
+/* reduce matrix to identity, track operations in matrix schedule, return rank */
+int matrix_gauss_elim(matrix_t *A)
+{
+	int j;
+
+	/* lower echelon form */
+	for (j = 0; j < A->cols; j++) {
+		if (!matrix_pivot(A, j, A->sched->P, A->sched->Q)) break;
+		/* first, reduce the pivot row so jj = 1 */
+		uint8_t jj = matrix_get(A, j, j);
+		if (jj != 1) {
+			const uint8_t b = GF256INV(jj);
+			matrix_row_mul(A, j, 0, b);
+			SCHED_ROWMUL(A, j, j, b);
+		}
+		for (int i = j + 1; i < A->rows; i++) {
+			/* add pivot row (j) * factor to row i so that ij == 0 */
+			jj = matrix_get(A, j, j);
+			const uint8_t ij = matrix_get(A, i, j);
+			const uint8_t f = gf256_div(ij, jj);
+			matrix_row_mul_byrow(A, i, 0, j, f);
+			SCHED_ROWMUL(A, i, j, f);
+		}
+	}
+	/* finish upper triangle */
+	for (int i = 0; i < A->cols; i++) {
+		for (int j = i + 1; j < A->cols; j++) {
+			const uint8_t ij = matrix_get(A, i, j);
+			const uint8_t jj = matrix_get(A, j, j);
+			const uint8_t f = gf256_div(ij, jj);
+			matrix_row_mul_byrow(A, i, 0, j, f);
+			SCHED_ROWMUL(A, i, j, f);
+		}
+	}
+
+	return j; /* rank */
+}
+
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 {
 	matrix_new(I, A->rows, A->cols, NULL);
@@ -429,8 +477,41 @@ void matrix_transpose(matrix_t *mat)
 	mat->trans = !(mat->trans);
 }
 
-void matrix_free(matrix_t *mat)
+void *matrix_schedule_free(matrix_sched_t *sched)
 {
-	free(mat->base);
-	mat->base = NULL;
+	if (sched) {
+		free(sched->op);
+		free(sched->Q);
+		free(sched->P);
+	}
+	free(sched);
+	return NULL;
+}
+
+matrix_sched_t *matrix_schedule_init(matrix_t *m, uint32_t rows, uint32_t cols)
+{
+	matrix_sched_t *s = calloc(1, sizeof(matrix_sched_t));
+	if (s) {
+		if (!(s->P = calloc(rows, sizeof(int))))
+			return matrix_schedule_free(s);
+		if (!(s->Q = calloc(cols, sizeof(int))))
+			return matrix_schedule_free(s);
+		if (!(s->op = calloc(rows, sizeof(matrix_op_t))))
+			return matrix_schedule_free(s);
+		for (uint32_t i = 0; i < cols; i++) s->Q[i] = i;
+		for (uint32_t i = 0; i < rows; i++) s->P[i] = i;
+		if (m) m->sched = s;
+	}
+	return s;
+}
+
+void matrix_free(matrix_t *m)
+{
+	if (m->sched) {
+		if (m->size) matrix_schedule_free(m->sched);
+		/* if submatrix (size == 0), shallow free */
+		else free(m->sched);
+	}
+	if (m->size) free(m->base);
+	m->base = NULL;
 }

@@ -34,19 +34,45 @@
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
+#define SCHED_ROWSWAP(A, a, b) SWAP((A)->sched->P[(a)], (A)->sched->P[(b)])
+#define SCHED_COLSWAP(A, a, b) SWAP((A)->sched->Q[(a)], (A)->sched->Q[(b)])
+#define SCHED_ROWMUL(A, dst, src, f) do { \
+	(A)->sched->op[(dst)].beta = f; \
+	(A)->sched->op[(dst)].isrc = src; \
+	(A)->sched->op[(dst)].idst = dst; \
+} while(0)
+
+
+/* track row operations (beta * source row added to destination row) */
+typedef struct matrix_op_s {
+	int     isrc; /* source row */
+	int     idst; /* destination row */
+	uint8_t beta; /* multiplication factor */
+} matrix_op_t;
+
+typedef struct matrix_sched_s {
+	int          *P; /* row permutations */
+	int          *Q; /* col permutations */
+	matrix_op_t *op; /* row operation */
+} matrix_sched_t;
+
 typedef struct matrix_s {
+	uint8_t *base;
+	matrix_sched_t *sched;
+	size_t   stride;
+	size_t   size;
 	int      rows;
 	int      cols;
 	int      trans;
-	size_t   stride;
-	size_t   size;
-	uint8_t *base;
 } matrix_t;
 
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base);
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
+
+matrix_sched_t *matrix_schedule_init(matrix_t *m, uint32_t rows, uint32_t cols);
+void *matrix_schedule_free(matrix_sched_t *sched);
 
 /* Zero matrix row. Ignores transposition. Returns pointer to row */
 uint8_t *matrix_zero_row(matrix_t *m, int row);
@@ -68,7 +94,7 @@ int matrix_row_degree(matrix_t *m, int row);
 
 void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
-void matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
+uint8_t *matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val);
 void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
@@ -88,6 +114,11 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 /* swap rows/cols in place */
 matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2);
 matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2);
+
+int matrix_pivot(matrix_t *A, int j, int P[], int Q[]);
+
+
+int matrix_gauss_elim(matrix_t *A);
 
 /* peform LU decomposition on matrix A, storing combined LU factors in LU and
  * row and col permutations in P + Q. Return matrix rank */
