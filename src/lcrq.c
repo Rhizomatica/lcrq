@@ -920,7 +920,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			if (beta > 0u) {
 				const uint8_t f = GF256DIV(beta, alpha);
 				matrix_row_mul_byrow(A, x, ip, ip, f);
-				matrix_row_mul_byrow(X, x, ip, ip, f);
 			}
 		}
 
