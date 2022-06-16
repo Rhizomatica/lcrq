@@ -403,19 +403,27 @@ matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 
 matrix_t *matrix_copy(matrix_t *dst, const matrix_t *src)
 {
-	memcpy(dst->base, src->base, src->size);
+	if (src->size) {
+		memcpy(dst->base, src->base, src->size);
+		dst->size = src->size;
+	}
+	else {
+		/* size = 0 => submatrix, copy row by row */
+		for (int i = 0; i < matrix_rows(src); i++) {
+			matrix_row_copy(dst, i, src, i);
+		}
+	}
 	dst->rows = src->rows;
 	dst->cols = src->cols;
 	dst->trans = src->trans;
-	dst->stride = src->stride;
-	dst->size = src->size;
+	if (!dst->stride) dst->stride = src->stride;
 	return dst;
 }
 
 matrix_t matrix_dup(const matrix_t *src)
 {
-	matrix_t m;
-	m.base = malloc(src->size);
+	matrix_t m = {0};
+	matrix_new(&m, matrix_rows(src), matrix_cols(src), NULL);
 	matrix_copy(&m, src);
 	return m;
 }
