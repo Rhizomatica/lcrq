@@ -9,7 +9,7 @@
 #include <sodium.h>
 #include <sys/param.h>
 
-#define REPS 1
+#define REPS 10
 #define FMIN 42
 #define FMAX 42
 #define TMIN 8
@@ -56,7 +56,6 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	/* Tests at the end of the First Phase: */
 	test_assert(X.rows == A.rows, "X.rows == A.rows");
 	test_assert(X.cols == A.cols, "X.cols == A.cols");
-	test_assert(matrix_is_lower(&X), "X is lower triangular");
 
 	matrix_dump(&A, stderr);
 
@@ -92,6 +91,13 @@ int phase_1(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi, size_t F,
 	//
 	fprintf(stderr, "X:\n");
 	matrix_dump(&X, stderr);
+
+	/* X is supposed to be "lower triangular throughout the first phase",
+	 * but it is a straight copy of A which is NOT lower triangular. X
+	 * doesn't become lower triangular until we trim off the rows and cols
+	 * outside i */
+	matrix_t X_trim = matrix_submatrix(&X, 0, 0, i, i);
+	test_assert(matrix_is_lower(&X_trim), "X (trimmed to i x i) is lower triangular");
 
 	matrix_free(&X);
 	matrix_free(&A);
