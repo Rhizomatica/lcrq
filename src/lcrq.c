@@ -491,10 +491,12 @@ void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *
 		const int row = rq->S + rq->H + lt++;
 		rq_generate_LT(rq, matrix_ptr_row(A, row), isi);
 	}
-	/* repair symbols (K ... K + nrep) */
-	for (int i = 0; i < rq->nrep; i++) {
+	assert(lt == rq->KP - rq->K + (uint32_t)rq->nsrc);
+
+	/* repair symbols (ESI = K ... K + nrep) */
+	for (int i = 0; i < rq->nrep; i++, lt++) {
 		const uint32_t isi = esi2isi(rq, rep->ESI[i]);
-		const uint32_t row = rq->S + rq->H + lt++;
+		const uint32_t row = rq->S + rq->H + lt;
 		rq_generate_LT(rq, matrix_ptr_row(A, row), isi);
 	}
 }
@@ -620,17 +622,25 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
+int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
+{
+	X->rows = *i;
+	X->cols = *i;
+	return 0;
+}
+
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 		uint32_t nesi)
 {
-	const size_t maplen = howmany(rq->K, CHAR_BIT);
-	unsigned char symmap[maplen];
-	unsigned char repmap[maplen];
-	rq_blkmap_t sym = { .map = symmap, .len = maplen, .p = dec };
-	rq_blkmap_t rep = { .map = repmap, .len = maplen, .p = enc, .ESI = ESI };
+	const size_t symmaplen = howmany(rq->K, CHAR_BIT);
+	const size_t repmaplen = howmany(nesi, CHAR_BIT);
+	unsigned char symmap[symmaplen];
+	unsigned char repmap[repmaplen];
+	rq_blkmap_t sym = { .map = symmap, .len = symmaplen, .p = dec };
+	rq_blkmap_t rep = { .map = repmap, .len = repmaplen, .p = enc, .ESI = ESI };
 
-	memset(symmap, 0, maplen);
-	memset(repmap, 0, maplen);
+	memset(symmap, 0, sizeof symmap);
+	memset(repmap, 0, sizeof repmap);
 
 	for (uint32_t i = 0; i < nesi; i++) setbit(repmap, i);
 
@@ -687,23 +697,17 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		}
 		if (r_row > 0 && r_row < rp) {
 			/* choose row with minimum original degree */
-			//if (odeg[row] > r_row) row = x;
-			row = x;
+			if (odeg[row] > r_row) row = x;
 			rp = r_row;
-			fprintf(stderr, "selecting row %i with r=%i\n", row, rp);
 		}
 		rdex[x] = r_row;
-		fprintf(stderr, "row %i, r = %i\n", x, r_row);
 	}
-
-	/* FIXME - if a different row is chosen, update r */
 
 	/* If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
 	if (rp == 2) {
-		fprintf(stderr, "searching %i components...\n", cmax);
 		unsigned char *cv;
 		unsigned int component_sz = 0, sz;
 		for (int v = 0; v < cmax; v++) {
@@ -716,20 +720,13 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 				for (int x = i; x < cmax; x++) {
 					if (rdex[x] == 2 && isset(cv, x)) {
 						row = x;
-						fprintf(stderr, "component override\n");
 						break;
 					}
 				}
 			}
-			else {
-				fprintf(stderr, "component size %i not larger than %i\n",
-						sz, component_sz);
-			}
 		}
 	}
 	*r = rdex[row];
-
-	fprintf(stderr, "row %i was very much chosen with r=%i\n", row, *r);
 	return (row == A->rows) ? -1 : row;
 }
 
@@ -770,7 +767,6 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 		if (r == 2) { /* row with r == 2, add to component bitmap */
 			/* the two nonzero elements (a,b) are vertices. Setting the
 			 * bits lets us find the largest component(s) by popcount */
-			fprintf(stderr, "row %i is an edge connecting %i to %i, adding\n", x, a, b);
 			int c[2] = { -1, -1};
 			int v;
 			unsigned char *cv, *c0, *c1;
@@ -778,20 +774,17 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 				cv = comp + v * mapsz;
 				if (!hamm(cv, mapsz)) break; /* last component */
 				if (isset(cv, a)) {
-					fprintf(stderr, "setting a\n");
 					c[0] = v;
 					setbit(cv, b);
 					if (c[1] > 0) break;
 				}
 				if (isset(cv, b)) {
-					fprintf(stderr, "setting b\n");
 					c[1] = v;
 					setbit(cv, a);
 					if (c[0] > 0) break;
 				}
 			}
 			if (c[0] == -1 && c[1] == -1) {
-				fprintf(stderr, "new component\n");
 				/* new component */
 				setbit(cv, a);
 				setbit(cv, b);
@@ -809,7 +802,6 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 					cl = c[1];
 					cg = c[0];
 				}
-				fprintf(stderr, "merging component %zu into %zu\n", cg, cl);
 				c0 = comp + cl * mapsz;
 				c1 = comp + cg * mapsz;
 				cv = comp + v * mapsz;
@@ -817,16 +809,12 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 					if (!hamm(cv, mapsz)) break; /* last component */
 					cv = comp + v * mapsz;
 				}
-				dump_components(comp, cmax, mapsz); // FIXME
 				for (size_t x = 0; x < mapsz; x++) {
-					fprintf(stderr, "%i | %i == %i\n", c0[x], c1[x], c0[x] | c1[x]);
 					c0[x] |= c1[x];
 					c1[x] = 0;
 					/* swap deleted component to end */
-					if (cv != c1) c1[x] = cv[x]; //SWAP(c1[x], cv[x]);
+					if (cv != c1) SWAP(c1[x], cv[x]);
 				}
-				fprintf(stderr, "merged:\n");
-				dump_components(comp, cmax, mapsz); // FIXME
 			}
 		}
 	}
@@ -850,25 +838,26 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 
 	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
 		rq_graph_components(A, comp, cmax, mapsz, *i, *u);
+#if TEST_DEBUG
 		dump_components(comp, cmax, mapsz);
+#endif
 		/* all entries of V are zero => FAIL */
 		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg, comp, cmax, mapsz)) == -1) return -1;
 		assert(row >= *i);
-
-		//fprintf(stderr, "row %i chosen with r=%i (i = %u, u = %i)\n", row, r, *i, *u);
 
 		/* the first row of A that intersects V is exchanged with the
 		 * chosen row so that the chosen row is the first row that
 		 * intersects V. */
 		if (*i != row) {
-			//fprintf(stderr, "swapping row %i with %i\n", *i, row);
 			matrix_swap_rows(A, *i, row);
 			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
 		}
 
+#if TEST_DEBUG
 		fprintf(stderr, "row swaps done:\n");
 		matrix_dump(A, stderr);
+#endif
 
 		/* The columns of A among those that intersect V are
 		 * reordered so that one of the r nonzeros in the chosen row
@@ -892,6 +881,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			}
 		}
 
+#if TEST_DEBUG
 		fprintf(stderr, "col swaps done (i = %u, u = %i, r = %i)\n", *i, *u, r);
 
 		matrix_t tmp = matrix_submatrix(A, 0, 0, *i + 1, Vmax);
@@ -904,6 +894,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		matrix_dump(&tmp, stderr);
 
 		matrix_dump(A, stderr);
+#endif
 
 		/* Then, an appropriate multiple of the chosen row is added
 		 * to all the other rows of A below the chosen row that have a
@@ -923,15 +914,22 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			}
 		}
 
+#if TEST_DEBUG
 		fprintf(stderr, "multiples added:\n");
 		matrix_dump(A, stderr);
+#endif
 
 		/* i is incremented by 1 and u is incremented by r-1 */
 		(*i)++;
 		(*u) += r - 1;
+
+#if TEST_DEBUG
 		fprintf(stderr, "i=%i, u=%i\n", *i, *u);
+#endif
 	}
+#if TEST_DEBUG
 	fprintf(stderr, "i=%i, u=%i, L = %u\n", *i, *u, rq->L);
+#endif
 
 	/* trim X  - this is Phase 2 */
 	//X->rows = *i;
