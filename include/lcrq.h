@@ -75,7 +75,7 @@ int rq_deg(const rq_t *rq, const int v);
 rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
 
 void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt);
-matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk);
+matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
 matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
 uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym);
 
@@ -109,6 +109,9 @@ int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
 int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep);
+
+uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc);
+
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 		uint32_t nesi);
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u);

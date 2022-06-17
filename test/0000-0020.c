@@ -34,18 +34,27 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
-static int decodeC(rq_t *rq, matrix_t *A, uint8_t *src, uint8_t *C1)
+static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 {
-	matrix_t D = rq_matrix_D(rq, src);
-	matrix_op_t *op = A->sched->op;
-	int *d = A->sched->P;
-	int *c = A->sched->Q;
-	uint8_t *C2 = calloc(rq->L, rq->T);
+	uint8_t *C2 = NULL;
 
-	test_assert(!memcmp(C1, C2, rq->L * rq->T), "intermediate symbols match");
+	fprintf(stderr, "Schedule:\n");
+	matrix_schedule_dump(rq->sched, stderr);
+
+	C2 = rq_decode_C(rq, enc);
+	test_assert(C2 != NULL, "rq_decode_C()");
+
+	fprintf(stderr, "C (original intermediate symbols):\n");
+	uint8_t *ptr = C1;
+	for (uint32_t i = 0; i < rq->L; i++) {
+		rq_dump_symbol(rq, ptr, stderr);
+		ptr += rq->T;
+	}
+
+	if (C2) test_assert(!memcmp(C1, C2, rq->L * rq->T), "intermediate symbols match");
 
 	free(C2);
-	matrix_free(&D);
+
 	return 0;
 }
 
@@ -91,9 +100,6 @@ static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	matrix_t I_u = matrix_submatrix(A, i, i, u, u);
 
 #if TEST_DEBUG
-	fprintf(stderr, "X (i x i):\n");
-	matrix_dump(X, stderr);
-
 	fprintf(stderr, "U (upper):\n");
 	matrix_dump(&U_upper, stderr);
 
@@ -110,6 +116,9 @@ static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 #if TEST_DEBUG
 	fprintf(stderr, "A (%i x %i):\n", A->rows, A->cols);
 	matrix_dump(A, stderr);
+
+	fprintf(stderr, "X (i x i):\n");
+	matrix_dump(X, stderr);
 #endif
 	if (rc == 0) {
 		/* Post Phase-2 tests */
@@ -146,6 +155,8 @@ static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	rc = rq_decoder_rfc6330_phase1(rq, X, A, i, u);
 
 	test_assert(rc == 0, "rq_decoder_rfc6330_phase1 returned 0");
+
+	matrix_schedule_dump(rq->sched, stderr);
 
 	/* Tests at the end of the First Phase: */
 	test_assert(X->rows == A->rows, "X.rows == A.rows");
@@ -248,6 +259,14 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		matrix_t A, X;
 		int i, u;
 		rq_t *rq = rq_init(F, T); assert(rq);
+		rq->sched = malloc(sizeof(matrix_sched_t));
+		memset(rq->sched, 0, sizeof(matrix_sched_t));
+		if (!rq->sched) {
+			rq_free(rq);
+			return -1;
+		}
+
+		assert(enc);
 
 		rc = phase_1(rq, &A, &X, &i, &u, enc, ESI, nesi);
 		test_assert(rc == 0, "Phase 1");
@@ -255,7 +274,7 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		test_assert(rc == 0, "Phase 2");
 		rc = phase_3(rq, &A, &X, i, u);
 		test_assert(rc == 0, "Phase 3");
-		rc = decodeC(rq, &A, src, C.base);
+		rc = decodeC(rq, enc, C.base);
 		test_assert(rc == 0, "Decode C");
 		matrix_free(&X);
 		matrix_free(&A);

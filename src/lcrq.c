@@ -210,7 +210,7 @@ int rq_encode_data(rq_t *rq, uint8_t *data, size_t len)
 			srcblk = padblk;
 		}
 		rq_generate_matrix_A(rq, &A, rq->KP);
-		D = rq_matrix_D(rq, srcblk);
+		D = rq_matrix_D(rq, srcblk, rq->K);
 		rq_intermediate_symbols(&A, &D, base);
 		matrix_free(&D);
 		matrix_free(&A);
@@ -423,18 +423,19 @@ void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt)
 /* 5.3.3.4.2
  * D denote the column vector consisting of S+H zero symbols followed
 	by the K' source symbols C'[0], C'[1], ..., C'[K'-1] */
-matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk)
+matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, const uint32_t N)
 {
+	uint32_t M = rq->S + rq->H + N + rq->KP - rq->K;
 	uint8_t *ptr;
 	matrix_t D = {0};
 
 	assert(rq->KP + rq->S + rq->H == rq->L);
-	matrix_new(&D, rq->L, rq->T, NULL);
+	matrix_new(&D, M, rq->T, NULL);
 	matrix_zero(&D);
 	/* first S + H symbols are zero */
 	ptr = D.base + (rq->S + rq->H) * rq->T * sizeof(uint8_t);
-	/* copy K symbols of size T into D */
-	memcpy(ptr, blk, rq->K * rq->T);
+	/* copy N symbols of size T into D */
+	memcpy(ptr, blk, N * rq->T);
 
 	return D;
 }
@@ -622,10 +623,101 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
+uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
+{
+	matrix_t C = {0};
+	matrix_t D = {0};
+	uint32_t M = rq->S + rq->H + rq->Nesi;
+	int d[M];
+	int c[rq->L];
+
+	//D = rq_matrix_D(rq, enc, rq->nrep); /* FIXME spacing incorrect */
+
+	/* D should have S + H zero symbols, followed by the LT symbols,
+	 * including padding symbols. So with no source symbols, we leave a gap
+	 * of K' - K before filling the remaining rows with our repair symbols.  */
+
+	/* FIXME FIXME FIXME
+	 * A looks to be correct, as does D.
+	 * Solving is working - A reduces to identity
+	 * Decoding schedule is plausible, but needs checking
+	 * Replay of decoding schedule on D looks correct
+	 * Problem is likely in decoding schedule somewhere */
+
+	matrix_new(&D, M, rq->T, NULL);
+	matrix_zero(&D);
+	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
+	uint8_t *ptr = D.base + off * rq->T;
+	memcpy(ptr, enc, rq->nrep * rq->T);
+
+	fprintf(stderr, "D (%i x %i)  (before decoding):\n", D.rows, D.cols);
+	matrix_dump(&D, stderr);
+
+	for (uint32_t i = 0; i < rq->L; i++) c[i] = i;
+	for (uint32_t i = 0; i < M; i++) d[i] = i;
+
+	uint8_t type = 0;
+	matrix_op_t *o;
+	for (uint8_t *op = rq->sched->base; *op; op += reclen[type]) {
+		type = (*op) & 0x07;
+		o = (matrix_op_t *)op;
+		switch (type) {
+			/* Each time a multiple, beta, of row i of A is added to
+			 * row i' in the decoding schedule, then in the decoding
+			 * process the symbol beta*D[d[i]] is added to symbol * D[d[i']] */
+			case MATRIX_OP_ADD:
+				fprintf(stderr, "ADDING d[%u]=%u %u c[%u]=%u %u\n", o->add.dst,
+						d[o->add.dst], o->add.off, o->add.src,
+						d[o->add.src], o->add.beta);
+				assert(d[o->add.dst] < D.rows);
+				matrix_row_mul_byrow(&D, d[o->add.dst], o->add.off,
+						d[o->add.src], o->add.beta);
+				break;
+			/* Each time a row i of A is multiplied by an octet
+			 * beta, then in the decoding process the symbol D[d[i]]
+			 * is also multiplied by beta.  */
+			case MATRIX_OP_MUL:
+				fprintf(stderr, "MULLING d[%u]=%u x %u\n", o->mul.dst, d[o->mul.dst],
+						o->mul.beta);
+				matrix_row_mul(&D, d[o->mul.dst], 0, o->mul.beta);
+				break;
+			/* Each time row i is exchanged with row i' in the
+			 * decoding schedule, then in the decoding process the
+			 * value of d[i] is exchanged with the value of d[i'] */
+			case MATRIX_OP_ROW:
+				fprintf(stderr, "ROWSW a = %u, b = %u\n", o->swp.a, o->swp.b);
+				SWAP(d[o->swp.a], d[o->swp.b]);
+				break;
+			/* Each time column j is exchanged with column j' in the
+			 * decoding schedule, then in the decoding process the
+			 * value of c[j] is exchanged with the value of c[j'] */
+			case MATRIX_OP_COL:
+				fprintf(stderr, "COLSW a = %u, b = %u\n", o->swp.a, o->swp.b);
+				SWAP(c[o->swp.a], c[o->swp.b]);
+				break;
+		}
+	}
+	fprintf(stderr, "D (decoded):\n");
+	matrix_dump(&D, stderr);
+
+	/* the L symbols D[d[0]], D[d[1]], ..., D[d[L-1]] are the values of the
+	 *     L symbols C[c[0]], C[c[1]], ..., C[c[L-1]] */
+	matrix_new(&C, rq->L, rq->T, NULL);
+	matrix_zero(&C);
+	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], &D, d[i]);
+
+	fprintf(stderr, "C (decoded):\n");
+	matrix_dump(&C, stderr);
+
+	matrix_free(&D);
+
+	return C.base;
+}
+
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
 {
 	/* FIXME - temp - lets just solve this by brute force, then optimize after */
-	int rank = matrix_gauss_elim(A);
+	int rank = matrix_gauss_elim(A, rq->sched);
 	if (rank < rq->L) return -1;
 	return 0;
 }
@@ -636,7 +728,7 @@ int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u
 	X->rows = *i; X->cols = *i;
 
 	matrix_t U_lower = matrix_submatrix(A, *i, *i, A->rows - *i, *u);
-	int rank = matrix_gauss_elim(&U_lower);
+	int rank = matrix_gauss_elim(&U_lower, rq->sched);
 	matrix_free(&U_lower);
 	if (rank < *u) return -1; /* decoding failure */
 	A->rows = rq->L; /* discard surplus rows */
@@ -664,7 +756,8 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	rq->Nesi = nesi + rq->KP - rq->K;
 
 	rq_decoding_matrix_A(rq, A, &sym, &rep);
-	matrix_schedule_init(A, rq->S + rq->H + rq->Nesi, rq->L);
+	assert(rq->sched);
+	matrix_schedule_init(rq->sched);
 }
 
 /*
@@ -868,7 +961,8 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			matrix_swap_rows(A, *i, row);
 			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
-			SCHED_ROWSWAP(A, *i, row);
+			fprintf(stderr, "ROWSWAP %u, %u\n", *i, row);
+			matrix_sched_row(rq->sched, (uint16_t)*i, (uint16_t)row);
 		}
 
 #if TEST_DEBUG
@@ -894,7 +988,8 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 				}
 				matrix_swap_cols(A, col, j);
 				matrix_swap_cols(X, col, j);
-				SCHED_COLSWAP(A, col, j);
+				matrix_sched_col(rq->sched, (uint16_t)col, (uint16_t)j);
+				fprintf(stderr, "COLSWAP %u, %u\n", (uint16_t)col, (uint16_t)j);
 				if (r == ++rr) break;
 			}
 		}
@@ -929,7 +1024,10 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			if (beta) {
 				const uint8_t f = GF256DIV(beta, alpha);
 				matrix_row_mul_byrow(A, x, ip, ip, f);
-				SCHED_ROWMUL(A, x, ip, f);
+				assert(ip < UINT16_MAX);
+				assert(x < UINT16_MAX);
+				fprintf(stderr, "ADD %u %u %u %u\n", (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
+				matrix_sched_add(rq->sched, (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
 			}
 		}
 
@@ -1003,6 +1101,8 @@ void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream)
 void rq_free(rq_t *rq)
 {
 	if (rq) {
+		matrix_schedule_free(rq->sched);
+		free(rq->sched);
 		free(rq->C);
 		free(rq);
 	}

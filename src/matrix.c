@@ -2,18 +2,25 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include <matrix.h>
-#include <assert.h>
 #include <gf256.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <unistd.h>
+
+uint8_t reclen[5] = {
+	0, /* NOOP */
+	sizeof(matrix_op_swap_t),
+	sizeof(matrix_op_swap_t),
+	sizeof(matrix_op_add_t),
+	sizeof(matrix_op_mul_t)
+};
 
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base)
 {
 	mat->rows = rows;
 	mat->cols = cols;
 	mat->trans = 0;
-	mat->sched = NULL;
 	mat->stride = (size_t)cols * sizeof(uint8_t);
 	mat->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
 	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
@@ -34,14 +41,8 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 		.cols = c,
 		.base = A->base + roff * A->stride + coff,
 		.trans = A->trans,
-		.stride = A->stride
+		.stride = A->stride,
 	};
-	if (A->sched) {
-		sub.sched = calloc(1, sizeof(matrix_sched_t));
-		sub.sched->P = A->sched->P + off_rows;
-		sub.sched->Q = A->sched->Q + off_cols;
-		sub.sched->op = A->sched->op + off_rows;
-	}
 	return sub;
 }
 
@@ -116,7 +117,9 @@ void matrix_dump(matrix_t *mat, FILE *stream)
 	fprintf(stream, "\n");
 	for (int r = 0; r < matrix_rows(mat); r++) {
 		for (int c = 0; c < matrix_cols(mat); c++) {
-			fprintf(stream, " %02x", matrix_get(mat, r, c));
+			const uint8_t v = matrix_get(mat, r, c);
+			if (!v) fprintf(stream, " --");
+			else fprintf(stream, " %02x", matrix_get(mat, r, c));
 		}
 		fprintf(stream, "\n");
 	}
@@ -354,9 +357,10 @@ void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val
 
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
+	int mcols = matrix_cols(m);
 	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
 	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
-	for (int col = off; col < m->cols; col++) {
+	for (int col = off; col < mcols; col++) {
 		if (*sptr && factor) {
 			uint8_t f = GF256MUL(*sptr, factor);
 			if (f) *dptr ^= f;
@@ -393,20 +397,43 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 	}
 }
 
+static int matrix_pivot_sched(matrix_t *A, int j, matrix_sched_t *sched)
+{
+	const int Arows = matrix_rows(A);
+	const int Acols = matrix_cols(A);
+	for (int col = j; col < Acols; col++) {
+		for (int row = j; row < Arows; row++) {
+			if (matrix_get_s(A, row, j)) {
+				/* pivot found, move in place, update P+Q */
+				if (row != j) {
+					matrix_swap_rows(A, row, j);
+					if (sched) matrix_sched_row(sched, row, j);
+				}
+				if (col != j) {
+					matrix_swap_cols(A, col, j);
+					if (sched) matrix_sched_row(sched, col, j);
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 /* reduce matrix to identity, track operations in matrix schedule, return rank */
-int matrix_gauss_elim(matrix_t *A)
+int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 {
 	int j;
 
 	/* lower echelon form */
 	for (j = 0; j < A->cols; j++) {
-		if (!matrix_pivot(A, j, A->sched->P, A->sched->Q)) break;
+		if (!matrix_pivot_sched(A, j, sched)) break;
 		/* first, reduce the pivot row so jj = 1 */
 		uint8_t jj = matrix_get(A, j, j);
 		if (jj != 1) {
 			const uint8_t b = GF256INV(jj);
 			matrix_row_mul(A, j, 0, b);
-			SCHED_ROWMUL(A, j, j, b);
+			if (sched) matrix_sched_mul(sched, j, b);
 		}
 		for (int i = j + 1; i < A->rows; i++) {
 			/* add pivot row (j) * factor to row i so that ij == 0 */
@@ -414,7 +441,7 @@ int matrix_gauss_elim(matrix_t *A)
 			const uint8_t ij = matrix_get(A, i, j);
 			const uint8_t f = gf256_div(ij, jj);
 			matrix_row_mul_byrow(A, i, 0, j, f);
-			SCHED_ROWMUL(A, i, j, f);
+			if (sched) matrix_sched_add(sched, i, 0, j, f);
 		}
 	}
 	/* finish upper triangle */
@@ -424,7 +451,7 @@ int matrix_gauss_elim(matrix_t *A)
 			const uint8_t jj = matrix_get(A, j, j);
 			const uint8_t f = gf256_div(ij, jj);
 			matrix_row_mul_byrow(A, i, 0, j, f);
-			SCHED_ROWMUL(A, i, j, f);
+			if (sched) matrix_sched_add(sched, i, 0, j, f);
 		}
 	}
 
@@ -496,41 +523,157 @@ void matrix_transpose(matrix_t *mat)
 	mat->trans = !(mat->trans);
 }
 
-void *matrix_schedule_free(matrix_sched_t *sched)
+static matrix_op_t *matrix_sched_op(matrix_sched_t *sched, uint8_t optype)
 {
-	if (sched) {
-		free(sched->op);
-		free(sched->Q);
-		free(sched->P);
+	uint8_t lasttype;
+	matrix_op_t *op;
+resized:
+	lasttype = *(sched->last) & 0x07;
+	op = (matrix_op_t *)(sched->last + reclen[lasttype]);
+	if (sched->len <= (size_t)(sched->last - sched->base + reclen[lasttype] + reclen[optype])) {
+		matrix_schedule_resize(sched);
+		goto resized;
 	}
-	free(sched);
-	return NULL;
+	op->swp.type = (lasttype << 4) | optype;
+	sched->last = (uint8_t *)op;
+	(sched->ops)++;
+	return op;
 }
 
-matrix_sched_t *matrix_schedule_init(matrix_t *m, uint32_t rows, uint32_t cols)
+void matrix_sched_add(matrix_sched_t *sched, uint16_t dst, uint16_t off, uint16_t src, uint8_t beta)
 {
-	matrix_sched_t *s = calloc(1, sizeof(matrix_sched_t));
-	if (s) {
-		if (!(s->P = calloc(rows, sizeof(int))))
-			return matrix_schedule_free(s);
-		if (!(s->Q = calloc(cols, sizeof(int))))
-			return matrix_schedule_free(s);
-		if (!(s->op = calloc(rows, sizeof(matrix_op_t))))
-			return matrix_schedule_free(s);
-		for (uint32_t i = 0; i < cols; i++) s->Q[i] = i;
-		for (uint32_t i = 0; i < rows; i++) s->P[i] = i;
-		if (m) m->sched = s;
+	matrix_op_add_t *op = (matrix_op_add_t *)matrix_sched_op(sched, MATRIX_OP_ADD);
+	op->dst = dst;
+	op->src = src;
+	op->beta = beta;
+	op->off = off;
+}
+
+void matrix_sched_mul(matrix_sched_t *sched, uint16_t dst, uint8_t beta)
+{
+	matrix_op_mul_t *op = (matrix_op_mul_t *)matrix_sched_op(sched, MATRIX_OP_MUL);
+	op->dst = dst;
+	op->beta = beta;
+}
+
+static void matrix_sched_swap(matrix_sched_t *sched, uint16_t a, uint16_t b, uint8_t optype)
+{
+	matrix_op_swap_t *op = (matrix_op_swap_t *)matrix_sched_op(sched, optype);
+	op->a = a;
+	op->b = b;
+}
+
+void matrix_sched_row(matrix_sched_t *sched, uint16_t a, uint16_t b)
+{
+	matrix_sched_swap(sched, a, b, MATRIX_OP_ROW);
+}
+
+void matrix_sched_col(matrix_sched_t *sched, uint16_t a, uint16_t b)
+{
+	matrix_sched_swap(sched, a, b, MATRIX_OP_COL);
+}
+
+void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream)
+{
+	uint8_t type;
+	matrix_op_t *o;
+	fprintf(stream, "-- schedule begins --\n");
+	for (uint8_t *op = sched->base; *op; op += reclen[type]) {
+		o = (matrix_op_t *)op;
+		type = (*op) & 0x07;
+		switch (type) {
+		case MATRIX_OP_NOOP:
+			fprintf(stream, "NOOP\n");
+			break;
+		case MATRIX_OP_ROW:
+			fprintf(stream, "OP_ROW %u %u\n", o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_COL:
+			fprintf(stream, "OP_COL %u %u\n", o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_ADD:
+			fprintf(stream, "OP_ADD %u %u %u %u\n", o->add.dst, o->add.off,
+					o->add.src, o->add.beta);
+			break;
+		case MATRIX_OP_MUL:
+			fprintf(stream, "OP_MUL %u %u\n", o->mul.dst, o->mul.beta);
+			break;
+		default:
+			assert(0); /* MUST not occur */
+		}
 	}
-	return s;
+	fprintf(stream, "-- schedule ends -- (%zu bytes, %zu ops)\n", sched->len, sched->ops);
+}
+
+void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched)
+{
+	uint8_t type;
+	matrix_op_t *o;
+	fprintf(stderr, "-- replay begins --\n");
+	for (uint8_t *op = sched->base; *op; op += reclen[type]) {
+		o = (matrix_op_t *)op;
+		type = (*op) & 0x07;
+		switch (type) {
+		case MATRIX_OP_NOOP:
+			fprintf(stderr, "NOOP\n");
+			break;
+		case MATRIX_OP_ROW:
+			fprintf(stderr, "OP_ROW %u %u\n", o->swp.a, o->swp.b);
+			matrix_swap_rows(m, o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_COL:
+			fprintf(stderr, "OP_COL %u %u\n", o->swp.a, o->swp.b);
+			matrix_swap_cols(m, o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_ADD:
+			fprintf(stderr, "OP_ADD %u %u %u %u\n", o->add.dst, o->add.off,
+					o->add.src, o->add.beta);
+			matrix_row_mul_byrow(m, o->add.dst, o->add.off, o->add.src, o->add.beta);
+			break;
+		case MATRIX_OP_MUL:
+			fprintf(stderr, "OP_MUL %u %u\n", o->mul.dst, o->mul.beta);
+			matrix_row_mul(m, o->mul.dst, 0, o->mul.beta);
+			break;
+		default:
+			assert(0); /* MUST not occur */
+		}
+	}
+	fprintf(stderr, "-- replay ends -- (%zu bytes, %zu ops)\n", sched->len, sched->ops);
+}
+
+void matrix_schedule_free(matrix_sched_t *sched)
+{
+	if (sched) {
+		free(sched->base);
+		sched->base = NULL;
+	}
+}
+
+uint8_t *matrix_schedule_resize(matrix_sched_t *sched)
+{
+	uint8_t *ptr;
+	long sz;
+	if ((sz = sysconf(_SC_PAGESIZE)) == -1) return NULL;
+	ptr = realloc(sched->base, sched->len + (size_t)sz);
+	if (ptr) {
+		if (sched->base) sched->last = ptr + (sched->last - sched->base);
+		else sched->last = ptr;
+		sched->base = ptr;
+		memset(ptr + sched->len, 0, sz);
+		sched->len += sz;
+	}
+	return ptr;
+}
+
+uint8_t *matrix_schedule_init(matrix_sched_t *sched)
+{
+	sched->base = matrix_schedule_resize(sched);
+	if (sched->base) sched->last = sched->base;
+	return sched->base;
 }
 
 void matrix_free(matrix_t *m)
 {
-	if (m->sched) {
-		if (m->size) matrix_schedule_free(m->sched);
-		/* if submatrix (size == 0), shallow free */
-		else free(m->sched);
-	}
 	if (m->size) free(m->base);
 	m->base = NULL;
 }

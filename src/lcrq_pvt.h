@@ -756,25 +756,8 @@ static const t2_t T2[] = {
 	{56403, 471, 907, 16, 56951}
 };
 
-typedef struct rq_op_s {
-	int     isrc; /* source row */
-	int     idst; /* dest row */
-	uint8_t beta; /* factor to multiply source row by */
-} rq_op_t;
-
-/* Decoding Schedule (5.4.2)
- * our schedule needs to track row and col swaps and row operations
- * a row operation could be adding or multiplying
- *
- * RFC uses c, d */
-typedef struct rq_sched_s {
-	int     *d; /* vector to track row swaps (P) */
-	int     *c; /* vector to track col swaps (Q) */
-	int     *R; /* vector to track row multiplications */
-	rq_op_t *S; /* vector to track row additions */
-} rq_sched_t;
-
 struct rq_s {
+	matrix_sched_t *sched;
 	part_t src_part;
 	part_t sub_part;
 	uint8_t *obj; /* pointer to source object data */

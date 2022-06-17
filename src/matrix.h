@@ -4,6 +4,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H 1
 
+#include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -34,31 +35,55 @@
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
-#define SCHED_ROWSWAP(A, a, b) SWAP((A)->sched->P[(a)], (A)->sched->P[(b)])
-#define SCHED_COLSWAP(A, a, b) SWAP((A)->sched->Q[(a)], (A)->sched->Q[(b)])
-#define SCHED_ROWMUL(A, dst, src, f) do { \
-	(A)->sched->op[(dst)].beta = f; \
-	(A)->sched->op[(dst)].isrc = src; \
-	(A)->sched->op[(dst)].idst = dst; \
-} while(0)
 
+/* schedule is stored as sequential records of matrix_op_*_t
+ * the lower 4 bits of uchar type indicate the type of the following record
+ * the upper 4 bits are the type of the previous record, so it is possible to
+ * traverse the records in reverse */
+enum {
+	MATRIX_OP_NOOP = 0x0, /* end of records */
+	MATRIX_OP_ROW  = 0x1,
+	MATRIX_OP_COL  = 0x2,
+	MATRIX_OP_ADD  = 0x3,
+	MATRIX_OP_MUL  = 0x4
+};
+extern uint8_t reclen[5];
 
-/* track row operations (beta * source row added to destination row) */
-typedef struct matrix_op_s {
-	int     isrc; /* source row */
-	int     idst; /* destination row */
-	uint8_t beta; /* multiplication factor */
+typedef struct matrix_op_add_s {
+	uint8_t type;
+	uint8_t beta;
+	uint16_t dst;
+	uint16_t src;
+	uint16_t off;
+} matrix_op_add_t;
+
+typedef struct matrix_op_mul_s {
+	uint8_t type;
+	uint8_t beta;
+	uint16_t dst;
+} matrix_op_mul_t;
+
+typedef struct matrix_op_swap_s {
+	uint8_t type;
+	uint16_t a;
+	uint16_t b;
+} matrix_op_swap_t;
+
+typedef union {
+	matrix_op_add_t add;
+	matrix_op_mul_t mul;
+	matrix_op_swap_t swp;
 } matrix_op_t;
 
 typedef struct matrix_sched_s {
-	int          *P; /* row permutations */
-	int          *Q; /* col permutations */
-	matrix_op_t *op; /* row operation */
+	uint8_t *base;
+	uint8_t *last;
+	size_t len;
+	size_t ops;
 } matrix_sched_t;
 
 typedef struct matrix_s {
 	uint8_t *base;
-	matrix_sched_t *sched;
 	size_t   stride;
 	size_t   size;
 	int      rows;
@@ -71,8 +96,16 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);
 
-matrix_sched_t *matrix_schedule_init(matrix_t *m, uint32_t rows, uint32_t cols);
-void *matrix_schedule_free(matrix_sched_t *sched);
+uint8_t *matrix_schedule_init(matrix_sched_t *sched);
+uint8_t *matrix_schedule_resize(matrix_sched_t *sched);
+void matrix_schedule_free(matrix_sched_t *sched);
+void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream);
+void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched);
+
+void matrix_sched_row(matrix_sched_t *sched, uint16_t a, uint16_t b);
+void matrix_sched_col(matrix_sched_t *sched, uint16_t a, uint16_t b);
+void matrix_sched_add(matrix_sched_t *sched, uint16_t dst, uint16_t off, uint16_t src, uint8_t beta);
+void matrix_sched_mul(matrix_sched_t *sched, uint16_t dst, uint8_t beta);
 
 /* Zero matrix row. Ignores transposition. Returns pointer to row */
 uint8_t *matrix_zero_row(matrix_t *m, int row);
@@ -119,8 +152,7 @@ matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2);
 
 int matrix_pivot(matrix_t *A, int j, int P[], int Q[]);
 
-
-int matrix_gauss_elim(matrix_t *A);
+int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched);
 
 /* peform LU decomposition on matrix A, storing combined LU factors in LU and
  * row and col permutations in P + Q. Return matrix rank */

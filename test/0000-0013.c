@@ -153,7 +153,7 @@ int main(void)
 		matrix_dump(&A, stderr);
 
 		test_log("generating matrix D\n");
-		D = rq_matrix_D(rq, srcblk);
+		D = rq_matrix_D(rq, srcblk, rq->K);
 		test_assert(D.rows = rq->L, "D has L rows");
 		test_assert(D.cols = rq->T, "D has T cols");
 		matrix_dump(&D, stderr);
