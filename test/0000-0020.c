@@ -34,7 +34,21 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
-int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
+static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
+{
+	matrix_t U_upper = matrix_submatrix(A, 0, i, i, u);
+
+	// TODO
+
+	fprintf(stderr, "U_upper (%i x %i):\n", U_upper.rows, U_upper.cols);
+	matrix_dump(&U_upper, stderr);
+
+	matrix_free(&U_upper);
+
+	return 0;
+}
+
+static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 {
 	int rc = 0;
 
@@ -79,7 +93,7 @@ int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	return rc;
 }
 
-int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
+static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 		uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *dec;
@@ -156,7 +170,7 @@ int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	return rc;
 }
 
-uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
+static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 {
 	uint8_t *enc;
 	uint8_t sbn = 0; /* FIXME - hardcoded SBN */
@@ -175,7 +189,7 @@ uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	return enc;
 }
 
-int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
+static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 {
 	rq_t *rq;
 	int nesi;
@@ -203,6 +217,8 @@ int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		test_assert(rc == 0, "Phase 1");
 		rc = phase_2(rq, &A, &X, i, u);
 		test_assert(rc == 0, "Phase 2");
+		rc = phase_3(rq, &A, &X, i, u);
+		test_assert(rc == 0, "Phase 3");
 		matrix_free(&X);
 		matrix_free(&A);
 		rq_free(rq);
