@@ -36,16 +36,34 @@ uint8_t *generate_source_object(size_t F)
 
 static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 {
+	int rc = 0;
+
 	matrix_t U_upper = matrix_submatrix(A, 0, i, i, u);
 
-	// TODO
+	/* TODO the matrix X is multiplied with the submatrix of A consisting of
+	 * the first i rows of A */
 
 	fprintf(stderr, "U_upper (%i x %i):\n", U_upper.rows, U_upper.cols);
 	matrix_dump(&U_upper, stderr);
 
+	rc = rq_decoder_rfc6330_phase3(rq, A, X, &i, &u);
+	test_assert(rc == 0, "rq_decoder_rfc6330_phase2() returned %i", rc);
+
+	/* TODO After this operation, the submatrix of A consisting of the
+	 * intersection of the first i rows and columns equals to X, whereas the
+	 * matrix U_upper is transformed to a sparse form. */
+
+	/* FIXME - temp - lets just solve this by brute force, then optimize after */
+
+
 	matrix_free(&U_upper);
 
-	return 0;
+	fprintf(stderr, "A (%i x %i):\n", A->rows, A->cols);
+	matrix_dump(A, stderr);
+
+	test_assert(matrix_is_identity(A), "A is identity matrix");
+
+	return rc;
 }
 
 static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)

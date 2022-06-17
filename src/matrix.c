@@ -129,6 +129,25 @@ void matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t
 	matrix_set(mat, row, col, sum);
 }
 
+matrix_t *matrix_multiply_inplace(const matrix_t *x, matrix_t *y)
+{
+	const int yrows = matrix_rows(y);
+	const int xcols = matrix_cols(x);
+
+	assert(xcols == yrows);
+
+	for (int i = 0; i < yrows; i++) {
+		for (int j = 0; j < xcols; j++) {
+			for (int k = 0; k < xcols; k++) {
+				uint8_t *a = MADDR(y, k, j);
+				const uint8_t b = matrix_get(x, i, k);
+				*a ^= GF256MUL(*a, b);
+			}
+		}
+	}
+	return y;
+}
+
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p)
 {

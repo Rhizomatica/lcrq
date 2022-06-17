@@ -622,6 +622,14 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
+int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
+{
+	/* FIXME - temp - lets just solve this by brute force, then optimize after */
+	int rank = matrix_gauss_elim(A);
+	if (rank < rq->L) return -1;
+	return 0;
+}
+
 int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
 {
 	/* trim X */

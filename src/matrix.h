@@ -108,6 +108,8 @@ matrix_t matrix_add(const matrix_t *x, const matrix_t *y);
 /* increment element by val using GF(256) addition */
 void matrix_inc_gf256(matrix_t *mat, const int row, const int col, const uint8_t val);
 
+matrix_t *matrix_multiply_inplace(const matrix_t *x, matrix_t *y);
+
 /* GF(256) dot product of x and y returned in p. Allocate p->base if required */
 matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *p);
 
