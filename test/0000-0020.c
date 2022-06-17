@@ -34,6 +34,21 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
+static int decodeC(rq_t *rq, matrix_t *A, uint8_t *src, uint8_t *C1)
+{
+	matrix_t D = rq_matrix_D(rq, src);
+	matrix_op_t *op = A->sched->op;
+	int *d = A->sched->P;
+	int *c = A->sched->Q;
+	uint8_t *C2 = calloc(rq->L, rq->T);
+
+	test_assert(!memcmp(C1, C2, rq->L * rq->T), "intermediate symbols match");
+
+	free(C2);
+	matrix_free(&D);
+	return 0;
+}
+
 static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 {
 	int rc = 0;
@@ -210,6 +225,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 {
 	rq_t *rq;
+	matrix_t C;
 	int nesi;
 	int rc;
 
@@ -222,6 +238,8 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 	}
 	rc = rq_encode_data(rq, src, F);
 	test_assert(rc == 0, "rq_encode_data");
+
+	C = rq_matrix_C_by_SBN(rq, 0);
 
 	nesi = rq->KP + overhead; /* NB: overhead is over and above K', not K */
 	if (!rc) {
@@ -237,6 +255,8 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		test_assert(rc == 0, "Phase 2");
 		rc = phase_3(rq, &A, &X, i, u);
 		test_assert(rc == 0, "Phase 3");
+		rc = decodeC(rq, &A, src, C.base);
+		test_assert(rc == 0, "Decode C");
 		matrix_free(&X);
 		matrix_free(&A);
 		rq_free(rq);

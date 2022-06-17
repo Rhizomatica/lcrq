@@ -78,7 +78,7 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 	return (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m;
 }
 
-static matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN)
+matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN)
 {
 	matrix_t C = {0};
 	assert(rq->C);
