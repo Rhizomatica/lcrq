@@ -150,6 +150,7 @@ static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	fprintf(stderr, "Matrix A (%i x %i)\n", A->rows, A->cols);
 	matrix_dump(A, stderr);
 #endif
+	matrix_t B = matrix_dup(&A); // FIXME - temp
 
 	*i = 0, *u = rq->P;
 	rc = rq_decoder_rfc6330_phase1(rq, X, A, i, u);
