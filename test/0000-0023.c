@@ -13,7 +13,7 @@ int main(void)
 {
 	loginit();
 
-	test_name("Decoding Schedule replay");
+	return test_skip("Decoding Schedule replay");
 
 	/* create a matrix with some data */
 	matrix_t A = {0};

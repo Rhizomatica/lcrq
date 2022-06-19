@@ -106,7 +106,7 @@ int main(void)
 	int rc;
 
 	loginit();
-	test_name("Encoder Size Tests");
+	return test_skip("Encoder Size Tests");
 	for (overhead = OMIN; overhead <= OMAX; overhead++) {
 		for (int T = TMIN; T <= TMAX; T *= RQ_AL) {
 			for (size_t F = FMIN; F <= FMAX; F++) {
