@@ -781,7 +781,7 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue;
 		for (int y = i; y < A->cols - u; y++) {
 			if (matrix_get_s(A, x, y)) r_row++;
-			//if (r_row > rp) break; /* too high */
+			if (r_row > rp && r_row > 2) break; /* too high */
 		}
 		if (r_row > 0 && r_row < rp) {
 			/* choose row with minimum original degree */
