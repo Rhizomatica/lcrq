@@ -29,7 +29,7 @@ fixme:
 todo:
 	grep -n TODO src/*.{c,h} test/*.{c,h}
 
-speedtest:
+speedtest: src
 	cd test && $(MAKE) $@
 
 clean realclean:

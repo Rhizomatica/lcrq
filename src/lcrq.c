@@ -870,7 +870,6 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 		int r = 0;
 		uint8_t a = 0, b = 0;
 		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
-		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue; /* skip zeros */
 		for (int y = i; y < A->cols - u; y++) {
 			if (matrix_get_s(A, x, y)) {
 				if (r++ == 0) a = y;
