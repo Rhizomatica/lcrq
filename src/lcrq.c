@@ -631,19 +631,11 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	int d[M];
 	int c[rq->L];
 
-	//D = rq_matrix_D(rq, enc, rq->nrep); /* FIXME spacing incorrect */
-
 	/* D should have S + H zero symbols, followed by the LT symbols,
 	 * including padding symbols. So with no source symbols, we leave a gap
 	 * of K' - K before filling the remaining rows with our repair symbols.  */
 
-	/* FIXME FIXME FIXME
-	 * A is correct, as is D (proven in 0022).
-	 * Solving is working - A reduces to identity
-	 * Decoding schedule is plausible, but needs checking
-	 * Replay of decoding schedule on D is correct (proved in 0022)
-	 * Problem is likely in recording of decoding schedule somewhere */
-
+	//D = rq_matrix_D(rq, enc, rq->nrep); /* FIXME spacing incorrect */
 	matrix_new(&D, M, rq->T, NULL);
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
@@ -666,12 +658,6 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 			 * row i' in the decoding schedule, then in the decoding
 			 * process the symbol beta*D[d[i]] is added to symbol * D[d[i']] */
 			case MATRIX_OP_ADD:
-#if 0
-				fprintf(stderr, "ADDING d[%u]=%u %u c[%u]=%u %u\n", o->add.dst,
-						d[o->add.dst], o->add.off, o->add.src,
-						d[o->add.src], o->add.beta);
-				assert(d[o->add.dst] < D.rows);
-#endif
 				matrix_row_mul_byrow(&D, d[o->add.dst], o->add.off,
 						d[o->add.src], o->add.beta);
 				break;
@@ -679,43 +665,28 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 			 * beta, then in the decoding process the symbol D[d[i]]
 			 * is also multiplied by beta.  */
 			case MATRIX_OP_MUL:
-#if 0
-				fprintf(stderr, "MULLING d[%u]=%u x %u\n", o->mul.dst, d[o->mul.dst],
-						o->mul.beta);
-#endif
 				matrix_row_mul(&D, d[o->mul.dst], 0, o->mul.beta);
 				break;
 			/* Each time row i is exchanged with row i' in the
 			 * decoding schedule, then in the decoding process the
 			 * value of d[i] is exchanged with the value of d[i'] */
 			case MATRIX_OP_ROW:
-#if 0
-				fprintf(stderr, "ROWSW a = %u, b = %u\n", o->swp.a, o->swp.b);
-#endif
 				SWAP(d[o->swp.a], d[o->swp.b]);
 				break;
 			/* Each time column j is exchanged with column j' in the
 			 * decoding schedule, then in the decoding process the
 			 * value of c[j] is exchanged with the value of c[j'] */
 			case MATRIX_OP_COL:
-#if 0
-				fprintf(stderr, "COLSW a = %u, b = %u\n", o->swp.a, o->swp.b);
-#endif
 				SWAP(c[o->swp.a], c[o->swp.b]);
 				break;
 		}
 	}
-	fprintf(stderr, "D (decoded):\n");
-	matrix_dump(&D, stderr);
 
 	/* the L symbols D[d[0]], D[d[1]], ..., D[d[L-1]] are the values of the
 	 *     L symbols C[c[0]], C[c[1]], ..., C[c[L-1]] */
 	matrix_new(&C, rq->L, rq->T, NULL);
 	matrix_zero(&C);
 	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], &D, d[i]);
-
-	fprintf(stderr, "C (decoded):\n");
-	matrix_dump(&C, stderr);
 
 	matrix_free(&D);
 
