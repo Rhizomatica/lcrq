@@ -88,6 +88,8 @@ typedef struct matrix_s {
 	size_t   size;
 	int      rows;
 	int      cols;
+	int      roff;
+	int      coff;
 	int      trans;
 } matrix_t;
 

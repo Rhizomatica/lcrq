@@ -638,11 +638,11 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	 * of K' - K before filling the remaining rows with our repair symbols.  */
 
 	/* FIXME FIXME FIXME
-	 * A looks to be correct, as does D.
+	 * A is correct, as is D (proven in 0022).
 	 * Solving is working - A reduces to identity
 	 * Decoding schedule is plausible, but needs checking
-	 * Replay of decoding schedule on D looks correct
-	 * Problem is likely in decoding schedule somewhere */
+	 * Replay of decoding schedule on D is correct (proved in 0022)
+	 * Problem is likely in recording of decoding schedule somewhere */
 
 	matrix_new(&D, M, rq->T, NULL);
 	matrix_zero(&D);
@@ -666,10 +666,12 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 			 * row i' in the decoding schedule, then in the decoding
 			 * process the symbol beta*D[d[i]] is added to symbol * D[d[i']] */
 			case MATRIX_OP_ADD:
+#if 0
 				fprintf(stderr, "ADDING d[%u]=%u %u c[%u]=%u %u\n", o->add.dst,
 						d[o->add.dst], o->add.off, o->add.src,
 						d[o->add.src], o->add.beta);
 				assert(d[o->add.dst] < D.rows);
+#endif
 				matrix_row_mul_byrow(&D, d[o->add.dst], o->add.off,
 						d[o->add.src], o->add.beta);
 				break;
@@ -677,22 +679,28 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 			 * beta, then in the decoding process the symbol D[d[i]]
 			 * is also multiplied by beta.  */
 			case MATRIX_OP_MUL:
+#if 0
 				fprintf(stderr, "MULLING d[%u]=%u x %u\n", o->mul.dst, d[o->mul.dst],
 						o->mul.beta);
+#endif
 				matrix_row_mul(&D, d[o->mul.dst], 0, o->mul.beta);
 				break;
 			/* Each time row i is exchanged with row i' in the
 			 * decoding schedule, then in the decoding process the
 			 * value of d[i] is exchanged with the value of d[i'] */
 			case MATRIX_OP_ROW:
+#if 0
 				fprintf(stderr, "ROWSW a = %u, b = %u\n", o->swp.a, o->swp.b);
+#endif
 				SWAP(d[o->swp.a], d[o->swp.b]);
 				break;
 			/* Each time column j is exchanged with column j' in the
 			 * decoding schedule, then in the decoding process the
 			 * value of c[j] is exchanged with the value of c[j'] */
 			case MATRIX_OP_COL:
+#if 0
 				fprintf(stderr, "COLSW a = %u, b = %u\n", o->swp.a, o->swp.b);
+#endif
 				SWAP(c[o->swp.a], c[o->swp.b]);
 				break;
 		}
@@ -1023,11 +1031,10 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			const uint8_t beta = matrix_get_s(A, x, ip);
 			if (beta) {
 				const uint8_t f = GF256DIV(beta, alpha);
-				matrix_row_mul_byrow(A, x, ip, ip, f);
-				assert(ip < UINT16_MAX);
-				assert(x < UINT16_MAX);
-				fprintf(stderr, "ADD %u %u %u %u\n", (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
-				matrix_sched_add(rq->sched, (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
+				//matrix_row_mul_byrow(A, x, ip, ip, f);
+				matrix_row_mul_byrow(A, x, 0, ip, f);
+				//matrix_sched_add(rq->sched, (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
+				matrix_sched_add(rq->sched, (uint16_t)x, 0, (uint16_t)ip, f);
 			}
 		}
 

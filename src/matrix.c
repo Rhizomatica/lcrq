@@ -21,6 +21,8 @@ matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *bas
 	mat->rows = rows;
 	mat->cols = cols;
 	mat->trans = 0;
+	mat->roff = 0;
+	mat->coff = 0;
 	mat->stride = (size_t)cols * sizeof(uint8_t);
 	mat->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
 	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
@@ -42,6 +44,8 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 		.base = A->base + roff * A->stride + coff,
 		.trans = A->trans,
 		.stride = A->stride,
+		.roff = roff,
+		.coff = coff,
 	};
 	return sub;
 }
@@ -407,11 +411,12 @@ static int matrix_pivot_sched(matrix_t *A, int j, matrix_sched_t *sched)
 				/* pivot found, move in place, update P+Q */
 				if (row != j) {
 					matrix_swap_rows(A, row, j);
-					if (sched) matrix_sched_row(sched, row, j);
+					//if (sched) matrix_sched_row(sched, row, j);
+					if (sched) matrix_sched_row(sched, A->roff + row, A->roff + j);
 				}
 				if (col != j) {
 					matrix_swap_cols(A, col, j);
-					if (sched) matrix_sched_row(sched, col, j);
+					if (sched) matrix_sched_row(sched, A->coff + col, A->coff + j);
 				}
 				return 1;
 			}
@@ -433,7 +438,7 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 		if (jj != 1) {
 			const uint8_t b = GF256INV(jj);
 			matrix_row_mul(A, j, 0, b);
-			if (sched) matrix_sched_mul(sched, j, b);
+			if (sched) matrix_sched_mul(sched, A->roff + j, b);
 		}
 		for (int i = j + 1; i < A->rows; i++) {
 			/* add pivot row (j) * factor to row i so that ij == 0 */
@@ -441,7 +446,7 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 			const uint8_t ij = matrix_get(A, i, j);
 			const uint8_t f = gf256_div(ij, jj);
 			matrix_row_mul_byrow(A, i, 0, j, f);
-			if (sched) matrix_sched_add(sched, i, 0, j, f);
+			if (sched) matrix_sched_add(sched, A->roff + i, 0, A->roff + j, f);
 		}
 	}
 	/* finish upper triangle */
@@ -451,7 +456,7 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 			const uint8_t jj = matrix_get(A, j, j);
 			const uint8_t f = gf256_div(ij, jj);
 			matrix_row_mul_byrow(A, i, 0, j, f);
-			if (sched) matrix_sched_add(sched, i, 0, j, f);
+			if (sched) matrix_sched_add(sched, A->roff + i, 0, A->roff + j, f);
 		}
 	}
 
