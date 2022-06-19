@@ -38,16 +38,18 @@ int main(void)
 
 	/* reduce matrix, with tracking schedule */
 	matrix_gauss_elim(&A, &sched);
+
 	fprintf(stderr, "Matrix A:\n");
 	matrix_dump(&A, stderr);
 
-	/* replay schedule on duplicate matrix */
-	matrix_schedule_replay(&B, &sched);
+	/* now reverse operations on A */
+	matrix_schedule_reverse(&A, &sched);
 
 	fprintf(stderr, "Matrix B:\n");
 	matrix_dump(&B, stderr);
 	test_assert(!memcmp(A.base, B.base, A.size), "A matches B");
 
+	matrix_schedule_dump(&sched, stderr);
 	matrix_schedule_free(&sched);
 	matrix_free(&A);
 	matrix_free(&B);

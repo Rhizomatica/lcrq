@@ -11,7 +11,6 @@
 
 #define REPS 1
 #define FMIN 42
-//#define FMAX 1017
 #define FMAX 42
 #define TMIN 8
 #define TMAX 8

@@ -610,6 +610,46 @@ void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream)
 	fprintf(stream, "-- schedule ends -- (%zu bytes, %zu ops)\n", sched->len, sched->ops);
 }
 
+void matrix_schedule_reverse(matrix_t *m, matrix_sched_t *sched)
+{
+	matrix_op_t *o;
+	uint8_t *op = sched->last;
+	uint8_t type;
+
+	fprintf(stderr, "-- reverse replay begins --\n");
+	type = (*op) & 0x0f;
+	do {
+		o = (matrix_op_t *)op;
+		switch (type) {
+		case MATRIX_OP_NOOP:
+			fprintf(stderr, "NOOP\n");
+			break;
+		case MATRIX_OP_ROW:
+			fprintf(stderr, "OP_ROW %u %u\n", o->swp.a, o->swp.b);
+			matrix_swap_rows(m, o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_COL:
+			fprintf(stderr, "OP_COL %u %u\n", o->swp.a, o->swp.b);
+			matrix_swap_cols(m, o->swp.a, o->swp.b);
+			break;
+		case MATRIX_OP_ADD:
+			fprintf(stderr, "OP_ADD %u %u %u %u\n", o->add.dst, o->add.off,
+					o->add.src, o->add.beta);
+			matrix_row_mul_byrow(m, o->add.dst, o->add.off, o->add.src, o->add.beta);
+			break;
+		case MATRIX_OP_MUL:
+			fprintf(stderr, "OP_MUL %u %u\n", o->mul.dst, o->mul.beta);
+			matrix_row_mul(m, o->mul.dst, 0, o->mul.beta);
+			break;
+		default:
+			assert(0); /* MUST not occur */
+		}
+		type = (*op) >> 4; /* type of previous record */
+		op -= reclen[type];
+	} while (type);
+	fprintf(stderr, "-- replay ends -- (%zu bytes, %zu ops)\n", sched->len, sched->ops);
+}
+
 void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched)
 {
 	uint8_t type;

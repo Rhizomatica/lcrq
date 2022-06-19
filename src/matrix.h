@@ -103,6 +103,7 @@ uint8_t *matrix_schedule_resize(matrix_sched_t *sched);
 void matrix_schedule_free(matrix_sched_t *sched);
 void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream);
 void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched);
+void matrix_schedule_reverse(matrix_t *m, matrix_sched_t *sched);
 
 void matrix_sched_row(matrix_sched_t *sched, uint16_t a, uint16_t b);
 void matrix_sched_col(matrix_sched_t *sched, uint16_t a, uint16_t b);
