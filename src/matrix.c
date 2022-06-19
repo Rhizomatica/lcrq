@@ -532,7 +532,7 @@ static matrix_op_t *matrix_sched_op(matrix_sched_t *sched, uint8_t optype)
 	uint8_t lasttype;
 	matrix_op_t *op;
 resized:
-	lasttype = *(sched->last) & 0x07;
+	lasttype = *(sched->last) & 0x0f;
 	op = (matrix_op_t *)(sched->last + reclen[lasttype]);
 	if (sched->len <= (size_t)(sched->last - sched->base + reclen[lasttype] + reclen[optype])) {
 		matrix_schedule_resize(sched);
@@ -584,7 +584,7 @@ void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream)
 	fprintf(stream, "-- schedule begins --\n");
 	for (uint8_t *op = sched->base; *op; op += reclen[type]) {
 		o = (matrix_op_t *)op;
-		type = (*op) & 0x07;
+		type = (*op) & 0x0f;
 		switch (type) {
 		case MATRIX_OP_NOOP:
 			fprintf(stream, "NOOP\n");
@@ -656,7 +656,7 @@ void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched)
 	fprintf(stderr, "-- replay begins --\n");
 	for (uint8_t *op = sched->base; *op; op += reclen[type]) {
 		o = (matrix_op_t *)op;
-		type = (*op) & 0x07;
+		type = (*op) & 0x0f;
 		switch (type) {
 		case MATRIX_OP_NOOP:
 			fprintf(stderr, "NOOP\n");

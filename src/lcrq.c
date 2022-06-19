@@ -650,7 +650,7 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	uint8_t type = 0;
 	matrix_op_t *o;
 	for (uint8_t *op = rq->sched->base; *op; op += reclen[type]) {
-		type = (*op) & 0x07;
+		type = (*op) & 0x0f;
 		o = (matrix_op_t *)op;
 		switch (type) {
 			/* Each time a multiple, beta, of row i of A is added to
