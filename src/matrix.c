@@ -410,7 +410,6 @@ static int matrix_pivot_sched(matrix_t *A, int j, matrix_sched_t *sched)
 				/* pivot found, move in place, update P+Q */
 				if (row != j) {
 					matrix_swap_rows(A, row, j);
-					//if (sched) matrix_sched_row(sched, row, j);
 					if (sched) matrix_sched_row(sched, A->roff + row, A->roff + j);
 				}
 				if (col != j) {
