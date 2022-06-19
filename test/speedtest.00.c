@@ -178,9 +178,10 @@ int main(int argc, char *argv[])
 		double edsec = (double)ensec / NANO;
 		fprintf(stderr, "encoder %zu bytes in %0.4fs ", F, edsec);
 		double eBs = F / edsec;
-		double eKbps = eBs * 8 / 1024;
-		double eMbps = eKbps / 1024;
-		double eGbps = eMbps / 1024;
+		double ebps = eBs * 8;
+		double eKbps = ebps / 1000;
+		double eMbps = eKbps / 1000;
+		double eGbps = eMbps / 1000;
 
 		fprintf(stderr, "%0.1f Mbps, ", eMbps);
 		fprintf(stderr, "%0.1f Gbps", eGbps);
@@ -197,9 +198,10 @@ int main(int argc, char *argv[])
 			dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
 			double ddsec = (double)dnsec / NANO;
 			double dBs = F / ddsec;
-			double dKbps = dBs * 8 / 1024;
-			double dMbps = dKbps / 1024;
-			double dGbps = dMbps / 1024;
+			double dbps = dBs * 8;
+			double dKbps = dbps / 1000;
+			double dMbps = dKbps / 1000;
+			double dGbps = dMbps / 1000;
 			fprintf(stderr, "decoder %zu bytes in %0.4fs ", F, ddsec);
 			fprintf(stderr, "%0.1f Mbps, ", dMbps);
 			fprintf(stderr, "%0.1f Gbps", dGbps);
