@@ -203,7 +203,6 @@ int rq_encode_data(rq_t *rq, uint8_t *data, size_t len)
 		if (SBN + 1 == rq->Z && rq->Kt * rq->T > rq->F) {
 			/* last block needs padding */
 			size_t padbyt = rq->Kt * rq->T - rq->F;
-			fprintf(stderr, "padding last block with %zu bytes\n", padbyt);
 			padblk = malloc(blklen);
 			memcpy(padblk, srcblk, blklen - padbyt);
 			memset(padblk + blklen - padbyt, 0, padbyt);
@@ -940,14 +939,8 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			matrix_swap_rows(A, *i, row);
 			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
-			fprintf(stderr, "ROWSWAP %u, %u\n", *i, row);
 			matrix_sched_row(rq->sched, (uint16_t)*i, (uint16_t)row);
 		}
-
-#if TEST_DEBUG
-		fprintf(stderr, "row swaps done:\n");
-		matrix_dump(A, stderr);
-#endif
 
 		/* The columns of A among those that intersect V are
 		 * reordered so that one of the r nonzeros in the chosen row
@@ -973,21 +966,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			}
 		}
 
-#if TEST_DEBUG
-		fprintf(stderr, "col swaps done (i = %u, u = %i, r = %i)\n", *i, *u, r);
-
-		matrix_t tmp = matrix_submatrix(A, 0, 0, *i + 1, Vmax);
-		matrix_dump(&tmp, stderr);
-
-		tmp = matrix_submatrix(A, 0, 0, *i + 1, *i + 1);
-		matrix_dump(&tmp, stderr);
-
-		tmp = matrix_submatrix(A, 0, *i + 1, *i + 1, Vmax - *i - 1);
-		matrix_dump(&tmp, stderr);
-
-		matrix_dump(A, stderr);
-#endif
-
 		/* Then, an appropriate multiple of the chosen row is added
 		 * to all the other rows of A below the chosen row that have a
 		 * nonzero entry in the first column of V.  Specifically, if a
@@ -1002,32 +980,14 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 			const uint8_t beta = matrix_get_s(A, x, ip);
 			if (beta) {
 				const uint8_t f = GF256DIV(beta, alpha);
-				//matrix_row_mul_byrow(A, x, ip, ip, f);
 				matrix_row_mul_byrow(A, x, 0, ip, f);
-				//matrix_sched_add(rq->sched, (uint16_t)x, (uint16_t)ip, (uint16_t)ip, f);
 				matrix_sched_add(rq->sched, (uint16_t)x, 0, (uint16_t)ip, f);
 			}
 		}
-
-#if TEST_DEBUG
-		fprintf(stderr, "multiples added:\n");
-		matrix_dump(A, stderr);
-#endif
-
-		/* i is incremented by 1 and u is incremented by r-1 */
 		(*i)++;
 		(*u) += r - 1;
-
-#if TEST_DEBUG
-		fprintf(stderr, "i=%i, u=%i\n", *i, *u);
-#endif
 	}
-#if TEST_DEBUG
-	fprintf(stderr, "i=%i, u=%i, L = %u\n", *i, *u, rq->L);
-#endif
-
 	free(comp);
-
 	return 0;
 }
 
