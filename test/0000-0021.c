@@ -25,6 +25,8 @@ int main(void)
 			matrix_set(&A, i, j, v);
 		}
 	}
+	/* deliberately zero one of the main diagonal elements to force row swap */
+	matrix_set(&A, 0, 0, 0);
 	matrix_dump(&A, stderr);
 
 	/* duplicate matrix */
