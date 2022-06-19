@@ -108,6 +108,8 @@ int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
 
 int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
+int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+
 void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep);
 
 uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc);

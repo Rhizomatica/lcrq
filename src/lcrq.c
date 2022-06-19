@@ -622,6 +622,35 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
+int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
+{
+	uint8_t *C;
+	matrix_t A, X, Cm;
+	int i = 0, u = rq->P;
+	int rc = 0;
+
+	rq->sched = malloc(sizeof(matrix_sched_t));
+	memset(rq->sched, 0, sizeof(matrix_sched_t));
+	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
+	rc = rq_decoder_rfc6330_phase1(rq, &X, &A, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase2(rq, &A, &X, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase3(rq, &A, &X, &i, &u);
+	if (rc) goto fail;
+	C = rq_decode_C(rq, enc);
+	matrix_new(&Cm, rq->L, rq->T, C);
+	for (int esi = 0; esi < rq->K; esi++) {
+		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
+	}
+	free(C);
+fail:
+	matrix_free(&A);
+	matrix_free(&X);
+
+	return rc;
+}
+
 uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 {
 	matrix_t C = {0};
@@ -640,9 +669,6 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
 	memcpy(ptr, enc, rq->nrep * rq->T);
-
-	fprintf(stderr, "D (%i x %i)  (before decoding):\n", D.rows, D.cols);
-	matrix_dump(&D, stderr);
 
 	for (uint32_t i = 0; i < rq->L; i++) c[i] = i;
 	for (uint32_t i = 0; i < M; i++) d[i] = i;
@@ -961,7 +987,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 				matrix_swap_cols(A, col, j);
 				matrix_swap_cols(X, col, j);
 				matrix_sched_col(rq->sched, (uint16_t)col, (uint16_t)j);
-				fprintf(stderr, "COLSWAP %u, %u\n", (uint16_t)col, (uint16_t)j);
 				if (r == ++rr) break;
 			}
 		}

@@ -29,6 +29,9 @@ fixme:
 todo:
 	grep -n TODO src/*.{c,h} test/*.{c,h}
 
+speedtest:
+	cd test && $(MAKE) $@
+
 clean realclean:
 	cd src && $(MAKE) $@
 	cd test && $(MAKE) $@

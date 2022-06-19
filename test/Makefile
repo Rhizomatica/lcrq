@@ -18,7 +18,7 @@ LOGFILE := $(shell mktemp "lsdb-test-XXXXXXXX.log")
 TIMESTAMP = $(shell date +"%Y-%m-%d %H:%M:%S")
 VALGRIND = valgrind --leak-check=full --error-exitcode=2 --errors-for-leak-kinds=all --track-origins=yes --log-file=$@.valgrind
 
-.PHONY: test clean realclean build result check cap
+.PHONY: test clean realclean build result check cap speedtest
 
 cap: SKIP = "----- capabilities not required \(skipping\) -----\\e[0m"
 
@@ -28,6 +28,12 @@ check: test
 
 sanitize: CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 sanitize: test
+
+speedtest.00: speedtest.00.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+speedtest: speedtest.00
+	./speedtest.00
 
 test: clean build $(shell echo ????-????.c | sed 's/\.c/\.test/g') result
 
