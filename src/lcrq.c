@@ -11,6 +11,8 @@
 #include <sys/param.h>
 #include <time.h>
 
+#define POPCOUNT_BUILTIN 1
+
 static int isprime(const int n)
 {
 	if (n <= 1) return 0;
@@ -25,7 +27,11 @@ static int isprime(const int n)
 static unsigned int hamm(unsigned char *map, size_t len)
 {
 	unsigned int c = 0;
+#ifdef POPCOUNT_BUILTIN
+	while (len--) c += __builtin_popcount(map[len]);
+#else
 	while (len--) for (char v = map[len]; v; c++) v &= v - 1;
+#endif
 	return c;
 }
 
