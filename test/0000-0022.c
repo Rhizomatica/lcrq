@@ -69,13 +69,10 @@ static int bruteforce(rq_t *rq, matrix_t *A, uint8_t *enc, uint32_t ESI[], uint3
 	fprintf(stderr, "Matrix A (%i x %i)\n", A->rows, A->cols);
 	matrix_dump(A, stderr);
 #endif
-	matrix_t B = matrix_dup(A);
-
 	matrix_gauss_elim(A, rq->sched);
 	fprintf(stderr, "Schedule:\n");
 	matrix_schedule_dump(rq->sched, stderr);
 
-	matrix_free(&B);
 	free(dec);
 
 	return rc;

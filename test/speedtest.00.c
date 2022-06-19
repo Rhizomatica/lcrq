@@ -102,8 +102,23 @@ int decoder_rfc(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[]
 
 int decoder_hybrid(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
 {
+	rq_t *rq;
+	uint8_t *dec;
+	size_t decsz;
+	int rc = 0;
+
 	fprintf(stderr, "hybrid ");
-	return sleep(1);
+
+	rq = rq_init(F, T); assert(rq);
+	decsz = rq->K * rq->T;
+	dec = malloc(decsz);
+	memset(dec, 0, decsz);
+	rc = rq_decode_block_hybrid(rq, dec, enc, ESI, nesi);
+	if (!rc) rc = memcmp(dec, src, F);
+	free(dec);
+	rq_free(rq);
+
+	return rc;
 }
 
 int decoder(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
