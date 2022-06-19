@@ -57,19 +57,16 @@ static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 	return 0;
 }
 
-static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
+static int phase_3(rq_t *rq, matrix_t *A, int i, int u)
 {
 	int rc = 0;
 
 	matrix_t U_upper = matrix_submatrix(A, 0, i, i, u);
 
-	/* TODO the matrix X is multiplied with the submatrix of A consisting of
-	 * the first i rows of A */
-
 	fprintf(stderr, "U_upper (%i x %i):\n", U_upper.rows, U_upper.cols);
 	matrix_dump(&U_upper, stderr);
 
-	rc = rq_decoder_rfc6330_phase3(rq, A, X, &i, &u);
+	rc = rq_decoder_rfc6330_phase3(rq, A, &i, &u);
 	test_assert(rc == 0, "rq_decoder_rfc6330_phase2() returned %i", rc);
 
 	/* TODO After this operation, the submatrix of A consisting of the
@@ -77,7 +74,6 @@ static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	 * matrix U_upper is transformed to a sparse form. */
 
 	/* FIXME - temp - lets just solve this by brute force, then optimize after */
-
 
 	matrix_free(&U_upper);
 
@@ -89,7 +85,7 @@ static int phase_3(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	return rc;
 }
 
-static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
+static int phase_2(rq_t *rq, matrix_t *A, int i, int u)
 {
 	int rc = 0;
 
@@ -109,20 +105,15 @@ static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	matrix_dump(&I_u, stderr);
 #endif
 
-	rc = rq_decoder_rfc6330_phase2(rq, A, X, &i, &u);
+	rc = rq_decoder_rfc6330_phase2(rq, A, &i, &u);
 	test_assert(rc == 0, "rq_decoder_rfc6330_phase2() returned %i", rc);
 
 #if TEST_DEBUG
 	fprintf(stderr, "A (%i x %i):\n", A->rows, A->cols);
 	matrix_dump(A, stderr);
-
-	fprintf(stderr, "X (i x i):\n");
-	matrix_dump(X, stderr);
 #endif
 	if (rc == 0) {
 		/* Post Phase-2 tests */
-		test_assert(X->rows == i, "X->rows = i");
-		test_assert(X->cols == i, "X->cols = i");
 		test_assert(A->rows == rq->L, "A->rows = L");
 		test_assert(A->cols == rq->L, "A->cols = L");
 		test_assert(matrix_is_identity(&I_u), "I_u is identity matrix");
@@ -134,7 +125,7 @@ static int phase_2(rq_t *rq, matrix_t *A, matrix_t *X, int i, int u)
 	return rc;
 }
 
-static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
+static int phase_1(rq_t *rq, matrix_t *A, int *i, int *u,
 		uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *dec;
@@ -150,7 +141,7 @@ static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	matrix_dump(A, stderr);
 #endif
 	*i = 0, *u = rq->P;
-	rc = rq_decoder_rfc6330_phase1(rq, X, A, i, u);
+	rc = rq_decoder_rfc6330_phase1(rq, A, i, u);
 
 	test_assert(rc == 0, "rq_decoder_rfc6330_phase1 returned 0");
 
@@ -158,8 +149,6 @@ static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	matrix_schedule_dump(rq->sched, stderr);
 
 	/* Tests at the end of the First Phase: */
-	test_assert(X->rows == A->rows, "X.rows == A.rows");
-	test_assert(X->cols == A->cols, "X.cols == A.cols");
 
 #if TEST_DEBUG
 	matrix_dump(A, stderr);
@@ -197,16 +186,6 @@ static int phase_1(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u,
 	 * unsuccessfully in decoding failure if at some step before V
 	 * disappears there is no nonzero row in V to choose in that step. */
 	test_assert(*i + *u == rq->L, "i + u == L");
-
-#if TEST_DEBUG
-	fprintf(stderr, "X:\n");
-	matrix_dump(X, stderr);
-#endif
-	/* X is supposed to be "lower triangular throughout the first phase",
-	 * but it is a straight copy of A which is NOT lower triangular. Only
-	 * the i x i portion of X is lower triangular. */
-	matrix_t Xii = matrix_submatrix(X, 0, 0, *i, *i);
-	test_assert(matrix_is_lower(&Xii), "X (trimmed to i x i) is lower triangular");
 
 	free(dec);
 
@@ -255,7 +234,7 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 	if (!rc) {
 		uint32_t ESI[nesi];
 		uint8_t *enc = encoder_generate_symbols(rq, ESI, nesi);
-		matrix_t A, X;
+		matrix_t A;
 		int i, u;
 		rq_t *rq = rq_init(F, T); assert(rq);
 		rq->sched = malloc(sizeof(matrix_sched_t));
@@ -267,15 +246,14 @@ static int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 
 		assert(enc);
 
-		rc = phase_1(rq, &A, &X, &i, &u, enc, ESI, nesi);
+		rc = phase_1(rq, &A, &i, &u, enc, ESI, nesi);
 		test_assert(rc == 0, "Phase 1");
-		rc = phase_2(rq, &A, &X, i, u);
+		rc = phase_2(rq, &A, i, u);
 		test_assert(rc == 0, "Phase 2");
-		rc = phase_3(rq, &A, &X, i, u);
+		rc = phase_3(rq, &A, i, u);
 		test_assert(rc == 0, "Phase 3");
 		rc = decodeC(rq, enc, C.base);
 		test_assert(rc == 0, "Decode C");
-		matrix_free(&X);
 		matrix_free(&A);
 		rq_free(rq);
 		free(enc);

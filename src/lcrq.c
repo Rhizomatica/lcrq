@@ -631,18 +631,18 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *C;
-	matrix_t A, X, Cm;
+	matrix_t A, Cm;
 	int i = 0, u = rq->P;
 	int rc = 0;
 
 	rq->sched = malloc(sizeof(matrix_sched_t));
 	memset(rq->sched, 0, sizeof(matrix_sched_t));
 	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
-	rc = rq_decoder_rfc6330_phase1(rq, &X, &A, &i, &u);
+	rc = rq_decoder_rfc6330_phase1(rq, &A, &i, &u);
 	if (rc) goto fail;
-	rc = rq_decoder_rfc6330_phase2(rq, &A, &X, &i, &u);
+	rc = rq_decoder_rfc6330_phase2(rq, &A, &i, &u);
 	if (rc) goto fail;
-	rc = rq_decoder_rfc6330_phase3(rq, &A, &X, &i, &u);
+	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
 	C = rq_decode_C(rq, enc);
 	matrix_new(&Cm, rq->L, rq->T, C);
@@ -652,7 +652,6 @@ int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], ui
 	free(C);
 fail:
 	matrix_free(&A);
-	matrix_free(&X);
 
 	return rc;
 }
@@ -724,7 +723,7 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	return C.base;
 }
 
-int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
+int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	/* FIXME - temp - lets just solve this by brute force, then optimize after */
 	int rank = matrix_gauss_elim(A, rq->sched);
@@ -732,17 +731,13 @@ int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u
 	return 0;
 }
 
-int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, matrix_t *X, int *i, int *u)
+int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u)
 {
-	/* trim X */
-	X->rows = *i; X->cols = *i;
-
 	matrix_t U_lower = matrix_submatrix(A, *i, *i, A->rows - *i, *u);
 	int rank = matrix_gauss_elim(&U_lower, rq->sched);
 	matrix_free(&U_lower);
 	if (rank < *u) return -1; /* decoding failure */
 	A->rows = rq->L; /* discard surplus rows */
-
 	return 0;
 }
 
@@ -939,7 +934,7 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 	}
 }
 
-int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u)
+int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
 	int row, r;
@@ -949,7 +944,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 
 	*i = 0;
 	*u = rq->P;
-	*X = matrix_dup(A);
 
 	/* save original degree of each row */
 	for (int i = 0; i < A->rows; i++) odeg[i] = matrix_row_degree(A, i);
@@ -969,7 +963,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 		 * intersects V. */
 		if (*i != row) {
 			matrix_swap_rows(A, *i, row);
-			matrix_swap_rows(X, *i, row);
 			SWAP(odeg[*i], odeg[row]);
 			matrix_sched_row(rq->sched, (uint16_t)*i, (uint16_t)row);
 		}
@@ -991,7 +984,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *X, matrix_t *A, int *i, int *u
 					if (col <= j) break;
 				}
 				matrix_swap_cols(A, col, j);
-				matrix_swap_cols(X, col, j);
 				matrix_sched_col(rq->sched, (uint16_t)col, (uint16_t)j);
 				if (r == ++rr) break;
 			}
