@@ -813,76 +813,6 @@ static int is_HDPC(matrix_t *A, int row)
 	return 0;
 }
 
-int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
-		unsigned char comp[], int cmax, size_t mapsz)
-{
-	int rp = INT_MAX;
-	int row = A->rows;
-	int rdex[A->rows];
-
-	memset(rdex, 0, sizeof rdex);
-
-	/* Let r be the minimum integer such that at least one row of A has
-	 * exactly r nonzeros in V */
-	for (int x = i; x < A->rows; x++) {
-		int r_row = 0;
-		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
-		if (!hamm(matrix_ptr_row(A, x), A->stride)) continue;
-		for (int y = i; y < A->cols - u; y++) {
-			if (matrix_get_s(A, x, y)) r_row++;
-			if (r_row > rp && r_row > 2) break; /* too high */
-		}
-		if (r_row > 0 && r_row < rp) {
-			/* choose row with minimum original degree */
-			if (odeg[row] > r_row) row = x;
-			rp = r_row;
-		}
-		rdex[x] = r_row;
-	}
-
-	/* If r = 2 and there is a row with exactly 2 ones in V, then
-	 * choose any row with exactly 2 ones in V that is part of a
-	 * maximum size component in the graph described above that is
-	 * defined by V. */
-	if (rp == 2) {
-		unsigned char *cv;
-		unsigned int component_sz = 0, sz;
-		for (int v = 0; v < cmax; v++) {
-			cv = comp + v * mapsz;
-			sz = hamm(cv, mapsz); /* bits set => component size */
-			if (sz == 0) break;   /* last component reached */
-			if (sz > component_sz) {
-				/* larger component found, choose row */
-				component_sz = sz;
-				for (int x = i; x < cmax; x++) {
-					if (rdex[x] == 2 && isset(cv, x)) {
-						row = x;
-						break;
-					}
-				}
-			}
-		}
-	}
-	*r = rdex[row];
-	return (row == A->rows) ? -1 : row;
-}
-
-static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
-{
-	for (int i = 0; i < cmax; i++) {
-		fprintf(stderr, "%02i: ", i);
-		if (hamm(comp + i * mapsz, mapsz))
-		for (int j = 0; j < cmax; j++) {
-			if (isset(comp + i * mapsz, j))
-				fputc('1', stderr);
-			else
-				fputc('0', stderr);
-		}
-		fputc('\n', stderr);
-	}
-	fputc('\n', stderr);
-}
-
 /* track components in graph using a bitmap */
 static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 		size_t mapsz, int i, int u)
@@ -956,6 +886,76 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 	}
 }
 
+int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
+		unsigned char comp[], int cmax, size_t mapsz)
+{
+	int rp = INT_MAX;
+	int row = A->rows;
+	int rdex[A->rows];
+
+	memset(rdex, 0, sizeof rdex);
+
+	/* Let r be the minimum integer such that at least one row of A has
+	 * exactly r nonzeros in V */
+	for (int x = i; x < A->rows; x++) {
+		int r_row = 0;
+		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
+		for (int y = i; y < A->cols - u; y++) {
+			if (matrix_get_s(A, x, y)) r_row++;
+			if (r_row > rp && r_row > 2) break; /* too high */
+		}
+		if (r_row > 0 && r_row < rp) {
+			/* choose row with minimum original degree */
+			if (odeg[row] > r_row) row = x;
+			rp = r_row;
+		}
+		rdex[x] = r_row;
+	}
+
+	/* If r = 2 and there is a row with exactly 2 ones in V, then
+	 * choose any row with exactly 2 ones in V that is part of a
+	 * maximum size component in the graph described above that is
+	 * defined by V. */
+	if (rp == 2) {
+		rq_graph_components(A, comp, cmax, mapsz, i, u);
+		unsigned char *cv;
+		unsigned int component_sz = 0, sz;
+		for (int v = 0; v < cmax; v++) {
+			cv = comp + v * mapsz;
+			sz = hamm(cv, mapsz); /* bits set => component size */
+			if (sz == 0) break;   /* last component reached */
+			if (sz > component_sz) {
+				/* larger component found, choose row */
+				component_sz = sz;
+				for (int x = i; x < cmax; x++) {
+					if (rdex[x] == 2 && isset(cv, x)) {
+						row = x;
+						break;
+					}
+				}
+			}
+		}
+	}
+	*r = rdex[row];
+	return (row == A->rows) ? -1 : row;
+}
+
+static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
+{
+	for (int i = 0; i < cmax; i++) {
+		fprintf(stderr, "%02i: ", i);
+		if (hamm(comp + i * mapsz, mapsz))
+		for (int j = 0; j < cmax; j++) {
+			if (isset(comp + i * mapsz, j))
+				fputc('1', stderr);
+			else
+				fputc('0', stderr);
+		}
+		fputc('\n', stderr);
+	}
+	fputc('\n', stderr);
+}
+
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
@@ -972,10 +972,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
 
 	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
-		rq_graph_components(A, comp, cmax, mapsz, *i, *u);
-#if TEST_DEBUG
-		dump_components(comp, cmax, mapsz);
-#endif
 		/* all entries of V are zero => FAIL */
 		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg, comp, cmax, mapsz)) == -1) return -1;
 		assert(row >= *i);
