@@ -979,6 +979,7 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 	int rp = INT_MAX;
 	int row = A->rows;
 	int rdex[A->rows];
+	const int Vmax = A->cols - u;
 
 	memset(rdex, 0, sizeof rdex);
 
@@ -987,11 +988,11 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 	for (int x = i; x < A->rows; x++) {
 		int r_row = 0;
 		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
-		for (int y = i; y < A->cols - u; y++) {
+		for (int y = i; y < Vmax; y++) {
 			if (matrix_get_s(A, x, y)) r_row++;
 			if (r_row > rp && r_row > 2) break; /* too high */
 		}
-		if (r_row > 0 && r_row < rp) {
+		if (r_row && r_row < rp) {
 			/* choose row with minimum original degree */
 			if (odeg[row] > r_row) row = x;
 			rp = r_row;
