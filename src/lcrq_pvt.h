@@ -807,8 +807,8 @@ struct rq_s {
 	int nrep; /* number of repair symbols received (ESI >= K) */
 };
 
-static const int T2LEN = sizeof T2 / sizeof T2[0];
-static const uint16_t KPAD_MAX = T2[T2LEN - 1].k; /* 56403 */
+#define T2LEN sizeof T2 / sizeof T2[0]
+#define KP_MAX 56403
 
 matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN);
 

@@ -632,7 +632,6 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 {
 	uint8_t *C;
 	matrix_t A, Cm;
-	int i = 0, u = rq->P;
 	int rc = 0;
 
 	rq->sched = malloc(sizeof(matrix_sched_t));
@@ -645,7 +644,6 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
 	}
 	free(C);
-fail:
 	matrix_free(&A);
 
 	return rc;
@@ -748,6 +746,7 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u)
 {
+	(void)i, (void)u;
 	/* FIXME - temp - lets just solve this by brute force, then optimize after */
 	int rank = matrix_gauss_elim(A, rq->sched);
 	if (rank < rq->L) return -1;
@@ -939,6 +938,7 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 	return (row == A->rows) ? -1 : row;
 }
 
+#if 0
 static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
 {
 	for (int i = 0; i < cmax; i++) {
@@ -954,6 +954,7 @@ static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
 	}
 	fputc('\n', stderr);
 }
+#endif
 
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 {
@@ -1118,7 +1119,7 @@ void rq_dump(const rq_t *rq, FILE *stream)
 /* set per-block values */
 void rq_block(rq_t *rq)
 {
-	for (int i = 0; i < T2LEN; i++) {
+	for (unsigned int i = 0; i < T2LEN; i++) {
 		if (T2[i].k >= rq->K) {
 			rq->KP = T2[i].k;
 			rq->H = T2[i].h;
