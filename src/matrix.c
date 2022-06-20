@@ -212,7 +212,7 @@ void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const in
 	uint8_t *dptr = matrix_ptr_row(dst, drow);
 	const int mcols = matrix_cols(dst);
 	for (int col = 0; col < mcols; col++) {
-		*dptr ^= matrix_get(src, srow, col);
+		*dptr ^= matrix_get_s(src, srow, col);
 		dptr++;
 	}
 }
