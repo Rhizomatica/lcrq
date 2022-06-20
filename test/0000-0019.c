@@ -9,13 +9,13 @@
 #include <sodium.h>
 #include <sys/param.h>
 
-#define REPS 100
-#define FMIN 328183
-#define FMAX 328183
-#define TMIN 1024
-#define TMAX 1024
+#define REPS 1000
+#define FMIN 42
+#define FMAX 42
+#define TMIN 8
+#define TMAX 8
 #define OMIN 1
-#define OMAX 1
+#define OMAX 5
 
 static_assert(TMIN % RQ_AL == 0);
 static_assert(TMAX % RQ_AL == 0);
@@ -41,7 +41,7 @@ int decode_and_verify(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi,
 
 	rq = rq_init(F, T); assert(rq);
 	dec = malloc(rq->K * rq->T);
-	rc = rq_decode_block_f(rq, dec, enc, ESI, nesi);
+	rc = rq_decode_block_rfc(rq, dec, enc, ESI, nesi);
 	if (!rc) rc = memcmp(dec, src, F);
 	free(dec);
 	rq_free(rq);
@@ -80,7 +80,7 @@ int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		test_assert(!rq, "zero F or T, rq_init() returns  NULL");
 		return 0;
 	}
-	rc = rq_encode_data(rq, src, F);
+	rc = rq_encode_data_rfc(rq, src, F);
 	test_assert(rc == 0, "rq_encode_data");
 
 	nesi = rq->KP + overhead; /* NB: overhead is over and above K', not K */
@@ -106,7 +106,7 @@ int main(void)
 	int rc;
 
 	loginit();
-	return test_skip("Encoder Size Tests");
+	test_name("Encoder Size Tests");
 	for (overhead = OMIN; overhead <= OMAX; overhead++) {
 		for (int T = TMIN; T <= TMAX; T *= RQ_AL) {
 			for (size_t F = FMIN; F <= FMAX; F++) {
