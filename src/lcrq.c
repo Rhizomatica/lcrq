@@ -805,11 +805,10 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 */
 
 /* quick hack - HDPC rows are the only ones with values > 1 */
-static int is_HDPC(matrix_t *A, int row)
+inline static int is_HDPC(matrix_t *A, int row)
 {
-	for (int j = 0; j < A->cols; j++) {
-		if (matrix_get_s(A, row, j) > 1) return -1;
-	}
+	uint8_t *p = MADDR(A, row, 0);
+	for (int j = 0; j < A->cols; j++, p++) if ((*p) & 0xfe) return -1;
 	return 0;
 }
 
