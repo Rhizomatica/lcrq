@@ -1021,8 +1021,10 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 			const uint8_t beta = matrix_get_s(A, x, ip);
 			if (beta) {
 				const uint8_t f = GF256DIV(beta, alpha);
-				matrix_row_mul_byrow(A, x, 0, ip, f);
-				matrix_sched_add(rq->sched, (uint16_t)x, 0, (uint16_t)ip, f);
+				if (f) {
+					matrix_row_mul_byrow(A, x, 0, ip, f);
+					matrix_sched_add(rq->sched, (uint16_t)x, 0, (uint16_t)ip, f);
+				}
 			}
 		}
 		(*i)++;

@@ -364,9 +364,9 @@ void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int 
 	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
 	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
 	for (int col = off; col < m->cols; col++) {
-		if (*sptr && factor) {
+		if (*sptr) {
 			uint8_t f = GF256MUL(*sptr, factor);
-			if (f) *dptr ^= f;
+			*dptr ^= f;
 		}
 		dptr++; sptr++;
 	}
