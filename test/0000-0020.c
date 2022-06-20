@@ -35,16 +35,24 @@ uint8_t *generate_source_object(size_t F)
 
 static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 {
+	matrix_t D;
 	uint8_t *C2 = NULL;
 
 	fprintf(stderr, "Schedule:\n");
 	matrix_schedule_dump(rq->sched, stderr);
 
-	C2 = rq_decode_C(rq, enc);
+	uint32_t M = rq->S + rq->H + rq->Nesi;
+	matrix_new(&D, M, rq->T, NULL);
+	matrix_zero(&D);
+	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
+	uint8_t *ptr = D.base + off * rq->T;
+	memcpy(ptr, enc, rq->nrep * rq->T);
+
+	C2 = rq_decode_C(rq, &D);
 	test_assert(C2 != NULL, "rq_decode_C()");
 
 	fprintf(stderr, "C (original intermediate symbols):\n");
-	uint8_t *ptr = C1;
+	ptr = C1;
 	for (uint32_t i = 0; i < rq->L; i++) {
 		rq_dump_symbol(rq, ptr, stderr);
 		ptr += rq->T;
@@ -53,6 +61,7 @@ static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 	if (C2) test_assert(!memcmp(C1, C2, rq->L * rq->T), "intermediate symbols match");
 
 	free(C2);
+	matrix_free(&D);
 
 	return 0;
 }
