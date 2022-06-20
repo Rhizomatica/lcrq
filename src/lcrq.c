@@ -713,20 +713,16 @@ int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 	memset(rq->sched, 0, sizeof(matrix_sched_t));
 	rq_encoder_rfc6330_phase0(rq, &A);
 
-	matrix_dump(&A, stderr);
 	rc = rq_decoder_rfc6330_phase1(rq, &A, &i, &u);
 	if (rc) goto fail;
 	rc = rq_decoder_rfc6330_phase2(rq, &A, &i, &u);
 	if (rc) goto fail;
 	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
-	matrix_dump(&A, stderr);
-	//matrix_schedule_dump(rq->sched, stderr);
 	matrix_t D = rq_matrix_D(rq, src, rq->K);
 	sym = rq_decode_C(rq, src, &D);
 	matrix_t Cm;
 	matrix_new(&Cm, rq->L, rq->T, sym);
-	matrix_dump(&Cm, stderr);
 	memcpy(C, sym, rq->L * rq->T);
 	free(sym);
 fail:
