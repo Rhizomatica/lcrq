@@ -13,7 +13,8 @@ $(error LIBNAME not set)
 endif
 .SUFFIXES:
 .SUFFIXES: .c .o
-CFLAGS += -O3 -Wall -Wextra -Wpedantic -g -fPIC -I. -I../include
+#CFLAGS += -O3 -Wall -Wextra -Wpedantic -g -fPIC -I. -I../include
+CFLAGS += -O3 -Wall -Wextra -Wpedantic -g -I. -I../include
 HEADERS = ../include/$(LIBNAME).h $(LIBNAME)_pvt.h $(sort $(wildcard ../include/$(LIBNAME)/*.h))
 INSTALL ?= install
 LDCONFIG ?= ldconfig
@@ -28,10 +29,11 @@ SOFILES := lib$(LIBNAME).so
 SOVFILES := $(foreach f,$(SOFILES),$f.$(VERSION))
 ABIFILES := $(foreach f,$(SOFILES),$f.$(ABIVERS))
 
-all: $(SOFILES)
+#all: $(SOFILES)
+all: $(OBJECTS)
 
-lib$(LIBNAME).so: $(OBJECTS)
-	$(CC) -shared -O3 -fPIC -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LIBS)
+#lib$(LIBNAME).so: $(OBJECTS)
+#	$(CC) -shared -O3 -fPIC -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LIBS)
 
 %.o: %.c %.h $(HEADERS)
 	$(CC) $(CFLAGS) -c $< $(LIBS)
