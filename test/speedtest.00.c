@@ -14,6 +14,7 @@
 #define DECODER_GAUSS 1
 #define DECODER_RFC 2
 #define DECODER_HYBRID 3
+#define DECODER_DEFAULT DECODER_RFC
 
 #define NANO 1000000000
 
@@ -23,7 +24,7 @@
 #define DEFAULT_O 1
 
 static uint32_t overhead;
-static int decoder_type = DECODER_GAUSS;
+static int decoder_type = DECODER_DEFAULT;
 
 uint8_t *generate_source_object(size_t F)
 {
@@ -134,6 +135,8 @@ int decoder(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], ui
 		case DECODER_HYBRID:
 			f = decoder_hybrid;
 			break;
+		default:
+			f = decoder_rfc;
 	}
 	return f(enc, src, F, T, ESI, nesi);
 }
