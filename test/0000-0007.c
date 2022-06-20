@@ -18,8 +18,8 @@ int main(void)
 		1
 	};
 	uint8_t v1[] = {2};
-	matrix_new(&A, 2, 1, v0);
-	matrix_new(&B, 1, 1, v1);
+	matrix_new(&A, 2, 1, v0, 0);
+	matrix_new(&B, 1, 1, v1, 0);
 	matrix_multiply_gf256(&A, &B, &C);
 	v = matrix_get(&C, 0, 0);
 	test_assert(C.base != NULL, "C base allocated");
@@ -39,8 +39,8 @@ int main(void)
 		2,
 		3
 	};
-	matrix_new(&A, 1, 3, v2);
-	matrix_new(&B, 3, 1, v3);
+	matrix_new(&A, 1, 3, v2, 0);
+	matrix_new(&B, 3, 1, v3, 0);
 	matrix_multiply_gf256(&A, &B, &C);
 	test_assert(C.rows == 1, "C.rows == 1");
 	test_assert(C.cols == 1, "C.cols == 1");

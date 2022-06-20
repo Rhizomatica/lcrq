@@ -24,7 +24,7 @@ int main(void)
 	loginit();
 	test_name("Matrix Submatrix");
 
-	matrix_new(&A, 3, 12, NULL);
+	matrix_new(&A, 3, 12, NULL, 0);
 	matrix_zero(&A);
 	B = matrix_submatrix(&A, row_off, col_off, 3, 3);
 

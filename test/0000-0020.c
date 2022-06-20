@@ -42,7 +42,7 @@ static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 	matrix_schedule_dump(rq->sched, stderr);
 
 	uint32_t M = rq->S + rq->H + rq->Nesi;
-	matrix_new(&D, M, rq->T, NULL);
+	matrix_new(&D, M, rq->T, NULL, 0);
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;

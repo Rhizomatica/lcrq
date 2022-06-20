@@ -8,6 +8,8 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#define VSZ 256
+
 uint8_t reclen[5] = {
 	0, /* NOOP */
 	sizeof(matrix_op_swap_t),
@@ -16,17 +18,24 @@ uint8_t reclen[5] = {
 	sizeof(matrix_op_mul_t)
 };
 
-matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base)
+matrix_t *matrix_new(matrix_t *m, const int rows, const int cols, uint8_t *base, int flags)
 {
-	mat->rows = rows;
-	mat->cols = cols;
-	mat->trans = 0;
-	mat->roff = 0;
-	mat->coff = 0;
-	mat->stride = (size_t)cols * sizeof(uint8_t);
-	mat->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
-	mat->base = (base) ? base : malloc(mat->size * sizeof(uint8_t));
-	return mat;
+	m->rows = rows;
+	m->cols = cols;
+	m->cvec = ((flags & MATRIX_VEC) == MATRIX_VEC) ? roundup(cols, VSZ) : 0;
+	m->trans = 0;
+	m->roff = 0;
+	m->coff = 0;
+	if (base || !m->cvec) {
+		m->stride = (size_t)cols * sizeof(uint8_t);
+		m->size = (size_t)rows * (size_t)cols * sizeof(uint8_t);
+	}
+	else {
+		m->stride = m->cvec * sizeof(uint8_t);
+		m->size = (size_t)rows * m->cvec * sizeof(uint8_t);
+	}
+	m->base = (base) ? base : malloc(m->size);
+	return m;
 }
 
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
@@ -52,14 +61,15 @@ matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_c
 
 uint8_t *matrix_zero_row(matrix_t *m, int row)
 {
-	return memset(matrix_ptr_row(m, row), 0, m->cols);
+	return memset(matrix_ptr_row(m, row), 0, m->cvec);
 }
 
 /* A submatrix needs to be zeroed row by row.
  * A full matrix has a size which can be passed to memset */
 void matrix_zero(matrix_t *m)
 {
-	if (!m->size) memset(m->base, 0, m->size);
+	assert(m && m->base);
+	if (m->size) memset(m->base, 0, m->size);
 	else for (int i = 0; i < m->rows; i++) matrix_zero_row(m, i);
 }
 
@@ -164,7 +174,7 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 	const int ycols = matrix_cols(y);
 	assert(xcols == yrows);
 	if (!p->base) {
-		matrix_new(p, xrows, ycols, NULL);
+		matrix_new(p, xrows, ycols, NULL, 0);
 	}
 	else {
 		if (p->cols != xrows || p->rows != yrows)
@@ -325,7 +335,7 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 
 	assert(n == matrix_cols(LU));
 
-	if (!IA->base) matrix_new(IA, matrix_rows(LU), matrix_cols(LU), NULL);
+	if (!IA->base) matrix_new(IA, matrix_rows(LU), matrix_cols(LU), NULL, 0);
 
 	for (int j = 0; j < matrix_cols(IA); j++) {
 		for (int i = 0; i < matrix_cols(IA); i++) {
@@ -361,13 +371,11 @@ void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val
 
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
+	assert(factor);
 	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
 	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
 	for (int col = off; col < m->cols; col++) {
-		if (*sptr) {
-			uint8_t f = GF256MUL(*sptr, factor);
-			*dptr ^= f;
-		}
+		if (*sptr) *dptr ^= GF256MUL(*sptr, factor);
 		dptr++; sptr++;
 	}
 }
@@ -376,13 +384,13 @@ void matrix_solve_LU(matrix_t *X, const matrix_t *Y, const matrix_t *LU, const i
 {
 	int n = MIN(matrix_rows(LU), matrix_cols(LU));
 
-	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(Y), NULL);
+	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(Y), NULL, 0);
 
 	assert(matrix_cols(LU) == matrix_rows(X));
 	assert(matrix_rows(LU) == matrix_rows(Y));
 	assert(matrix_cols(X) == matrix_cols(Y));
 
-	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(LU), NULL);
+	if (!X->base) matrix_new(X, matrix_rows(LU), matrix_cols(LU), NULL, 0);
 
 	for (int i = 0; i < n; i++) {
 		matrix_row_copy(X, Q[i], Y, P[i]);
@@ -473,7 +481,7 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 
 matrix_t *matrix_inverse(matrix_t *A, matrix_t *I)
 {
-	matrix_new(I, A->rows, A->cols, NULL);
+	matrix_new(I, A->rows, A->cols, NULL, 0);
 	matrix_identity(I);
 
 	/* lower echelon form */
@@ -526,7 +534,7 @@ matrix_t *matrix_copy(matrix_t *dst, const matrix_t *src)
 matrix_t matrix_dup(const matrix_t *src)
 {
 	matrix_t m = {0};
-	matrix_new(&m, matrix_rows(src), matrix_cols(src), NULL);
+	matrix_new(&m, matrix_rows(src), matrix_cols(src), NULL, 0);
 	matrix_copy(&m, src);
 	return m;
 }

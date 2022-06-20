@@ -17,7 +17,7 @@ int main(void)
 
 	/* create a matrix with some data */
 	matrix_t A = {0};
-	matrix_new(&A, 10, 10, NULL);
+	matrix_new(&A, 10, 10, NULL, 0);
 	uint8_t v;
 	for (int i = 0; i < A.rows; i++) {
 		for (int j = 0; j < A.cols; j++) {
@@ -46,7 +46,7 @@ int main(void)
 
 	fprintf(stderr, "Matrix B:\n");
 	matrix_dump(&B, stderr);
-	test_assert(!memcmp(A.base, B.base, A.size), "A matches B");
+	test_assert(!memcmp(A.base, B.base, A.rows * A.cols), "A matches B");
 
 	matrix_schedule_free(&sched);
 	matrix_free(&A);

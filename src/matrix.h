@@ -35,6 +35,8 @@
 #define matrix_cols MCOL
 #define matrix_rows MROW
 
+/* matrix_new() flags */
+#define MATRIX_VEC 0x0001
 
 /* schedule is stored as sequential records of matrix_op_*_t
  * the lower 4 bits of uchar type indicate the type of the following record
@@ -86,6 +88,7 @@ typedef struct matrix_s {
 	uint8_t *base;
 	size_t   stride;
 	size_t   size;
+	int      cvec; /* cols aligned to vector multiple */
 	int      rows;
 	int      cols;
 	int      roff;
@@ -93,7 +96,7 @@ typedef struct matrix_s {
 	int      trans;
 } matrix_t;
 
-matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base);
+matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base, int flags);
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
 void matrix_free(matrix_t *mat);

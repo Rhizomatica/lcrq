@@ -180,7 +180,7 @@ int main(void)
 		rq_encode_block(rq, &C, repsym, rq->KP, nrep);
 
 		matrix_t R = {0};
-		matrix_new(&R, nrep, rq->T, repsym);
+		matrix_new(&R, nrep, rq->T, repsym, 0);
 		fprintf(stderr, "Repair symbols:");
 		matrix_dump(&R, stderr);
 

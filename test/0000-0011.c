@@ -56,7 +56,7 @@ void check_HDPC(rq_t *rq, uint16_t K)
 	rq_block(rq);
 	rq_dump(rq, stderr);
 
-	matrix_new(&A, rq->L, rq->L, NULL);
+	matrix_new(&A, rq->L, rq->L, NULL, 0);
 	matrix_zero(&A);
 	rq_generate_HDPC(rq, &A);
 	rq_dump_hdpc(rq, &A, fout);

@@ -88,7 +88,7 @@ matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN)
 {
 	matrix_t C = {0};
 	assert(rq->C);
-	matrix_new(&C, rq->L, rq->T, rq->C + SBN * rq->T * rq->L);
+	matrix_new(&C, rq->L, rq->T, rq->C + SBN * rq->T * rq->L, 0);
 	return C;
 }
 
@@ -120,7 +120,7 @@ uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi,
 	uint32_t b1 = tup.b1;
 	matrix_t R;
 
-	matrix_new(&R, 1, rq->T, sym);
+	matrix_new(&R, 1, rq->T, sym, 0);
 	matrix_zero(&R);
 	matrix_row_copy(&R, 0, C, b);
 	for (uint32_t j = 1; j < tup.d; j++) {
@@ -371,7 +371,7 @@ void rq_generate_LDPC(const rq_t *rq, matrix_t *A)
 {
 	matrix_t L1, I_S;
 
-	matrix_new(&L1, rq->S, rq->L, A->base);
+	matrix_new(&L1, rq->S, rq->L, A->base, 0);
 
 	/* G_LDPC,1 (S x B) */
 	for (int i = 0; i < rq->B; i++) {        // For i = 0, ..., B-1 do
@@ -452,7 +452,7 @@ static void rq_generate_LT(const rq_t *rq, uint8_t lt[rq->L], uint32_t isi)
 static void rq_generate_GENC(const rq_t *rq, matrix_t *A)
 {
 	matrix_t LT;
-	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L);
+	matrix_new(&LT, rq->KP, rq->L, A->base + (rq->S + rq->H) * rq->L, 0);
 	for (int isi = 0; isi < LT.rows; isi++) {
 		rq_generate_LT(rq, matrix_ptr_row(&LT, isi), isi);
 	}
@@ -460,7 +460,7 @@ static void rq_generate_GENC(const rq_t *rq, matrix_t *A)
 
 void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt)
 {
-	matrix_new(A, rq->S + rq->H + lt, rq->L, NULL);
+	matrix_new(A, rq->S + rq->H + lt, rq->L, NULL, 0);
 	matrix_zero(A);
 	assert(rq->L == rq->KP + rq->S + rq->H); /* L = K'+S+H (5.3.3.3) */
 	assert(rq->L == rq->W + rq->P);          /* L = W+P (5.3.3.3) */
@@ -479,7 +479,7 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, const uint32_t N)
 	matrix_t D = {0};
 
 	assert(rq->KP + rq->S + rq->H == rq->L);
-	matrix_new(&D, M, rq->T, NULL);
+	matrix_new(&D, M, rq->T, NULL, 0);
 	matrix_zero(&D);
 	/* first S + H symbols are zero */
 	ptr = D.base + (rq->S + rq->H) * rq->T * sizeof(uint8_t);
@@ -505,7 +505,7 @@ matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base)
 	int Q[matrix_cols(A)];
 	int rank;
 
-	if (base) matrix_new(&C, matrix_rows(A), matrix_cols(D), base);
+	if (base) matrix_new(&C, matrix_rows(A), matrix_cols(D), base, 0);
 	LU = matrix_dup(A);
 	rank = matrix_LU_decompose(&LU, P, Q);
 	if (rank >= LU.cols) {
@@ -528,7 +528,7 @@ void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *
 
 	/* create Matrix A (Directors extended cut) */
 
-	matrix_new(A, rq->S + rq->H + rq->Nesi, rq->L, NULL);
+	matrix_new(A, rq->S + rq->H + rq->Nesi, rq->L, NULL, 0);
 	matrix_zero(A);
 	rq_generate_LDPC(rq, A);
 	rq_generate_HDPC(rq, A);
@@ -573,7 +573,7 @@ static void rq_pack_LT_symbols(rq_t *rq, matrix_t *D, int P[], rq_blkmap_t *sym,
 {
 	uint32_t gap = 0;
 	uint32_t off = rq->S + rq->H;
-	matrix_new(D, rq->L, rq->T, NULL);
+	matrix_new(D, rq->L, rq->T, NULL, 0);
 	matrix_zero(D);
 	for (int drow = 0, r = 0; drow < rq->KP; drow++) {
 		const uint32_t srow = P[drow];
@@ -611,7 +611,7 @@ static int rq_decode_intermediate_symbols(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_
 	rq_pack_LT_symbols(rq, &D, P, sym, rep);
 
 	/* solve to find intermediate symbols */
-	matrix_new(C, rq->L, rq->T, NULL);
+	matrix_new(C, rq->L, rq->T, NULL, 0);
 	matrix_zero(C);
 	matrix_solve_LU(C, &D, &A, P, Q);
 
@@ -684,7 +684,7 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 	matrix_gauss_elim(&A, rq->sched);
 
 	uint32_t M = rq->S + rq->H + rq->Nesi;
-	matrix_new(&D, M, rq->T, NULL);
+	matrix_new(&D, M, rq->T, NULL, 0);
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
@@ -692,7 +692,7 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 
 	C = rq_decode_C(rq, &D);
 	matrix_free(&D);
-	matrix_new(&Cm, rq->L, rq->T, C);
+	matrix_new(&Cm, rq->L, rq->T, C, 0);
 	for (int esi = 0; esi < rq->K; esi++) {
 		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
 	}
@@ -722,7 +722,7 @@ int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 	matrix_t D = rq_matrix_D(rq, src, rq->K);
 	sym = rq_decode_C(rq, &D);
 	matrix_t Cm;
-	matrix_new(&Cm, rq->L, rq->T, sym);
+	matrix_new(&Cm, rq->L, rq->T, sym, 0);
 	memcpy(C, sym, rq->L * rq->T);
 	free(sym);
 fail:
@@ -752,14 +752,14 @@ int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], ui
 	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
 	uint32_t M = rq->S + rq->H + rq->Nesi;
-	matrix_new(&D, M, rq->T, NULL);
+	matrix_new(&D, M, rq->T, NULL, 0);
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
 	memcpy(ptr, enc, rq->nrep * rq->T);
 	C = rq_decode_C(rq, &D);
 	matrix_free(&D);
-	matrix_new(&Cm, rq->L, rq->T, C);
+	matrix_new(&Cm, rq->L, rq->T, C, 0);
 	for (int esi = 0; esi < rq->K; esi++) {
 		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
 	}
@@ -816,7 +816,7 @@ uint8_t *rq_decode_C(rq_t *rq, matrix_t *D)
 
 	/* the L symbols D[d[0]], D[d[1]], ..., D[d[L-1]] are the values of the
 	 *     L symbols C[c[0]], C[c[1]], ..., C[c[L-1]] */
-	matrix_new(&C, rq->L, rq->T, NULL);
+	matrix_new(&C, rq->L, rq->T, NULL, 0);
 	matrix_zero(&C);
 	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], D, d[i]);
 

@@ -54,7 +54,7 @@ For i = 0, ..., S-1 do
 static void verify_LDPC_relations(rq_t *rq, matrix_t *C)
 {
 	matrix_t D = {0};
-	matrix_new(&D, rq->S, rq->T, NULL);
+	matrix_new(&D, rq->S, rq->T, NULL, 0);
 
 	test_log("verifying LDPC coding relations\n");
 	for (int i = 0; i < rq->S; i++) {
@@ -130,7 +130,7 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_t MT, GAMMA, CT, CT1, CT2, P0, P1 = {0}, P2 = {0};
 
 	/* build the MT matrix */
-	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL);
+	matrix_new(&MT, rq->H, rq->KP + rq->S, NULL, 0);
 	matrix_zero(&MT);
 
 	for (int j = 0; j < rq->KP +rq->S - 1; j++) {
@@ -149,7 +149,7 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	matrix_dump(&MT, stderr);
 
 	/* build GAMMA */
-	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL);
+	matrix_new(&GAMMA, rq->KP + rq->S, rq->KP + rq->S, NULL, 0);
 	matrix_zero(&GAMMA);
 	uint8_t v = 1;
 	for (int i = 0; i < GAMMA.rows; i++) {
@@ -167,7 +167,7 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 
 	/* ok, lets create the HDPC matrix another way */
 	matrix_t A, HDPC;
-	matrix_new(&A, rq->L, rq->L, NULL);
+	matrix_new(&A, rq->L, rq->L, NULL, 0);
 	rq_generate_HDPC(rq, &A);
 	HDPC = matrix_submatrix(&A, rq->S, 0, rq->H, rq->KP + rq->S);
 	fprintf(stderr, "HDPC:\n");

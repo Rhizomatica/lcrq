@@ -26,7 +26,7 @@ int main(void)
 		0x02, 0x01, 0x03, 0x02,
 		0x05, 0x09, 0x06, 0x0e
 	};
-	matrix_new(&A, 4, 4, v0);
+	matrix_new(&A, 4, 4, v0, 0);
 
 	LU = matrix_dup(&A);
 	matrix_LU_decompose(&LU, P, Q);
