@@ -19,11 +19,12 @@
 #define NANO 1000000000
 
 #define DEFAULT_REPS 1
-#define DEFAULT_F 328183
-#define DEFAULT_T 1024
+#define DEFAULT_F 42
+#define DEFAULT_T 8
 #define DEFAULT_O 1
 
 static uint32_t overhead;
+static int encoder_type = DECODER_DEFAULT;
 static int decoder_type = DECODER_DEFAULT;
 
 uint8_t *generate_source_object(size_t F)
@@ -53,7 +54,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	return enc;
 }
 
-uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
+uint8_t *encoder_gauss(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
 	int rc = rq_encode_data(rq, src, rq->F);
 	assert(rc == 0);
@@ -61,6 +62,29 @@ uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 	return encoder_generate_symbols(rq, ESI, nesi);
 }
 
+uint8_t *encoder_rfc(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
+{
+	int rc = rq_encode_data_rfc(rq, src, rq->F);
+	assert(rc == 0);
+	fprintf(stderr, "rfc ");
+	return encoder_generate_symbols(rq, ESI, nesi);
+}
+
+uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
+{
+	uint8_t *(*f)(rq_t *, uint8_t *, uint32_t *, int);
+	switch (encoder_type) {
+		case DECODER_GAUSS:
+			f = encoder_gauss;
+			break;
+		case DECODER_RFC:
+			f = encoder_rfc;
+			break;
+		default:
+			f = encoder_rfc;
+	}
+	return f(rq, src, ESI, nesi);
+}
 
 int decoder_gauss(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
 {
@@ -157,9 +181,15 @@ int main(int argc, char *argv[])
 	if (argc > 1) F = atoll(argv[1]);
 	if (argc > 2) T = atoll(argv[2]); /* TODO ensure multiple of Al */
 	if (argc > 3) reps = atoll(argv[3]);
-	if (argc > 4 && !strcmp(argv[4], "gauss")) decoder_type = DECODER_GAUSS;
+	if (argc > 4 && !strcmp(argv[4], "gauss")) {
+		encoder_type = DECODER_GAUSS;
+		decoder_type = DECODER_GAUSS;
+	}
 	if (argc > 4 && !strcmp(argv[4], "hybrid")) decoder_type = DECODER_HYBRID;
-	if (argc > 4 && !strcmp(argv[4], "rfc")) decoder_type = DECODER_RFC;
+	if (argc > 4 && !strcmp(argv[4], "rfc")) {
+		encoder_type = DECODER_RFC;
+		decoder_type = DECODER_RFC;
+	}
 
 	for (int i = 0; i < reps; i++) {
 

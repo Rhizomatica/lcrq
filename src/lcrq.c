@@ -228,6 +228,50 @@ int rq_encode_data(rq_t *rq, uint8_t *data, size_t len)
 	return 0;
 }
 
+int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
+{
+	const size_t clen = rq->L * rq->T;
+	size_t blklen, off;
+	uint8_t *base;
+	uint8_t *padblk = NULL;
+	uint8_t *srcblk = data;
+
+	/* create storage for intermediate symbols (C) */
+	rq->C = malloc(clen * rq->Z);
+	memset(rq->C, 0, clen * rq->Z);
+	base = rq->C;
+	rq->obj = data;
+	rq->sym = data;
+	for (uint8_t SBN = 0; SBN < rq->Z; SBN++) {
+		if (SBN < rq->src_part.JL) {
+			rq->K = rq->src_part.IL;
+			blklen = rq->src_part.IL * rq->T;
+		}
+		else {
+			rq->K = rq->src_part.IS;
+			blklen = rq->src_part.IS * rq->T;
+		}
+		if (SBN + 1 == rq->Z && rq->Kt * rq->T > rq->F) {
+			/* last block needs padding */
+			size_t padbyt = rq->Kt * rq->T - rq->F;
+			padblk = malloc(blklen);
+			memcpy(padblk, srcblk, blklen - padbyt);
+			memset(padblk + blklen - padbyt, 0, padbyt);
+			srcblk = padblk;
+		}
+
+		int rc = rq_encode_block_rfc(rq, base, srcblk);
+		assert(rc == 0);
+
+		free(padblk);
+		base += clen;
+		off = MIN(blklen, len);
+		srcblk += off;
+		len -= off;
+	}
+	return 0;
+}
+
 uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym)
 {
 	rq_t *rq = state->rq;
@@ -631,14 +675,23 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *C;
-	matrix_t A, Cm;
+	matrix_t A, Cm, D;
 	int rc = 0;
 
 	rq->sched = malloc(sizeof(matrix_sched_t));
 	memset(rq->sched, 0, sizeof(matrix_sched_t));
 	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
 	matrix_gauss_elim(&A, rq->sched);
-	C = rq_decode_C(rq, enc);
+
+	uint32_t M = rq->S + rq->H + rq->Nesi;
+	matrix_new(&D, M, rq->T, NULL);
+	matrix_zero(&D);
+	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
+	uint8_t *ptr = D.base + off * rq->T;
+	memcpy(ptr, enc, rq->nrep * rq->T);
+
+	C = rq_decode_C(rq, enc, &D);
+	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C);
 	for (int esi = 0; esi < rq->K; esi++) {
 		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
@@ -649,10 +702,47 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 	return rc;
 }
 
+int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
+{
+	matrix_t A;
+	uint8_t *sym;
+	int i = 0, u = rq->P;
+	int rc = 0;
+
+	rq->sched = malloc(sizeof(matrix_sched_t));
+	memset(rq->sched, 0, sizeof(matrix_sched_t));
+	rq_encoder_rfc6330_phase0(rq, &A);
+
+	matrix_dump(&A, stderr);
+	rc = rq_decoder_rfc6330_phase1(rq, &A, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase2(rq, &A, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
+	if (rc) goto fail;
+	matrix_dump(&A, stderr);
+	//matrix_schedule_dump(rq->sched, stderr);
+	matrix_t D = rq_matrix_D(rq, src, rq->K);
+	sym = rq_decode_C(rq, src, &D);
+	matrix_t Cm;
+	matrix_new(&Cm, rq->L, rq->T, sym);
+	matrix_dump(&Cm, stderr);
+	memcpy(C, sym, rq->L * rq->T);
+	free(sym);
+fail:
+	matrix_free(&A);
+	matrix_free(&D);
+	matrix_schedule_free(rq->sched);
+	free(rq->sched);
+	rq->sched = NULL;
+
+	return rc;
+}
+
 int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *C;
-	matrix_t A, Cm;
+	matrix_t A, Cm, D;
 	int i = 0, u = rq->P;
 	int rc = 0;
 
@@ -665,7 +755,14 @@ int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], ui
 	if (rc) goto fail;
 	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
-	C = rq_decode_C(rq, enc);
+	uint32_t M = rq->S + rq->H + rq->Nesi;
+	matrix_new(&D, M, rq->T, NULL);
+	matrix_zero(&D);
+	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
+	uint8_t *ptr = D.base + off * rq->T;
+	memcpy(ptr, enc, rq->nrep * rq->T);
+	C = rq_decode_C(rq, enc, &D);
+	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C);
 	for (int esi = 0; esi < rq->K; esi++) {
 		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
@@ -677,10 +774,9 @@ fail:
 	return rc;
 }
 
-uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
+uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc, matrix_t *D)
 {
 	matrix_t C = {0};
-	matrix_t D = {0};
 	uint32_t M = rq->S + rq->H + rq->Nesi;
 	int d[M];
 	int c[rq->L];
@@ -689,12 +785,15 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	 * including padding symbols. So with no source symbols, we leave a gap
 	 * of K' - K before filling the remaining rows with our repair symbols.  */
 
+#if 0
+	matrix_t D = {0};
 	//D = rq_matrix_D(rq, enc, rq->nrep); /* FIXME spacing incorrect */
 	matrix_new(&D, M, rq->T, NULL);
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
 	memcpy(ptr, enc, rq->nrep * rq->T);
+#endif
 
 	for (uint32_t i = 0; i < rq->L; i++) c[i] = i;
 	for (uint32_t i = 0; i < M; i++) d[i] = i;
@@ -709,14 +808,14 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 			 * row i' in the decoding schedule, then in the decoding
 			 * process the symbol beta*D[d[i]] is added to symbol * D[d[i']] */
 			case MATRIX_OP_ADD:
-				matrix_row_mul_byrow(&D, d[o->add.dst], o->add.off,
+				matrix_row_mul_byrow(D, d[o->add.dst], o->add.off,
 						d[o->add.src], o->add.beta);
 				break;
 			/* Each time a row i of A is multiplied by an octet
 			 * beta, then in the decoding process the symbol D[d[i]]
 			 * is also multiplied by beta.  */
 			case MATRIX_OP_MUL:
-				matrix_row_mul(&D, d[o->mul.dst], 0, o->mul.beta);
+				matrix_row_mul(D, d[o->mul.dst], 0, o->mul.beta);
 				break;
 			/* Each time row i is exchanged with row i' in the
 			 * decoding schedule, then in the decoding process the
@@ -737,9 +836,9 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc)
 	 *     L symbols C[c[0]], C[c[1]], ..., C[c[L-1]] */
 	matrix_new(&C, rq->L, rq->T, NULL);
 	matrix_zero(&C);
-	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], &D, d[i]);
+	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], D, d[i]);
 
-	matrix_free(&D);
+	//matrix_free(&D);
 
 	return C.base;
 }
@@ -761,6 +860,16 @@ int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u)
 	if (rank < *u) return -1; /* decoding failure */
 	A->rows = rq->L; /* discard surplus rows */
 	return 0;
+}
+
+void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)
+{
+	rq->nsrc = rq->K;
+	rq->nrep = 0;
+	rq->Nesi = rq->KP;
+	rq_generate_matrix_A(rq, A, rq->KP);
+	assert(rq->sched);
+	matrix_schedule_init(rq->sched);
 }
 
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
