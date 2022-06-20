@@ -23,7 +23,7 @@
 #define DEFAULT_T 8
 #define DEFAULT_O 1
 
-static uint32_t overhead;
+static uint32_t overhead = RQ_OVERHEAD;
 static int encoder_type = DECODER_DEFAULT;
 static int decoder_type = DECODER_DEFAULT;
 

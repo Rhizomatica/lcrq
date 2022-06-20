@@ -690,7 +690,7 @@ int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 	uint8_t *ptr = D.base + off * rq->T;
 	memcpy(ptr, enc, rq->nrep * rq->T);
 
-	C = rq_decode_C(rq, enc, &D);
+	C = rq_decode_C(rq, &D);
 	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C);
 	for (int esi = 0; esi < rq->K; esi++) {
@@ -720,7 +720,7 @@ int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
 	matrix_t D = rq_matrix_D(rq, src, rq->K);
-	sym = rq_decode_C(rq, src, &D);
+	sym = rq_decode_C(rq, &D);
 	matrix_t Cm;
 	matrix_new(&Cm, rq->L, rq->T, sym);
 	memcpy(C, sym, rq->L * rq->T);
@@ -757,7 +757,7 @@ int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], ui
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
 	memcpy(ptr, enc, rq->nrep * rq->T);
-	C = rq_decode_C(rq, enc, &D);
+	C = rq_decode_C(rq, &D);
 	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C);
 	for (int esi = 0; esi < rq->K; esi++) {
@@ -770,26 +770,12 @@ fail:
 	return rc;
 }
 
-uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc, matrix_t *D)
+uint8_t *rq_decode_C(rq_t *rq, matrix_t *D)
 {
 	matrix_t C = {0};
 	uint32_t M = rq->S + rq->H + rq->Nesi;
 	int d[M];
 	int c[rq->L];
-
-	/* D should have S + H zero symbols, followed by the LT symbols,
-	 * including padding symbols. So with no source symbols, we leave a gap
-	 * of K' - K before filling the remaining rows with our repair symbols.  */
-
-#if 0
-	matrix_t D = {0};
-	//D = rq_matrix_D(rq, enc, rq->nrep); /* FIXME spacing incorrect */
-	matrix_new(&D, M, rq->T, NULL);
-	matrix_zero(&D);
-	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
-	uint8_t *ptr = D.base + off * rq->T;
-	memcpy(ptr, enc, rq->nrep * rq->T);
-#endif
 
 	for (uint32_t i = 0; i < rq->L; i++) c[i] = i;
 	for (uint32_t i = 0; i < M; i++) d[i] = i;
@@ -833,8 +819,6 @@ uint8_t *rq_decode_C(rq_t *rq, uint8_t *enc, matrix_t *D)
 	matrix_new(&C, rq->L, rq->T, NULL);
 	matrix_zero(&C);
 	for (uint32_t i = 0; i < rq->L; i++) matrix_row_copy(&C, c[i], D, d[i]);
-
-	//matrix_free(&D);
 
 	return C.base;
 }
