@@ -213,10 +213,10 @@ matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2)
 
 matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2)
 {
-	for (int i = 0; i < matrix_rows(m); i++) {
-		const uint8_t tmp = matrix_get(m, i, c1);
-		matrix_set(m, i, c1, matrix_get(m, i, c2));
-		matrix_set(m, i, c2, tmp);
+	for (int i = 0; i < m->rows; i++) {
+		uint8_t *a = MADDR(m, i, c1);
+		uint8_t *b = MADDR(m, i, c2);
+		SWAP(*a, *b);
 	}
 	return m;
 }
