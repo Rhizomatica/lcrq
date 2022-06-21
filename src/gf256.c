@@ -40,6 +40,7 @@ uint8_t gf256_div(const uint8_t u, const uint8_t v)
 	return OCT_EXP[OCT_LOG[u] - OCT_LOG[v] + 255];
 }
 
+#ifdef INTEL_SSE3
 __m128i gf256_mul_128(__m128i A, uint8_t y)
 {
 	__m128i table1 = _mm_loadu_si128((const __m128i_u *)GF256LR[y][0]);
@@ -55,6 +56,7 @@ __m128i gf256_mul_128(__m128i A, uint8_t y)
 	h = _mm_shuffle_epi8(table2, h);
 	return _mm_xor_si128(h, l);
 }
+#endif
 
 /* allocate and precompute tables */
 void gf256_init(void)

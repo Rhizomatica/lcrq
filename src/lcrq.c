@@ -1250,6 +1250,10 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 	rq = malloc(sizeof(rq_t));
 	memset(rq, 0, sizeof(rq_t));
 
+#ifdef INTEL_SSE3
+	gf256_init(); // FIXME - this doesn't belong here
+#endif
+
 	rq->F = F;
 	/* TODO what is an appropriate size for WS ? */
 	rq->WS = 1073741824; /* 1GiB */

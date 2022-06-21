@@ -93,6 +93,8 @@ extern uint8_t GF256LR[256][2][16];
 
 #define GF256INV(v) OCT_EXP[255 - OCT_LOG[(v)]]
 
+#define GF256MUL0(a, b) (GF256EXP((int)GF256LOG(a) + (int)GF256LOG(b)))
+
 #define GF256MUL(a, b) ((a) == 0 || (b) == 0) ? 0 : (GF256EXP((int)GF256LOG(a) + (int)GF256LOG(b)))
 
 #define GF256DIV(a, b) ((a) == 0) ? 0 : OCT_EXP[OCT_LOG[(a)] - OCT_LOG[(b)] + 255]
@@ -110,8 +112,9 @@ uint8_t gf256_mul(const uint8_t a, const uint8_t b);
 
 uint8_t gf256_div(const uint8_t u, const uint8_t v);
 
+#ifdef INTEL_SSE3
 __m128i gf256_mul_128(__m128i A, uint8_t y);
-
 void gf256_init(void);
+#endif
 
 #endif /* GF256_H */
