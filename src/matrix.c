@@ -372,11 +372,12 @@ void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t factor)
 {
 	assert(factor);
-	uint8_t *dptr = matrix_ptr_row(m, rdst) + off;
-	uint8_t *sptr = matrix_ptr_row(m, rsrc) + off;
-	for (int col = off; col < m->cols; col++) {
-		if (*sptr) *dptr ^= GF256MUL(*sptr, factor);
-		dptr++; sptr++;
+	uint8_t *d = matrix_ptr_row(m, rdst) + off;
+	uint8_t *s = matrix_ptr_row(m, rsrc) + off;
+	int i;
+
+	for (i = 0; i < m->cols; i++) {
+		d[i] ^= GF256MUL(s[i], factor);
 	}
 }
 
