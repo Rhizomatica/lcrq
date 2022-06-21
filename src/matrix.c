@@ -203,10 +203,10 @@ matrix_t *matrix_multiply_gf256(const matrix_t *x, const matrix_t *y, matrix_t *
 
 matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2)
 {
-	for (int i = 0; i < matrix_cols(m); i++) {
-		const uint8_t tmp = matrix_get(m, r1, i);
-		matrix_set(m, r1, i, matrix_get(m, r2, i));
-		matrix_set(m, r2, i, tmp);
+	for (int i = 0; i < m->cols; i++) {
+		uint8_t *a = MADDR(m, r1, i);
+		uint8_t *b = MADDR(m, r2, i);
+		SWAP(*a, *b);
 	}
 	return m;
 }
