@@ -976,32 +976,39 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 	}
 }
 
+/* Let r be the minimum integer such that at least one row of A has
+ * exactly r nonzeros in V */
+// FIXME - make static when optimized
+int rq_rdex(matrix_t *A, int rdex[], int odeg[], int i, int u, int *rp)
+{
+	const int Vmax = A->cols - u;
+	int row = A->rows;
+	memset(rdex, 0, A->rows * sizeof(int));
+	for (int x = i; x < A->rows; x++) {
+		int r_row = 0;
+		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
+		for (int y = i; y < Vmax; y++) {
+			if (matrix_get_s(A, x, y)) r_row++;
+			if (r_row > *rp && r_row > 2) break; /* too high */
+		}
+		if (r_row && r_row < *rp) {
+			/* choose row with minimum original degree */
+			if (odeg[row] > r_row) row = x;
+			*rp = r_row;
+		}
+		rdex[x] = r_row;
+	}
+	return row;
+}
+
 int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		unsigned char comp[], int cmax, size_t mapsz)
 {
 	int rp = INT_MAX;
 	int row = A->rows;
 	int rdex[A->rows];
-	const int Vmax = A->cols - u;
 
-	memset(rdex, 0, sizeof rdex);
-
-	/* Let r be the minimum integer such that at least one row of A has
-	 * exactly r nonzeros in V */
-	for (int x = i; x < A->rows; x++) {
-		int r_row = 0;
-		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
-		for (int y = i; y < Vmax; y++) {
-			if (matrix_get_s(A, x, y)) r_row++;
-			if (r_row > rp && r_row > 2) break; /* too high */
-		}
-		if (r_row && r_row < rp) {
-			/* choose row with minimum original degree */
-			if (odeg[row] > r_row) row = x;
-			rp = r_row;
-		}
-		rdex[x] = r_row;
-	}
+	row = rq_rdex(A, rdex, odeg, i, u, &rp);
 
 	/* If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
@@ -1254,7 +1261,7 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 	memset(rq, 0, sizeof(rq_t));
 
 #ifdef INTEL_SSE3
-	gf256_init(); // FIXME - this doesn't belong here
+	GF256LR_INIT; // FIXME - this doesn't belong here
 #endif
 
 	rq->F = F;
