@@ -892,85 +892,78 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
-/* quick hack - HDPC rows are the only ones with values > 1
- * checking the first 5 cols gives a small chance of accidentally choosing a
- * HDPC row. p = 1 / (254 * 254 * 254 * 254 * 254) = 1 / 1057227821024 */
-static int is_HDPC(matrix_t *A, int row, int u)
-{
-	int checkcols = 5;
-	uint8_t *p = MADDR(A, row, 0);
-	for (int j = A->cols - u; checkcols--; j++) if (p[j] & 0xfe) return -1;
-	return 0;
-}
-
 /* track components in graph using a bitmap */
-static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
-		size_t mapsz, int i, int u)
+static void rq_graph_components(matrix_t *A, int rdex[],
+		unsigned char comp[], int cmax, size_t mapsz, int i, int u)
 {
 	memset(comp, 0, mapsz * cmax);
 	/* we're only interested in rows with exactly two nonzero elements */
 	for (int x = i; x < A->rows; x++) {
-		int r = 0;
-		uint8_t a = 0, b = 0;
-		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
+		if (rdex[x] != 2) continue;
+
+		/* get the two nonzero values (a, b) in this row */
+		int a = -1, b = -1;
+		uint8_t *p = matrix_ptr_row(A, x);
 		for (int y = i; y < A->cols - u; y++) {
-			if (matrix_get_s(A, x, y)) {
-				if (r++ == 0) a = y;
-				else b = y;
-			}
-			if (r > 2) break; /* too high */
-		}
-		if (r == 2) { /* row with r == 2, add to component bitmap */
-			/* the two nonzero elements (a,b) are vertices. Setting the
-			 * bits lets us find the largest component(s) by popcount */
-			int c[2] = { -1, -1};
-			int v;
-			unsigned char *cv, *c0, *c1;
-			for (v = 0; v < cmax; v++) {
-				cv = comp + v * mapsz;
-				if (!hamm(cv, mapsz)) break; /* last component */
-				if (isset(cv, a)) {
-					c[0] = v;
-					setbit(cv, b);
-					if (c[1] > 0) break;
-				}
-				if (isset(cv, b)) {
-					c[1] = v;
-					setbit(cv, a);
-					if (c[0] > 0) break;
-				}
-			}
-			if (c[0] == -1 && c[1] == -1) {
-				/* new component */
-				setbit(cv, a);
-				setbit(cv, b);
-				continue;
-			}
-			if (c[0] == c[1]) continue;
-			if (c[0] > 0 && c[1] > 0) {
-				/* merge two components into the first */
-				size_t cl, cg;
-				if (c[0] < c[1]) {
-					cl = c[0];
-					cg = c[1];
-				}
+			if (*p) {
+				if (a < 0) a = i;
 				else {
-					cl = c[1];
-					cg = c[0];
+					b = i;
+					break;
 				}
-				c0 = comp + cl * mapsz;
-				c1 = comp + cg * mapsz;
+			}
+		}
+
+		/* row with r == 2, add to component bitmap */
+		/* the two nonzero elements (a,b) are vertices. Setting the
+		 * bits lets us find the largest component(s) by popcount */
+		int c[2] = { -1, -1};
+		int v;
+		unsigned char *cv, *c0, *c1;
+		for (v = 0; v < cmax; v++) {
+			cv = comp + v * mapsz;
+			if (!hamm(cv, mapsz)) break; /* last component */
+			if (isset(cv, a)) {
+				c[0] = v;
+				setbit(cv, b);
+				if (c[1] > 0) break;
+			}
+			if (isset(cv, b)) {
+				c[1] = v;
+				setbit(cv, a);
+				if (c[0] > 0) break;
+			}
+		}
+		if (c[0] == -1 && c[1] == -1) {
+			/* new component */
+			setbit(cv, a);
+			setbit(cv, b);
+			continue;
+		}
+		if (c[0] == c[1]) continue;
+		if (c[0] > 0 && c[1] > 0) {
+			/* merge two components into the first */
+			size_t cl, cg;
+			if (c[0] < c[1]) {
+				cl = c[0];
+				cg = c[1];
+			}
+			else {
+				cl = c[1];
+				cg = c[0];
+			}
+			c0 = comp + cl * mapsz;
+			c1 = comp + cg * mapsz;
+			cv = comp + v * mapsz;
+			for (int last = v; last < cmax; last++) {
+				if (!hamm(cv, mapsz)) break; /* last component */
 				cv = comp + v * mapsz;
-				for (int last = v; last < cmax; last++) {
-					if (!hamm(cv, mapsz)) break; /* last component */
-					cv = comp + v * mapsz;
-				}
-				for (size_t x = 0; x < mapsz; x++) {
-					c0[x] |= c1[x];
-					c1[x] = 0;
-					/* swap deleted component to end */
-					if (cv != c1) SWAP(c1[x], cv[x]);
-				}
+			}
+			for (size_t x = 0; x < mapsz; x++) {
+				c0[x] |= c1[x];
+				c1[x] = 0;
+				/* swap deleted component to end */
+				if (cv != c1) SWAP(c1[x], cv[x]);
 			}
 		}
 	}
@@ -1026,7 +1019,7 @@ static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
 	if (rp == 2) {
-		rq_graph_components(A, comp, cmax, mapsz, i, u);
+		rq_graph_components(A, rdex, comp, cmax, mapsz, i, u);
 		unsigned char *cv;
 		unsigned int component_sz = 0, sz;
 		for (int v = 0; v < cmax; v++) {
