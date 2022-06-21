@@ -976,21 +976,23 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 	}
 }
 
+inline static int count_r(uint8_t *p, int len)
+{
+	int c = 0;
+	while (len--) c += p[len];
+	return c;
+}
+
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
-// FIXME - make static when optimized
-int rq_rdex(matrix_t *A, int rdex[], int odeg[], int i, int u, int *rp)
+static int rq_rdex(matrix_t *A, int rdex[], int odeg[], int i, int u, int *rp)
 {
-	const int Vmax = A->cols - u;
 	int row = A->rows;
 	memset(rdex, 0, A->rows * sizeof(int));
 	for (int x = i; x < A->rows; x++) {
 		int r_row = 0;
-		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
-		for (int y = i; y < Vmax; y++) {
-			if (matrix_get_s(A, x, y)) r_row++;
-			if (r_row > *rp && r_row > 2) break; /* too high */
-		}
+		/* just sum the elements to get r, they are 1 or 0 except for HDPC */
+		r_row = count_r(MADDR(A, x, i), A->cols - u - i);
 		if (r_row && r_row < *rp) {
 			/* choose row with minimum original degree */
 			if (odeg[row] > r_row) row = x;
@@ -1001,7 +1003,7 @@ int rq_rdex(matrix_t *A, int rdex[], int odeg[], int i, int u, int *rp)
 	return row;
 }
 
-int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
+static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 		unsigned char comp[], int cmax, size_t mapsz)
 {
 	int rp = INT_MAX;
