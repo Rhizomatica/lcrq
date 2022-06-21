@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <emmintrin.h>
+#include <immintrin.h>
 
 /* GF(256) operations as per RFC6330 (5.7) */
 
@@ -81,6 +83,8 @@ static const uint8_t OCT_LOG[] = {
 };
 static_assert(sizeof(OCT_LOG) == 255 + 1, "OCT_LOG table has wrong size.");
 
+extern uint8_t GF256LR[256][2][16];
+
 #define GF256ADD(a, b) ((a) ^ (b))
 
 #define GF256EXP(e) OCT_EXP[(e)]
@@ -105,5 +109,9 @@ uint8_t gf256_inv(const uint8_t v);
 uint8_t gf256_mul(const uint8_t a, const uint8_t b);
 
 uint8_t gf256_div(const uint8_t u, const uint8_t v);
+
+__m128i gf256_mul_128(__m128i A, uint8_t y);
+
+void gf256_init(void);
 
 #endif /* GF256_H */

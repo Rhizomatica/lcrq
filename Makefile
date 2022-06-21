@@ -10,6 +10,9 @@ LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
 
+CFLAGS += -mavx
+export CFLAGS
+
 all: src
 
 install: all doc
