@@ -8,6 +8,11 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#ifdef INTEL_SSE3
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
+
 #define VSZ 256
 
 uint8_t reclen[5] = {
@@ -219,11 +224,24 @@ matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2)
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	assert(matrix_cols(dst) == matrix_cols(src));
-	uint8_t *dptr = matrix_ptr_row(dst, drow);
+	uint8_t *d = matrix_ptr_row(dst, drow);
 	const int mcols = matrix_cols(dst);
-	for (int col = 0; col < mcols; col++) {
-		*dptr ^= matrix_get_s(src, srow, col);
-		dptr++;
+#ifdef INTEL_SSE3
+	uint8_t *s = matrix_ptr_row(src, srow);
+	const int mod = mcols % 16;
+	const int maxv = mcols - mod;
+	int j;
+	for (j = 0; j < maxv; j += 16) {
+		__m128i S = _mm_loadu_si128((const __m128i_u *)&s[j]);
+		__m128i D = _mm_loadu_si128((const __m128i_u *)&d[j]);
+		D = _mm_xor_si128(D, S);
+		_mm_storeu_si128((__m128i*)&d[j], D);
+	}
+#else
+	int j = 0;
+#endif
+	for (; j < mcols; j++) {
+		d[j] ^= matrix_get_s(src, srow, j);
 	}
 }
 

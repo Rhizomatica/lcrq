@@ -6,8 +6,11 @@
 
 #include <stdint.h>
 #include <assert.h>
+
+#ifdef INTEL_SSE3
 #include <emmintrin.h>
 #include <immintrin.h>
+#endif
 
 /* GF(256) operations as per RFC6330 (5.7) */
 
