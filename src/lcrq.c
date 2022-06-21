@@ -892,11 +892,14 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 	Figure 6: Submatrices of A in the First Phase
 */
 
-/* quick hack - HDPC rows are the only ones with values > 1 */
-inline static int is_HDPC(matrix_t *A, int row)
+/* quick hack - HDPC rows are the only ones with values > 1
+ * checking the first 5 cols gives a small chance of accidentally choosing a
+ * HDPC row. p = 1 / (254 * 254 * 254 * 254 * 254) = 1 / 1057227821024 */
+static int is_HDPC(matrix_t *A, int row, int u)
 {
+	int checkcols = 5;
 	uint8_t *p = MADDR(A, row, 0);
-	for (int j = 0; j < A->cols; j++, p++) if ((*p) & 0xfe) return -1;
+	for (int j = A->cols - u; checkcols--; j++) if (p[j] & 0xfe) return -1;
 	return 0;
 }
 
@@ -909,7 +912,7 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 	for (int x = i; x < A->rows; x++) {
 		int r = 0;
 		uint8_t a = 0, b = 0;
-		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
+		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
 		for (int y = i; y < A->cols - u; y++) {
 			if (matrix_get_s(A, x, y)) {
 				if (r++ == 0) a = y;
@@ -987,7 +990,7 @@ int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
 	 * exactly r nonzeros in V */
 	for (int x = i; x < A->rows; x++) {
 		int r_row = 0;
-		if (is_HDPC(A, x)) continue; /* skip HDPC rows */
+		if (is_HDPC(A, x, u)) continue; /* skip HDPC rows */
 		for (int y = i; y < Vmax; y++) {
 			if (matrix_get_s(A, x, y)) r_row++;
 			if (r_row > rp && r_row > 2) break; /* too high */
