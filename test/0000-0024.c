@@ -10,7 +10,8 @@
 int main(void)
 {
 	loginit();
-	test_name("Galois Field 256 SIMD multiplication");
+#ifdef INTEL_SSE3
+	test_name("Galois Field 256 SIMD (SSE3) multiplication");
 
 	gf256_init();
 
@@ -82,6 +83,9 @@ int main(void)
 		const uint8_t v = GF256MUL(in[i], y);
 		test_assert(out[i] == v, "%02x * %02x == %02x (expected %02x)", in[i], y, out[i], v);
 	}
+#else
+	return test_skip("Galois Field 256 SIMD (SSE) multiplication (requires SSE3)");
+#endif
 
 	return fails;
 }
