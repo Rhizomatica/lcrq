@@ -382,8 +382,9 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 
 void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val)
 {
-	for (int col = off; col < m->cols; col++) {
-		matrix_set(m, row, col, GF256MUL(matrix_get(m, row, col), val));
+	uint8_t *d = matrix_ptr_row(m, row) + off;
+	for (int col = 0; col < m->cols; col++) {
+		d[col] = GF256MUL(d[col], val);
 	}
 }
 
