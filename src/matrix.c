@@ -122,15 +122,6 @@ int matrix_is_zero(matrix_t *m)
 	return -1;
 }
 
-int matrix_row_degree(matrix_t *m, int row)
-{
-	int d = 0;
-	for (int j = 0; j < matrix_cols(m); j++) {
-		if (matrix_get(m, row, j)) d++;
-	}
-	return d;
-}
-
 void matrix_dump(matrix_t *mat, FILE *stream)
 {
 	fprintf(stream, "\n");

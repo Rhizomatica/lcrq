@@ -1079,7 +1079,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	*u = rq->P;
 
 	/* save original degree of each row */
-	for (int i = 0; i < A->rows; i++) odeg[i] = matrix_row_degree(A, i);
+	for (int i = 0; i < A->rows; i++) odeg[i] = count_r(MADDR(A, i, 0), A->cols);
 	odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
 
 	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
