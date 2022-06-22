@@ -3,3 +3,5 @@
 *.swp
 cov-int/
 *.tgz
+gmon.out
+profile.*
