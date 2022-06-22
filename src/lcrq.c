@@ -979,7 +979,16 @@ static void rq_graph_components(matrix_t *A, unsigned char comp[], int cmax,
 inline static int count_r(uint8_t *p, int len)
 {
 	int c = 0;
-	while (len--) c += p[len];
+#ifdef INTEL_SSE3
+	for (int vlen = len / 16; vlen; vlen--, p += 16) {
+		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
+		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
+		uint16_t bitmask = ~_mm_movemask_epi8(cmp);
+		c +=  __builtin_popcount(bitmask);
+	}
+	len = len % 16;
+#endif
+	for (; len; len--, p++) c += *p;
 	return c;
 }
 
