@@ -34,6 +34,7 @@ speedtest.00: speedtest.00.o $(OBJS)
 
 speedtest: speedtest.00
 	./speedtest.00
+	rm gmon.out
 
 test: clean build $(shell echo ????-????.c | sed 's/\.c/\.test/g') result
 
