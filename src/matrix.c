@@ -225,9 +225,9 @@ void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const in
 {
 	assert(matrix_cols(dst) == matrix_cols(src));
 	uint8_t *d = matrix_ptr_row(dst, drow);
+	uint8_t *s = matrix_ptr_row(src, srow);
 	const int mcols = matrix_cols(dst);
 #ifdef INTEL_SSE3
-	uint8_t *s = matrix_ptr_row(src, srow);
 	const int mod = mcols % 16;
 	const int maxv = mcols - mod;
 	int j;
@@ -240,9 +240,7 @@ void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const in
 #else
 	int j = 0;
 #endif
-	for (; j < mcols; j++) {
-		d[j] ^= matrix_get_s(src, srow, j);
-	}
+	for (; j < mcols; j++) d[j] ^= s[j];
 }
 
 matrix_t matrix_add(const matrix_t *x, const matrix_t *y)
