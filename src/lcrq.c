@@ -1122,17 +1122,13 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 		 * of V, and the chosen row has entry alpha in the first column
 		 * of V, then beta/alpha multiplied by the chosen row is added
 		 * to this row to leave a zero value in the first column of V.
-		 * */
-		const uint8_t alpha = matrix_get_s(A, *i, *i);
-		const int ip = *i;
-		for (int x = ip + 1; x < A->rows; x++) {
-			const uint8_t beta = matrix_get_s(A, x, ip);
+		 * NB: alpha is always == 1 here */
+		assert(matrix_get_s(A, *i, *i) == 1); /* alpha == 1 */
+		for (int x = *i + 1; x < A->rows; x++) {
+			const uint8_t beta = matrix_get_s(A, x, *i);
 			if (beta) {
-				const uint8_t f = GF256DIV(beta, alpha);
-				if (f) {
-					matrix_row_mul_byrow(A, x, 0, ip, f);
-					matrix_sched_add(rq->sched, (uint16_t)x, 0, (uint16_t)ip, f);
-				}
+				matrix_row_mul_byrow(A, x, 0, *i, beta);
+				matrix_sched_add(rq->sched, x, 0, *i, beta);
 			}
 		}
 		(*i)++;

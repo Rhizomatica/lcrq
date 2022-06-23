@@ -137,7 +137,7 @@ void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
 void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val);
 
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc,
-		const uint8_t factor);
+		const uint8_t y);
 
 matrix_t matrix_add(const matrix_t *x, const matrix_t *y);
 
