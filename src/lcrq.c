@@ -969,6 +969,7 @@ static void rq_graph_components(matrix_t *A, int rdex[],
 	}
 }
 
+/* just sum the elements to get r, they are 1 or 0 except for HDPC */
 inline static int count_r(uint8_t *p, int len)
 {
 	int c = 0;
@@ -987,32 +988,26 @@ inline static int count_r(uint8_t *p, int len)
 
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
-static int rq_rdex(matrix_t *A, int rdex[], int odeg[], int i, int u, int *rp)
+static int rq_rdex(matrix_t *A, int rdex[], int odeg[], const int i, int *rp)
 {
 	int row = A->rows;
-	memset(rdex, 0, A->rows * sizeof(int));
 	for (int x = i; x < A->rows; x++) {
-		int r_row = 0;
-		/* just sum the elements to get r, they are 1 or 0 except for HDPC */
-		r_row = count_r(MADDR(A, x, i), A->cols - u - i);
-		if (r_row && r_row < *rp) {
+		if (rdex[x] && rdex[x] < *rp) {
 			/* choose row with minimum original degree */
-			if (odeg[row] > r_row) row = x;
-			*rp = r_row;
+			if (odeg[row] > rdex[x]) row = x;
+			*rp = rdex[x];
 		}
-		rdex[x] = r_row;
 	}
 	return row;
 }
 
-static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r, int odeg[],
-		unsigned char comp[], int cmax, size_t mapsz)
+static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r,
+		int rdex[], int odeg[], unsigned char comp[], int cmax, size_t mapsz)
 {
 	int rp = INT_MAX;
-	int row = A->rows;
-	int rdex[A->rows];
-
-	row = rq_rdex(A, rdex, odeg, i, u, &rp);
+	int row = rq_rdex(A, rdex, odeg, i, &rp);
+	assert(row != -1);
+	if (row == -1) return -1;
 
 	/* If r = 2 and there is a row with exactly 2 ones in V, then
 	 * choose any row with exactly 2 ones in V that is part of a
@@ -1060,9 +1055,17 @@ static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
 }
 #endif
 
+static void create_rdex(matrix_t *A, int i, int u, int r[])
+{
+	for (int x = i; x < A->rows; x++) {
+		r[x] = count_r(MADDR(A, x, i), A->cols - u - i);
+	}
+}
+
 int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
+	int rdex[A->rows];
 	int row, r;
 	int cmax = A->rows - rq->P;
 	const size_t mapsz = howmany(cmax, CHAR_BIT);
@@ -1070,16 +1073,17 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 
 	*i = 0;
 	*u = rq->P;
-
-	/* save original degree of each row */
-	for (int i = 0; i < A->rows; i++) odeg[i] = count_r(MADDR(A, i, 0), A->cols);
-	odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
-
+	odeg[A->rows] = 0;
 	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
 		/* all entries of V are zero => FAIL */
-		if ((row = rq_phase1_choose_row(A, *i, *u, &r, odeg, comp, cmax, mapsz)) == -1) return -1;
-		assert(row >= *i);
-
+		memset(rdex, 0, sizeof rdex);
+		create_rdex(A, *i, *u, rdex);
+		if (!odeg[A->rows]) {
+			/* save original degree of each row */
+			memcpy(odeg, rdex, sizeof rdex);
+			odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
+		}
+		if ((row = rq_phase1_choose_row(A, *i, *u, &r, rdex, odeg, comp, cmax, mapsz)) == -1) return -1;
 		/* the first row of A that intersects V is exchanged with the
 		 * chosen row so that the chosen row is the first row that
 		 * intersects V. */
