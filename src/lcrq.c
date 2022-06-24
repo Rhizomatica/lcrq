@@ -1084,7 +1084,7 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	*i = 0;
 	*u = rq->P;
 	odeg[A->rows] = 0;
-	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
+	while ((*i) + (*u) < rq->L) {
 		/* all entries of V are zero => FAIL */
 		create_rdex(A, *i, *u, rdex);
 		if (!odeg[A->rows]) {
