@@ -10,6 +10,13 @@ LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
 
+CFLAGS += -Wall -Wextra -Wpedantic
+CFLAGS += -pipe
+ifndef NDEBUG
+CFLAGS += -g -Og
+else
+CFLAGS += -O3 -DNDEBUG
+endif
 CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops
 export CFLAGS
 

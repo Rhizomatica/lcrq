@@ -14,7 +14,7 @@ endif
 .SUFFIXES:
 .SUFFIXES: .c .o
 #CFLAGS += -O3 -Wall -Wextra -Wpedantic -g -fPIC -I. -I../include
-CFLAGS += -O3 -Wall -Wextra -Wpedantic -g -I. -I../include
+CFLAGS += -I. -I../include
 HEADERS = ../include/$(LIBNAME).h $(LIBNAME)_pvt.h $(sort $(wildcard ../include/$(LIBNAME)/*.h))
 INSTALL ?= install
 LDCONFIG ?= ldconfig

@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 CAPS = ""
-CFLAGS += -Og -Wall -Wextra -Wpedantic -g -fno-builtin-malloc -fno-builtin-calloc -I../src -I ../include
+CFLAGS += -fno-builtin-malloc -fno-builtin-calloc -I../src -I ../include
 NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
 OBJS := test.o log.o misc.o falloc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
 LDFLAGS := -lm -ldl -lpthread -llibrecast -lsodium
@@ -34,7 +34,7 @@ speedtest.00: speedtest.00.o $(OBJS)
 
 speedtest: speedtest.00
 	./speedtest.00
-	rm gmon.out
+	rm -f gmon.out
 
 test: clean build $(shell echo ????-????.c | sed 's/\.c/\.test/g') result
 
@@ -84,3 +84,5 @@ realclean: clean
 	rm -f lsdb-test-????????.log* ????-????.test.valgrind
 	rm -rf ????-????.tmp.* *core*
 	rm -rf ????-????.*.tmp*
+	rm -f gmon.out
+	rm -f speedtest.00
