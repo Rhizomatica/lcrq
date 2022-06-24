@@ -8,7 +8,7 @@
 #include <sys/param.h>
 #include <unistd.h>
 
-#ifdef INTEL_SSE3
+#if (defined(INTEL_SSE3) || defined(INTEL_AVX2))
 #include <emmintrin.h>
 #include <immintrin.h>
 #endif

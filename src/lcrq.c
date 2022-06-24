@@ -11,6 +11,11 @@
 #include <sys/param.h>
 #include <time.h>
 
+#if (defined(INTEL_SSE3) || defined(INTEL_AVX2))
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
+
 #define POPCOUNT_BUILTIN 1
 
 static int isprime(const int n)
