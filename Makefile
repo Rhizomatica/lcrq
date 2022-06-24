@@ -10,7 +10,7 @@ LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
 
-CFLAGS += -march=native
+CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops
 export CFLAGS
 
 all: src
