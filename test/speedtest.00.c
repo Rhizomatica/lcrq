@@ -58,7 +58,7 @@ uint8_t *encoder_gauss(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
 	int rc = rq_encode_data(rq, src, rq->F);
 	assert(rc == 0);
-	fprintf(stderr, "gauss ");
+	//fprintf(stderr, "gauss ");
 	return encoder_generate_symbols(rq, ESI, nesi);
 }
 
@@ -66,7 +66,7 @@ uint8_t *encoder_rfc(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
 	int rc = rq_encode_data_rfc(rq, src, rq->F);
 	assert(rc == 0);
-	fprintf(stderr, "rfc ");
+	//fprintf(stderr, "rfc ");
 	return encoder_generate_symbols(rq, ESI, nesi);
 }
 
@@ -92,7 +92,7 @@ int decoder_gauss(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI
 	uint8_t *dec;
 	int rc = 0;
 
-	fprintf(stderr, "gauss ");
+	//fprintf(stderr, "gauss ");
 
 	rq = rq_init(F, T); assert(rq);
 	dec = malloc(rq->K * rq->T);
@@ -111,7 +111,7 @@ int decoder_rfc(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[]
 	size_t decsz;
 	int rc = 0;
 
-	fprintf(stderr, "rfc ");
+	//fprintf(stderr, "rfc ");
 
 	rq = rq_init(F, T); assert(rq);
 	decsz = rq->K * rq->T;
@@ -132,7 +132,7 @@ int decoder_hybrid(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ES
 	size_t decsz;
 	int rc = 0;
 
-	fprintf(stderr, "hybrid ");
+	//fprintf(stderr, "hybrid ");
 
 	rq = rq_init(F, T); assert(rq);
 	decsz = rq->K * rq->T;
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 		ensec -= (ts_enc_start.tv_sec * NANO + ts_enc_start.tv_nsec);
 		double edsec = (double)ensec / NANO;
 
-		dump_stats("encoder", F, T, F, edsec);
+		//dump_stats("encoder", F, T, F, edsec);
 		bytes_total_encoder += F;
 		s_total_encoder += edsec;
 
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 			uint64_t dnsec = (ts_dec_end.tv_sec * NANO + ts_dec_end.tv_nsec);
 			dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
 			double ddsec = (double)dnsec / NANO;
-			dump_stats("decoder", F, T, F, ddsec);
+			//dump_stats("decoder", F, T, F, ddsec);
 			bytes_total_decoder += F;
 			s_total_decoder += ddsec;
 		}
