@@ -973,7 +973,16 @@ static void rq_graph_components(matrix_t *A, int rdex[],
 inline static int count_r(uint8_t *p, int len)
 {
 	int c = 0;
-#ifdef INTEL_SSE3
+#if defined(INTEL_AVX2)
+	for (int vlen = len / 32; vlen; vlen--, p += 32) {
+		__m256i v = _mm256_loadu_si256((const __m256i_u *)p);
+		__m256i cmp = _mm256_cmpeq_epi8(v, _mm256_setzero_si256());
+		uint16_t bitmask = ~_mm256_movemask_epi8(cmp);
+		c +=  __builtin_popcount(bitmask);
+	}
+	len = len % 32;
+#endif
+#if defined(INTEL_SSE3)
 	for (int vlen = len / 16; vlen; vlen--, p += 16) {
 		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
 		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
@@ -988,7 +997,7 @@ inline static int count_r(uint8_t *p, int len)
 
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
-static int rq_rdex(matrix_t *A, int rdex[], int odeg[], const int i, int *rp)
+inline static int rq_rdex(matrix_t *A, int rdex[], int odeg[], const int i, int *rp)
 {
 	int row = A->rows;
 	for (int x = i; x < A->rows; x++) {
@@ -1055,8 +1064,9 @@ static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
 }
 #endif
 
-static void create_rdex(matrix_t *A, int i, int u, int r[])
+inline static void create_rdex(matrix_t *A, int i, int u, int r[])
 {
+	memset(r, 0, A->rows);
 	for (int x = i; x < A->rows; x++) {
 		r[x] = count_r(MADDR(A, x, i), A->cols - u - i);
 	}
@@ -1076,7 +1086,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	odeg[A->rows] = 0;
 	while ((*i) < A->rows && (*i) < A->cols && (*i) + (*u) < rq->L) {
 		/* all entries of V are zero => FAIL */
-		memset(rdex, 0, sizeof rdex);
 		create_rdex(A, *i, *u, rdex);
 		if (!odeg[A->rows]) {
 			/* save original degree of each row */
