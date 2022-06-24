@@ -165,13 +165,31 @@ int decoder(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], ui
 	return f(enc, src, F, T, ESI, nesi);
 }
 
+static void dump_stats(const char *msg, size_t F, uint16_t T, size_t bytes, double s)
+{
+	fprintf(stderr, "%s %zu bytes in %0.4fs ", msg, bytes, s);
+	double eBs = bytes / s;
+	double ebps = eBs * 8;
+	double eKbps = ebps / 1000;
+	double eMbps = eKbps / 1000;
+	double eGbps = eMbps / 1000;
+
+	fprintf(stderr, "%0.1f Mbps, ", eMbps);
+	fprintf(stderr, "%0.1f Gbps", eGbps);
+	fprintf(stderr, " F=%zu, T=%u\n", F, T);
+}
+
 int main(int argc, char *argv[])
 {
+	double s_total_decoder = 0;
+	double s_total_encoder = 0;
 	struct timespec ts_enc_start = {0};
 	struct timespec ts_enc_end = {0};
 	struct timespec ts_dec_start = {0};
 	struct timespec ts_dec_end = {0};
 	uint8_t *srcobj, *enc;
+	size_t bytes_total_decoder = 0;
+	size_t bytes_total_encoder = 0;
 	size_t F = DEFAULT_F;
 	uint16_t T = DEFAULT_T;
 	int reps = DEFAULT_REPS;
@@ -209,16 +227,10 @@ int main(int argc, char *argv[])
 		uint64_t ensec = (ts_enc_end.tv_sec * NANO + ts_enc_end.tv_nsec);
 		ensec -= (ts_enc_start.tv_sec * NANO + ts_enc_start.tv_nsec);
 		double edsec = (double)ensec / NANO;
-		fprintf(stderr, "encoder %zu bytes in %0.4fs ", F, edsec);
-		double eBs = F / edsec;
-		double ebps = eBs * 8;
-		double eKbps = ebps / 1000;
-		double eMbps = eKbps / 1000;
-		double eGbps = eMbps / 1000;
 
-		fprintf(stderr, "%0.1f Mbps, ", eMbps);
-		fprintf(stderr, "%0.1f Gbps", eGbps);
-		fprintf(stderr, " F=%zu, T=%u\n", F, T);
+		dump_stats("encoder", F, T, F, edsec);
+		bytes_total_encoder += F;
+		s_total_encoder += edsec;
 
 		/* decoder test */
 		clock_gettime(CLOCK_REALTIME, &ts_dec_start);
@@ -230,25 +242,22 @@ int main(int argc, char *argv[])
 			uint64_t dnsec = (ts_dec_end.tv_sec * NANO + ts_dec_end.tv_nsec);
 			dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
 			double ddsec = (double)dnsec / NANO;
-			double dBs = F / ddsec;
-			double dbps = dBs * 8;
-			double dKbps = dbps / 1000;
-			double dMbps = dKbps / 1000;
-			double dGbps = dMbps / 1000;
-			fprintf(stderr, "decoder %zu bytes in %0.4fs ", F, ddsec);
-			fprintf(stderr, "%0.1f Mbps, ", dMbps);
-			fprintf(stderr, "%0.1f Gbps", dGbps);
+			dump_stats("decoder", F, T, F, ddsec);
+			bytes_total_decoder += F;
+			s_total_decoder += ddsec;
 		}
 		else {
 			fprintf(stderr, "decoder FAIL ");
 		}
-		fprintf(stderr, " F=%zu, T=%u\n", F, T);
 
 		/* clean up */
 		free(ESI);
 		free(enc);
 		free(srcobj);
 	}
+	fputc('\n', stderr);
+	dump_stats("encoder avg", F, T, bytes_total_encoder, s_total_encoder);
+	dump_stats("decoder avg", F, T, bytes_total_decoder, s_total_decoder);
 
 	return 0;
 }
