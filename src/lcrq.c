@@ -1085,14 +1085,15 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	*u = rq->P;
 	odeg[A->rows] = 0;
 	while ((*i) + (*u) < rq->L) {
-		/* all entries of V are zero => FAIL */
 		create_rdex(A, *i, *u, rdex);
 		if (!odeg[A->rows]) {
 			/* save original degree of each row */
 			memcpy(odeg, rdex, sizeof rdex);
 			odeg[A->rows] = INT_MAX; /* last entry simplifies loop in row chooser */
 		}
-		if ((row = rq_phase1_choose_row(A, *i, *u, &r, rdex, odeg, comp, cmax, mapsz)) == -1) return -1;
+		if ((row = rq_phase1_choose_row(A, *i, *u, &r, rdex, odeg, comp, cmax, mapsz)) == -1)
+			return -1; /* all entries of V are zero => FAIL */
+
 		/* the first row of A that intersects V is exchanged with the
 		 * chosen row so that the chosen row is the first row that
 		 * intersects V. */
