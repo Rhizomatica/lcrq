@@ -830,10 +830,8 @@ uint8_t *rq_decode_C(rq_t *rq, matrix_t *D)
 
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u)
 {
-	(void)i, (void)u;
-	/* FIXME - temp - lets just solve this by brute force, then optimize after */
-	int rank = matrix_gauss_elim(A, rq->sched);
-	if (rank < rq->L) return -1;
+	(void)u;
+	matrix_gauss_upper(A, rq->sched, *i);
 	return 0;
 }
 

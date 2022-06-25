@@ -155,6 +155,7 @@ matrix_t *matrix_swap_rows(matrix_t *m, const int r1, const int r2);
 
 int matrix_pivot(matrix_t *A, int j, int P[], int Q[]);
 
+void matrix_gauss_upper(matrix_t *A, matrix_sched_t *sched, int off);
 int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched);
 
 /* peform LU decomposition on matrix A, storing combined LU factors in LU and

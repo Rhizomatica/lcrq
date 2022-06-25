@@ -496,6 +496,19 @@ static int matrix_pivot_sched(matrix_t *A, int j, matrix_sched_t *sched)
 	return 0;
 }
 
+void matrix_gauss_upper(matrix_t *A, matrix_sched_t *sched, int off)
+{
+	for (int i = 0; i < off; i++) {
+		for (int j = i + 1; j < A->cols; j++) {
+			const uint8_t ij = matrix_get_s(A, i, j);
+			if (ij) {
+				matrix_row_mul_byrow(A, i, 0, j, ij);
+				matrix_sched_add(sched, i, 0, j, ij);
+			}
+		}
+	}
+}
+
 /* reduce matrix to identity, track operations in matrix schedule, return rank */
 int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 {
