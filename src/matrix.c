@@ -518,7 +518,7 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 	for (j = 0; j < A->cols; j++) {
 		if (!matrix_pivot_sched(A, j, sched)) break;
 		/* first, reduce the pivot row so jj = 1 */
-		uint8_t jj = matrix_get_s(A, j, j);
+		const uint8_t jj = matrix_get_s(A, j, j);
 		if (jj != 1) {
 			const uint8_t b = GF256INV(jj);
 			if (b) {
@@ -528,14 +528,10 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 		}
 		for (int i = j + 1; i < A->rows; i++) {
 			/* add pivot row (j) * factor to row i so that ij == 0 */
-			jj = matrix_get_s(A, j, j);
 			const uint8_t ij = matrix_get_s(A, i, j);
 			if (ij) {
-				const uint8_t f = gf256_div(ij, jj);
-				if (f) {
-					matrix_row_mul_byrow(A, i, 0, j, f);
-					matrix_sched_add(sched, A->roff + i, 0, A->roff + j, f);
-				}
+				matrix_row_mul_byrow(A, i, 0, j, ij);
+				matrix_sched_add(sched, A->roff + i, 0, A->roff + j, ij);
 			}
 		}
 	}
@@ -544,12 +540,8 @@ int matrix_gauss_elim(matrix_t *A, matrix_sched_t *sched)
 		for (int j = i + 1; j < A->cols; j++) {
 			const uint8_t ij = matrix_get_s(A, i, j);
 			if (ij) {
-				const uint8_t jj = matrix_get_s(A, j, j);
-				const uint8_t f = gf256_div(ij, jj);
-				if (f) {
-					matrix_row_mul_byrow(A, i, 0, j, f);
-					matrix_sched_add(sched, A->roff + i, 0, A->roff + j, f);
-				}
+				matrix_row_mul_byrow(A, i, 0, j, ij);
+				matrix_sched_add(sched, A->roff + i, 0, A->roff + j, ij);
 			}
 		}
 	}
