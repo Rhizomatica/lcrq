@@ -414,22 +414,22 @@ void rq_generate_HDPC(const rq_t *rq, matrix_t *A)
 	I_H = matrix_submatrix(&H1, 0, rq->L - rq->H, rq->H, rq->H);
 
 	for (int j = 0; j < rq->H; j++) {
-		matrix_set(&H1, j, rq->KP + rq->S - 1, GF256EXP(j));
+		matrix_set_s(&H1, j, rq->KP + rq->S - 1, GF256EXP(j));
 	}
 	for (int j = rq->KP + rq->S - 2; j >= 0; j--) {
 		for (int i = 0; i < rq->H; i++) {
-			val = matrix_get(&H1, i, j + 1);
+			val = matrix_get_s(&H1, i, j + 1);
 			val = GF256MUL(val, 2);
-			matrix_set(&H1, i, j, val);
+			matrix_set_s(&H1, i, j, val);
 		}
 		int a = rq_rand(j + 1, 6, rq->H);
-		val = matrix_get(&H1, a, j);
+		val = matrix_get_s(&H1, a, j);
 		val ^= 1; /* GF add => XOR */
-		matrix_set(&H1, a, j, val);
+		matrix_set_s(&H1, a, j, val);
 		a = (a + rq_rand(j + 1, 7, rq->H - 1) + 1) % rq->H;
-		val = matrix_get(&H1, a, j);
+		val = matrix_get_s(&H1, a, j);
 		val ^= 1; /* GF add => XOR */
-		matrix_set(&H1, a, j, val);
+		matrix_set_s(&H1, a, j, val);
 	}
 
 	/* The identity matrix, I_H */
