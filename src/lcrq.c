@@ -871,8 +871,8 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 */
 
 /* track components in graph using a bitmap */
-static void rq_graph_components(matrix_t *A, int rdex[],
-		unsigned char comp[], int cmax, size_t mapsz, int i, int u)
+static void rq_graph_components(const matrix_t *A, const int rdex[],
+		unsigned char comp[], const int cmax, const size_t mapsz, const int i, const int u)
 {
 	memset(comp, 0, mapsz * cmax);
 	/* we're only interested in rows with exactly two nonzero elements */
@@ -958,7 +958,7 @@ inline static int count_r(uint8_t *p, int len)
 		uint16_t bitmask = ~_mm256_movemask_epi8(cmp);
 		c +=  __builtin_popcount(bitmask);
 	}
-	len = len % 32;
+	len &= 0xff;
 #endif
 #if defined(INTEL_SSE3)
 	for (int vlen = len / 16; vlen; vlen--, p += 16) {
@@ -967,7 +967,7 @@ inline static int count_r(uint8_t *p, int len)
 		uint16_t bitmask = ~_mm_movemask_epi8(cmp);
 		c +=  __builtin_popcount(bitmask);
 	}
-	len = len % 16;
+	len &= 0x0f;
 #endif
 	for (; len; len--, p++) c += *p;
 	return c;
@@ -975,7 +975,7 @@ inline static int count_r(uint8_t *p, int len)
 
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
-inline static int rq_rdex(matrix_t *A, int rdex[], int odeg[], const int i, int *rp)
+inline static int rq_rdex(const matrix_t *A, const int rdex[], const int odeg[], const int i, int *rp)
 {
 	int row = A->rows;
 	for (int x = i; x < A->rows; x++) {
@@ -988,8 +988,9 @@ inline static int rq_rdex(matrix_t *A, int rdex[], int odeg[], const int i, int 
 	return row;
 }
 
-static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r,
-		int rdex[], int odeg[], unsigned char comp[], int cmax, size_t mapsz)
+static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int *r,
+		const int rdex[], const int odeg[], unsigned char comp[],
+		const int cmax, const size_t mapsz)
 {
 	int rp = INT_MAX;
 	int row = rq_rdex(A, rdex, odeg, i, &rp);
@@ -1024,7 +1025,7 @@ static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r,
 	return (row == A->rows) ? -1 : row;
 }
 
-inline static void create_rdex(matrix_t *A, int i, int u, int r[])
+inline static void create_rdex(const matrix_t *A, const int i, const int u, int r[])
 {
 	memset(r, 0, A->rows);
 	for (int x = i; x < A->rows; x++) {
@@ -1032,7 +1033,7 @@ inline static void create_rdex(matrix_t *A, int i, int u, int r[])
 	}
 }
 
-int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
+int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
 	int rdex[A->rows];
@@ -1107,13 +1108,6 @@ int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u)
 	free(comp);
 	return 0;
 }
-
-#if 0
-int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
-{
-	return 0;
-}
-#endif
 
 #ifndef NDEBUG
 #if 0

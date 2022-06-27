@@ -126,7 +126,7 @@ uint8_t *rq_decode_C(rq_t *rq, matrix_t *D);
 void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A);
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 		uint32_t nesi);
-int rq_decoder_rfc6330_phase1(rq_t *rq, matrix_t *A, int *i, int *u);
+int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
