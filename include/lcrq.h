@@ -84,19 +84,20 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
 matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
 uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym);
 
-uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, uint8_t sbn, uint32_t esi);
+uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi);
 
 /* return a random repair symbol for block SBN
  * intermediate symbols must have been generated already by a call to
  * rq_encode_data() */
-uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, uint8_t sbn);
+uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 
-uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, uint8_t sbn);
-uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, uint8_t sbn);
+uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
+uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 
 /* generate n symbols, starting at ISI from.  pass in preallocated buffer blk.
  * ISIs >= K are repair symbols */
-uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk, uint32_t from, uint32_t n);
+uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk,
+		const uint32_t from, const uint32_t n);
 
 /* encode an object of size F using a symbol size of T.
  * Return encoded data in enc, with size enclen */

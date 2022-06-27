@@ -31,7 +31,7 @@ static int isprime(const int n)
 }
 
 /* return number of bits set in bitmap (Hamming Weight / popcount) */
-static unsigned int hamm(unsigned char *map, size_t len)
+inline static unsigned int hamm(const unsigned char *map, size_t len)
 {
 	unsigned int c = 0;
 #ifdef POPCOUNT_BUILTIN
@@ -43,7 +43,7 @@ static unsigned int hamm(unsigned char *map, size_t len)
 }
 
 /* convert ESI to ISI (5.3.1) */
-static inline uint32_t esi2isi(const rq_t *rq, uint32_t esi)
+static inline uint32_t esi2isi(const rq_t *rq, const uint32_t esi)
 {
 	assert(esi <= RQ_ESI_MAX);
 	return (esi < rq->K) ? esi : esi + rq->KP - rq->K;
@@ -83,15 +83,15 @@ int rq_deg(const rq_t *rq, const int v)
 
 size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 {
-	const uint8_t x0 = (y + i) % (1 << 8);
-	const uint8_t x1 = ((y >> 8) + i) % (1 << 8);
-	const uint8_t x2 = ((y >> 16) + i) % (1 << 8);
-	const uint8_t x3 = ((y >> 24) + i) % (1 << 8);
+	const uint8_t x0 = (y + i) & 0xff;
+	const uint8_t x1 = ((y >> 8) + i) & 0xff;
+	const uint8_t x2 = ((y >> 16) + i) & 0xff;
+	const uint8_t x3 = ((y >> 24) + i) & 0xff;
 	assert(m); /* must be positive */
 	return (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m;
 }
 
-matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN)
+matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
 {
 	matrix_t C = {0};
 	assert(rq->C);
@@ -144,7 +144,7 @@ uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi,
 	return R.base;
 }
 
-uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, uint8_t sbn, uint32_t esi)
+uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi)
 {
 	uint32_t isi = esi2isi(rq, esi);
 	matrix_t C = rq_matrix_C_by_SBN(rq, sbn);
@@ -153,7 +153,7 @@ uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, uint8_t sbn, uint32_t
 	return rq_encode_symbol(rq, &C, isi, sym->sym);
 }
 
-uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
+uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
 {
 	/* NB: ESI is a 24-bit unsigned integer (3.2) */
 	uint32_t esi = randombytes_uniform(RQ_ESI_MAX - rq->K) + rq->K;
@@ -161,7 +161,7 @@ uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
 }
 
 /* TODO - pass in state (threads) */
-uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
+uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
 {
 	static uint8_t sbn_last;
 	static uint32_t esi;
@@ -171,7 +171,7 @@ uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
 }
 
 /* reverse the polarity */
-uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
+uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
 {
 	static uint8_t sbn_last;
 	static uint32_t esi = RQ_ESI_MAX;
@@ -180,7 +180,8 @@ uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, uint8_t sbn)
 	return rq_symbol_generate(rq, sym, sbn, esi--);
 }
 
-uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk, uint32_t from, uint32_t n)
+uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk,
+		const uint32_t from, const uint32_t n)
 {
 	for (uint32_t isi = from; isi < (from + n); isi++) {
 		rq_encode_symbol(rq, C, isi, blk);
