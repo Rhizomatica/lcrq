@@ -11,9 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define DECODER_GAUSS 1
-#define DECODER_RFC 2
-#define DECODER_HYBRID 3
+#define DECODER_RFC 1
 #define DECODER_DEFAULT DECODER_RFC
 
 #define NANO 1000000000
@@ -54,115 +52,11 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	return enc;
 }
 
-uint8_t *encoder_gauss(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
-{
-	int rc = rq_encode_data(rq, src, rq->F);
-	assert(rc == 0);
-	//fprintf(stderr, "gauss ");
-	return encoder_generate_symbols(rq, ESI, nesi);
-}
-
-uint8_t *encoder_rfc(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
+uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
 	int rc = rq_encode_data_rfc(rq, src, rq->F);
 	assert(rc == 0);
-	//fprintf(stderr, "rfc ");
 	return encoder_generate_symbols(rq, ESI, nesi);
-}
-
-uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
-{
-	uint8_t *(*f)(rq_t *, uint8_t *, uint32_t *, int);
-	switch (encoder_type) {
-		case DECODER_GAUSS:
-			f = encoder_gauss;
-			break;
-		case DECODER_RFC:
-			f = encoder_rfc;
-			break;
-		default:
-			f = encoder_rfc;
-	}
-	return f(rq, src, ESI, nesi);
-}
-
-int decoder_gauss(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
-{
-	rq_t *rq;
-	uint8_t *dec;
-	int rc = 0;
-
-	//fprintf(stderr, "gauss ");
-
-	rq = rq_init(F, T); assert(rq);
-	dec = malloc(rq->K * rq->T);
-	rc = rq_decode_block_f(rq, dec, enc, ESI, nesi);
-	if (!rc) rc = memcmp(dec, src, F);
-	free(dec);
-	rq_free(rq);
-
-	return rc;
-}
-
-int decoder_rfc(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
-{
-	rq_t *rq;
-	uint8_t *dec;
-	size_t decsz;
-	int rc = 0;
-
-	//fprintf(stderr, "rfc ");
-
-	rq = rq_init(F, T); assert(rq);
-	decsz = rq->K * rq->T;
-	dec = malloc(decsz);
-	memset(dec, 0, decsz);
-	rc = rq_decode_block_rfc(rq, dec, enc, ESI, nesi);
-	if (!rc) rc = memcmp(dec, src, F);
-	free(dec);
-	rq_free(rq);
-
-	return rc;
-}
-
-int decoder_hybrid(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
-{
-	rq_t *rq;
-	uint8_t *dec;
-	size_t decsz;
-	int rc = 0;
-
-	//fprintf(stderr, "hybrid ");
-
-	rq = rq_init(F, T); assert(rq);
-	decsz = rq->K * rq->T;
-	dec = malloc(decsz);
-	memset(dec, 0, decsz);
-	rc = rq_decode_block_hybrid(rq, dec, enc, ESI, nesi);
-	if (!rc) rc = memcmp(dec, src, F);
-	free(dec);
-	rq_free(rq);
-
-	return rc;
-}
-
-int decoder(uint8_t *enc, uint8_t *src, size_t F, uint16_t T, uint32_t ESI[], uint32_t nesi)
-{
-	int (*f)(uint8_t *, uint8_t *, size_t, uint16_t, uint32_t *, uint32_t);
-	switch (decoder_type) {
-		case DECODER_GAUSS:
-			f = decoder_gauss;
-			break;
-		case DECODER_RFC:
-			f = decoder_rfc;
-			break;
-		case DECODER_HYBRID:
-			f = decoder_hybrid;
-			break;
-		default:
-			f = decoder_rfc;
-	}
-	return f(enc, src, F, T, ESI, nesi);
 }
 
 static void dump_stats(const char *msg, size_t F, uint16_t T, size_t bytes, double s)
@@ -181,6 +75,7 @@ static void dump_stats(const char *msg, size_t F, uint16_t T, size_t bytes, doub
 
 int main(int argc, char *argv[])
 {
+	rq_t *rq_enc = NULL, *rq_dec = NULL;
 	double s_total_decoder = 0;
 	double s_total_encoder = 0;
 	struct timespec ts_enc_start = {0};
@@ -195,60 +90,57 @@ int main(int argc, char *argv[])
 	int reps = DEFAULT_REPS;
 	uint32_t *ESI;
 	int nesi;
+	int fails = 0;
 
 	if (argc > 1) F = atoll(argv[1]);
 	if (argc > 2) T = atoll(argv[2]); /* TODO ensure multiple of Al */
 	if (argc > 3) reps = atoll(argv[3]);
-	if (argc > 4 && !strcmp(argv[4], "gauss")) {
-		encoder_type = DECODER_GAUSS;
-		decoder_type = DECODER_GAUSS;
-	}
-	if (argc > 4 && !strcmp(argv[4], "hybrid")) decoder_type = DECODER_HYBRID;
 	if (argc > 4 && !strcmp(argv[4], "rfc")) {
 		encoder_type = DECODER_RFC;
 		decoder_type = DECODER_RFC;
 	}
 
 	for (int i = 0; i < reps; i++) {
-
 		/* generate random source block for test */
 		srcobj = generate_source_object(F);
 
 		/* encoder test */
 		clock_gettime(CLOCK_REALTIME, &ts_enc_start);
-		rq_t *rq = rq_init(F, T);
-		nesi = rq->KP + overhead;
+		rq_enc = rq_init(F, T);
+		nesi = rq_enc->KP + overhead;
 		ESI = calloc(nesi, sizeof(uint32_t));
-		enc = encoder(rq, srcobj, ESI, nesi);
-		rq_free(rq);
+		enc = encoder(rq_enc, srcobj, ESI, nesi);
+		rq_free(rq_enc);
 		clock_gettime(CLOCK_REALTIME, &ts_enc_end);
 
 		/* encoder stats */
 		uint64_t ensec = (ts_enc_end.tv_sec * NANO + ts_enc_end.tv_nsec);
 		ensec -= (ts_enc_start.tv_sec * NANO + ts_enc_start.tv_nsec);
 		double edsec = (double)ensec / NANO;
-
-		//dump_stats("encoder", F, T, F, edsec);
 		bytes_total_encoder += F;
 		s_total_encoder += edsec;
 
 		/* decoder test */
 		clock_gettime(CLOCK_REALTIME, &ts_dec_start);
-		int ok = decoder(enc, srcobj, F, T, ESI, nesi);
+		rq_dec = rq_init(F, T);
+		uint8_t *dec = NULL;
+		size_t decsz = rq_dec->K * rq_dec->T;
+		dec = malloc(decsz);
+		memset(dec, 0, decsz);
+		int ok = rq_decode_block_rfc(rq_dec, dec, enc, ESI, nesi);
+		rq_free(rq_dec);
 		clock_gettime(CLOCK_REALTIME, &ts_dec_end);
 
+		if (ok == 0) ok = memcmp(dec, srcobj, F);
+		free(dec);
+
 		/* decoder stats */
-		if (ok == 0) {
-			uint64_t dnsec = (ts_dec_end.tv_sec * NANO + ts_dec_end.tv_nsec);
-			dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
-			double ddsec = (double)dnsec / NANO;
-			//dump_stats("decoder", F, T, F, ddsec);
-			bytes_total_decoder += F;
-			s_total_decoder += ddsec;
-		}
-		else {
-			fprintf(stderr, "decoder FAIL ");
-		}
+		uint64_t dnsec = (ts_dec_end.tv_sec * NANO + ts_dec_end.tv_nsec);
+		dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
+		double ddsec = (double)dnsec / NANO;
+		s_total_decoder += ddsec;
+		if (ok == 0) bytes_total_decoder += F;
+		else fails++;
 
 		/* clean up */
 		free(ESI);
@@ -258,6 +150,8 @@ int main(int argc, char *argv[])
 	fputc('\n', stderr);
 	dump_stats("encoder avg", F, T, bytes_total_encoder, s_total_encoder);
 	dump_stats("decoder avg", F, T, bytes_total_decoder, s_total_decoder);
+	if (fails) fprintf(stderr, "decoder FAILs = %i/%i (%0.4f%%), overhead = %i\n", fails, reps,
+		(double)fails/(double)reps * 100, RQ_OVERHEAD);
 
 	return 0;
 }
