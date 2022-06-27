@@ -43,7 +43,7 @@ inline static unsigned int hamm(const unsigned char *map, size_t len)
 }
 
 /* convert ESI to ISI (5.3.1) */
-static inline uint32_t esi2isi(const rq_t *rq, const uint32_t esi)
+inline static uint32_t esi2isi(const rq_t *rq, const uint32_t esi)
 {
 	assert(esi <= RQ_ESI_MAX);
 	return (esi < rq->K) ? esi : esi + rq->KP - rq->K;
@@ -269,7 +269,7 @@ int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 		}
 
 		int rc = rq_encode_block_rfc(rq, base, srcblk);
-		assert(rc == 0);
+		assert(rc == 0); (void)rc;
 
 		free(padblk);
 		base += clen;
@@ -947,32 +947,6 @@ static void rq_graph_components(const matrix_t *A, const int rdex[],
 	}
 }
 
-/* just sum the elements to get r, they are 1 or 0 except for HDPC */
-inline static int count_r(uint8_t *p, int len)
-{
-	int c = 0;
-#if defined(INTEL_AVX2)
-	for (int vlen = len / 32; vlen; vlen--, p += 32) {
-		__m256i v = _mm256_loadu_si256((const __m256i_u *)p);
-		__m256i cmp = _mm256_cmpeq_epi8(v, _mm256_setzero_si256());
-		uint16_t bitmask = ~_mm256_movemask_epi8(cmp);
-		c +=  __builtin_popcount(bitmask);
-	}
-	len &= 0xff;
-#endif
-#if defined(INTEL_SSE3)
-	for (int vlen = len / 16; vlen; vlen--, p += 16) {
-		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
-		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
-		uint16_t bitmask = ~_mm_movemask_epi8(cmp);
-		c +=  __builtin_popcount(bitmask);
-	}
-	len &= 0x0f;
-#endif
-	for (; len; len--, p++) c += *p;
-	return c;
-}
-
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
 inline static int rq_rdex(const matrix_t *A, const int rdex[], const int odeg[], const int i, int *rp)
@@ -1025,6 +999,32 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 	return (row == A->rows) ? -1 : row;
 }
 
+/* just sum the elements to get r, they are 1 or 0 except for HDPC */
+inline static int count_r(uint8_t *p, int len)
+{
+	int c = 0;
+#if defined(INTEL_AVX2)
+	for (int vlen = len / 32; vlen; vlen--, p += 32) {
+		__m256i v = _mm256_loadu_si256((const __m256i_u *)p);
+		__m256i cmp = _mm256_cmpeq_epi8(v, _mm256_setzero_si256());
+		uint16_t bitmask = ~_mm256_movemask_epi8(cmp);
+		c +=  __builtin_popcount(bitmask);
+	}
+	len &= 0xff;
+#endif
+#if defined(INTEL_SSE3)
+	for (int vlen = len / 16; vlen; vlen--, p += 16) {
+		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
+		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
+		uint16_t bitmask = ~_mm_movemask_epi8(cmp);
+		c +=  __builtin_popcount(bitmask);
+	}
+	len &= 0x0f;
+#endif
+	for (; len; len--, p++) c += *p;
+	return c;
+}
+
 inline static void create_rdex(const matrix_t *A, const int i, const int u, int r[])
 {
 	memset(r, 0, A->rows);
@@ -1061,7 +1061,7 @@ int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u)
 		if (*i != row) {
 			matrix_swap_rows(A, *i, row);
 			SWAP(odeg[*i], odeg[row]);
-			matrix_sched_row(rq->sched, (uint16_t)*i, (uint16_t)row);
+			matrix_sched_row(rq->sched, *i, row);
 		}
 
 		/* The columns of A among those that intersect V are
@@ -1081,7 +1081,7 @@ int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u)
 					if (col <= j) break;
 				}
 				matrix_swap_cols(A, col, j);
-				matrix_sched_col(rq->sched, (uint16_t)col, (uint16_t)j);
+				matrix_sched_col(rq->sched, col, j);
 				if (r == ++rr) break;
 			}
 		}

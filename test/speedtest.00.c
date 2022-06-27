@@ -55,7 +55,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
 	int rc = rq_encode_data_rfc(rq, src, rq->F);
-	assert(rc == 0);
+	assert(rc == 0); (void)rc;
 	return encoder_generate_symbols(rq, ESI, nesi);
 }
 
