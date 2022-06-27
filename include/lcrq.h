@@ -17,6 +17,9 @@
 /* NB: ESI is a 24-bit unsigned integer (3.2) */
 #define RQ_ESI_MAX 0xffffff
 
+/* default working memory value */
+extern size_t RQ_WS_DEFAULT;
+
 /* rounding integer division */
 #define CEIL(x, y)  (((x) + ((y) - 1)) / (y))
 #define FLOOR(x, y) ((x) / (y))

@@ -16,6 +16,8 @@
 #include <immintrin.h>
 #endif
 
+size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
+
 #define POPCOUNT_BUILTIN 1
 
 static int isprime(const int n)
@@ -1252,8 +1254,7 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 #endif
 
 	rq->F = F;
-	/* TODO what is an appropriate size for WS ? */
-	rq->WS = 1073741824; /* 1GiB */
+	rq->WS = RQ_WS_DEFAULT;
 	rq->Al = RQ_AL;
 	rq->T = T;
 
