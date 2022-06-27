@@ -7,7 +7,9 @@
 #include <matrix.h>
 #include <stddef.h>
 #include <stdint.h>
+#ifndef NDEBUG
 #include <stdio.h>
+#endif
 
 #define RQ_AL 4
 
@@ -130,9 +132,12 @@ int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uin
 
 rq_t *rq_init(const size_t F, const uint16_t T);
 void rq_free(rq_t *rq);
+
+#ifndef NDEBUG
 void rq_dump(const rq_t *rq, FILE *stream);
 void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream);
 void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream);
 void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream);
+#endif
 
 #endif /* LCRQ_PVT_H */

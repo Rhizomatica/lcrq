@@ -5,7 +5,9 @@
 #define MATRIX_H 1
 
 #include <assert.h>
+#ifndef NDEBUG
 #include <stdio.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
 
@@ -96,6 +98,11 @@ typedef struct matrix_s {
 	int      trans;
 } matrix_t;
 
+#ifndef NDEBUG
+void matrix_dump(matrix_t *mat, FILE *stream);
+void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream);
+#endif
+
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base, int flags);
 matrix_t matrix_submatrix(const matrix_t *A, const int off_rows, const int off_cols,
 		const int rows, const int cols);
@@ -104,7 +111,6 @@ void matrix_free(matrix_t *mat);
 uint8_t *matrix_schedule_init(matrix_sched_t *sched);
 uint8_t *matrix_schedule_resize(matrix_sched_t *sched);
 void matrix_schedule_free(matrix_sched_t *sched);
-void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream);
 void matrix_schedule_replay(matrix_t *m, matrix_sched_t *sched);
 void matrix_schedule_reverse(matrix_t *m, matrix_sched_t *sched);
 
@@ -128,7 +134,6 @@ int matrix_is_lower(matrix_t *m);
 /* return nonzero if all m elements are zero */
 int matrix_is_zero(matrix_t *m);
 
-void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 uint8_t *matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
 void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);

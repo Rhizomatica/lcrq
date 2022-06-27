@@ -568,7 +568,9 @@ static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
 	/* LU decompose A */
 	if ((rank = matrix_LU_decompose(A, P, Q)) < rq->L) {
 		matrix_free(A);
+#ifndef NDEBUG
 		fprintf(stderr, "matrix_LU_decompose() FAIL rank = %i/%u\n", rank, rq->L);
+#endif
 		return -1;
 	}
 	A->rows = rank; /* discard extraneous rows */
