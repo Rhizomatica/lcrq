@@ -1227,11 +1227,6 @@ void rq_block(rq_t *rq)
 	rq->P1 = rq->P;
 	while (!isprime(rq->P1)) rq->P1++;
 
-	/* N is the minimum n=1, ..., Nmax such that ceil(Kt/Z) <= KL(n) */
-	for (rq->N = 1; rq->N <= rq->Nmax; rq->N++) {
-		if (CEIL(rq->Kt,rq->Z) <= KL(rq->WS, rq->Al, rq->T, rq->N)) break;
-	}
-
 	/* verify primes */
 	assert(isprime(rq->P1));
 	assert(isprime(rq->S));
