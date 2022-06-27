@@ -677,36 +677,6 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 	return rq_decode_block(rq, &sym, &rep);
 }
 
-int rq_decode_block_hybrid(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
-{
-	uint8_t *C;
-	matrix_t A, Cm, D;
-	int rc = 0;
-
-	rq->sched = malloc(sizeof(matrix_sched_t));
-	memset(rq->sched, 0, sizeof(matrix_sched_t));
-	rq_decoder_rfc6330_phase0(rq, &A, dec, enc, ESI, nesi);
-	matrix_gauss_elim(&A, rq->sched);
-
-	uint32_t M = rq->S + rq->H + rq->Nesi;
-	matrix_new(&D, M, rq->T, NULL, 0);
-	matrix_zero(&D);
-	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
-	uint8_t *ptr = D.base + off * rq->T;
-	memcpy(ptr, enc, rq->nrep * rq->T);
-
-	C = rq_decode_C(rq, &D);
-	matrix_free(&D);
-	matrix_new(&Cm, rq->L, rq->T, C, 0);
-	for (int esi = 0; esi < rq->K; esi++) {
-		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
-	}
-	free(C);
-	matrix_free(&A);
-
-	return rc;
-}
-
 int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 {
 	matrix_t A;
