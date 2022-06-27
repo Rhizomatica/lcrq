@@ -128,8 +128,6 @@ int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
-void rq_block(rq_t *rq); /* calculate params based on K */
-
 rq_t *rq_init(const size_t F, const uint16_t T);
 void rq_free(rq_t *rq);
 void rq_dump(const rq_t *rq, FILE *stream);

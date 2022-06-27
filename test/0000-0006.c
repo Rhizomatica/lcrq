@@ -352,7 +352,6 @@ int main(void)
 			srcblk = padblk;
 		}
 
-		rq_block(rq);
 		rq_dump(rq, stderr);
 
 		test_log("SBN %zu: K' (%u) * T (%u) = %zu\n", SBN, rq->KP, rq->T, rq->KP * rq->T);

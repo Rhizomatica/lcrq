@@ -811,5 +811,6 @@ struct rq_s {
 #define KP_MAX 56403
 
 matrix_t rq_matrix_C_by_SBN(const rq_t *rq, uint8_t SBN);
+void rq_block(rq_t *rq); /* calculate params based on K */
 
 #endif /* LCRQ_PVT_H */

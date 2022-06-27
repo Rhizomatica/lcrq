@@ -1021,24 +1021,6 @@ static int rq_phase1_choose_row(matrix_t *A, int i, int u, int *r,
 	return (row == A->rows) ? -1 : row;
 }
 
-#if 0
-static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
-{
-	for (int i = 0; i < cmax; i++) {
-		fprintf(stderr, "%02i: ", i);
-		if (hamm(comp + i * mapsz, mapsz))
-		for (int j = 0; j < cmax; j++) {
-			if (isset(comp + i * mapsz, j))
-				fputc('1', stderr);
-			else
-				fputc('0', stderr);
-		}
-		fputc('\n', stderr);
-	}
-	fputc('\n', stderr);
-}
-#endif
-
 inline static void create_rdex(matrix_t *A, int i, int u, int r[])
 {
 	memset(r, 0, A->rows);
@@ -1130,6 +1112,25 @@ int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uin
 }
 #endif
 
+#ifndef NDEBUG
+#if 0
+static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
+{
+	for (int i = 0; i < cmax; i++) {
+		fprintf(stderr, "%02i: ", i);
+		if (hamm(comp + i * mapsz, mapsz))
+		for (int j = 0; j < cmax; j++) {
+			if (isset(comp + i * mapsz, j))
+				fputc('1', stderr);
+			else
+				fputc('0', stderr);
+		}
+		fputc('\n', stderr);
+	}
+	fputc('\n', stderr);
+}
+#endif
+
 void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)
 {
 	matrix_t H;
@@ -1160,22 +1161,11 @@ void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream)
 
 void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream)
 {
-	//fprintf(stream, "symbol (%p)\n", (void *)sym);
 	const int symwidth = MIN(rq->T, rq->F);
 	for (int i = 0; i < symwidth; i++) {
 		fprintf(stream, " %02x", sym[i]);
 	}
 	fputc('\n', stream);
-}
-
-void rq_free(rq_t *rq)
-{
-	if (rq) {
-		matrix_schedule_free(rq->sched);
-		free(rq->sched);
-		free(rq->C);
-		free(rq);
-	}
 }
 
 /* dump all rq_t values to stream */
@@ -1203,6 +1193,17 @@ void rq_dump(const rq_t *rq, FILE *stream)
 	fprintf(stream, "%s\t= %u\n", "P1", rq->P1);
 	fprintf(stream, "%s\t= %u\n", "U", rq->U);
 	fprintf(stream, "%s\t= %u\n", "B", rq->B);
+}
+#endif
+
+void rq_free(rq_t *rq)
+{
+	if (rq) {
+		matrix_schedule_free(rq->sched);
+		free(rq->sched);
+		free(rq->C);
+		free(rq);
+	}
 }
 
 /* set per-block values */
@@ -1250,7 +1251,7 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 	memset(rq, 0, sizeof(rq_t));
 
 #ifdef INTEL_SSE3
-	GF256LR_INIT; // FIXME - this doesn't belong here
+	GF256LR_INIT;
 #endif
 
 	rq->F = F;
