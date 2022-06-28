@@ -5,6 +5,7 @@
 #define LCRQ_PVT_H 1
 
 #include <lcrq.h>
+#include <matrix.h>
 #include <stdint.h>
 
 typedef struct t2_s {
@@ -812,5 +813,35 @@ struct rq_s {
 
 matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN);
 void rq_block(rq_t *rq); /* calculate params based on K */
+
+/* generate n symbols, starting at ISI from.  pass in preallocated buffer blk.
+ * ISIs >= K are repair symbols */
+uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk,
+		const uint32_t from, const uint32_t n);
+
+void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt);
+matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
+matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
+uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym);
+
+void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep);
+
+uint8_t *rq_decode_C(rq_t *rq, matrix_t *D);
+
+void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A);
+void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
+		uint32_t nesi);
+int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u);
+int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
+int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
+
+#ifndef NDEBUG
+void rq_dump(const rq_t *rq, FILE *stream);
+void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream);
+void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream);
+void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream);
+#endif
+
+
 
 #endif /* LCRQ_PVT_H */

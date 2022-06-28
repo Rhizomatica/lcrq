@@ -2,7 +2,6 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include <lcrq_pvt.h>
-#include <matrix.h>
 #include <assert.h>
 #include <gf256.h>
 #include <sodium.h>
