@@ -17,7 +17,7 @@ CFLAGS += -g -Og
 else
 CFLAGS += -O3 -DNDEBUG
 endif
-CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops
+CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops -flto
 export CFLAGS
 
 all: src
