@@ -5,7 +5,7 @@ export VERSION := 0.0.0
 export ABIVERS := 0.0
 PREFIX ?= /usr/local
 export PREFIX
-export LIBNAME := liblcrq
+export LIBNAME := lcrq
 LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
