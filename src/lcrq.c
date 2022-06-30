@@ -892,6 +892,7 @@ void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc
 */
 
 /* track components in graph using a bitmap */
+#ifdef RQ_TRACK_COMPONENTS
 static void rq_graph_components(const matrix_t *A, const int rdex[],
 		unsigned char comp[], const int cmax, const size_t mapsz, const int i, const int u)
 {
@@ -967,6 +968,7 @@ static void rq_graph_components(const matrix_t *A, const int rdex[],
 		}
 	}
 }
+#endif
 
 /* Let r be the minimum integer such that at least one row of A has
  * exactly r nonzeros in V */
@@ -996,6 +998,7 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 	 * choose any row with exactly 2 ones in V that is part of a
 	 * maximum size component in the graph described above that is
 	 * defined by V. */
+#ifdef RQ_TRACK_COMPONENTS
 	if (rp == 2) {
 		rq_graph_components(A, rdex, comp, cmax, mapsz, i, u);
 		unsigned char *cv;
@@ -1016,6 +1019,7 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 			}
 		}
 	}
+#endif
 	*r = rdex[row];
 	return (row == A->rows) ? -1 : row;
 }
