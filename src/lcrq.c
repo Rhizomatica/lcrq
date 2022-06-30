@@ -896,7 +896,7 @@ static void rq_graph_components(const matrix_t *A, const int rdex[],
 		 * bits lets us find the largest component(s) by popcount */
 		int c[2] = { -1, -1};
 		int v;
-		unsigned char *cv, *c0, *c1;
+		unsigned char *cv = comp, *c0, *c1;
 		for (v = 0; v < cmax; v++) {
 			cv = comp + v * mapsz;
 			if (!hamm(cv, mapsz)) break; /* last component */
