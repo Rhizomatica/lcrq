@@ -904,15 +904,16 @@ static void rq_graph_components(const matrix_t *A, const int rdex[],
 		/* get the two nonzero values (a, b) in this row */
 		int a = -1, b = -1;
 		uint8_t *p = matrix_ptr_row(A, x);
-		for (int y = i; y < A->cols - u; y++) {
+		for (int y = i; y < A->cols - u; y++, p++) {
 			if (*p) {
-				if (a < 0) a = i;
+				if (a < 0) a = y;
 				else {
-					b = i;
+					b = y;
 					break;
 				}
 			}
 		}
+		if (a < 0 || b < 0) continue;
 
 		/* row with r == 2, add to component bitmap */
 		/* the two nonzero elements (a,b) are vertices. Setting the
