@@ -4,6 +4,7 @@
 #ifndef LCRQ_PVT_H
 #define LCRQ_PVT_H 1
 
+#include <config.h>
 #include <lcrq.h>
 #include <matrix.h>
 #include <stdint.h>

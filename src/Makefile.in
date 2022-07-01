@@ -2,15 +2,9 @@
 # Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
 
 SHELL = /bin/sh
-ifndef VERSION
-$(error VERSION not set)
-endif
-ifndef ABIVERS
-$(error ABIVERS not set)
-endif
-ifndef LIBNAME
-$(error LIBNAME not set)
-endif
+LIBNAME := @PACKAGE_NAME@
+VERSION := @PACKAGE_VERSION@
+ABIVERS := @PACKAGE_ABIVERS@
 .SUFFIXES:
 .SUFFIXES: .c .o
 CFLAGS += -fPIC
@@ -24,19 +18,16 @@ LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 OBJECTS := gf256.o lcrq.o matrix.o
 
-LIBS := -lsodium
 SOFILES := lib$(LIBNAME).so
 SOVFILES := $(foreach f,$(SOFILES),$f.$(VERSION))
 ABIFILES := $(foreach f,$(SOFILES),$f.$(ABIVERS))
 
 all: $(SOFILES)
-#all: $(OBJECTS)
 
 lib$(LIBNAME).so: $(OBJECTS)
-	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^
 
 %.o: %.c %.h $(HEADERS)
-	$(CC) $(CFLAGS) -c $< $(LIBS)
 
 install: $(SOFILES)
 	$(INSTALL) -d $(LIBDIR)

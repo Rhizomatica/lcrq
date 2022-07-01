@@ -5,3 +5,12 @@ cov-int/
 *.tgz
 gmon.out
 profile.*
+autom4te.cache/
+autoscan-2.71.log
+configure~
+config.status
+config.log
+Makefile
+src/Makefile
+test/Makefile
+src/config.h
