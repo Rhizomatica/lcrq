@@ -4,7 +4,12 @@
 #include <lcrq_pvt.h>
 #include <assert.h>
 #include <gf256.h>
+#ifdef HAVE_LIBSODIUM
 #include <sodium.h>
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
@@ -155,7 +160,24 @@ uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, co
 uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
 {
 	/* NB: ESI is a 24-bit unsigned integer (3.2) */
-	uint32_t esi = randombytes_uniform(RQ_ESI_MAX - rq->K) + rq->K;
+	uint32_t esi = 0;
+#ifdef HAVE_LIBSODIUM
+	esi = randombytes_uniform(RQ_ESI_MAX - rq->K) + rq->K;
+#else
+	/* read 24 bits (3 bytes) from /dev/random */
+	uint8_t *a = (uint8_t *)&esi;
+	static int f; /* we'll keep the handle until program exit */
+	if (!f) f = open("/dev/random", O_RDONLY);
+#ifdef WORDS_BIGENDIAN
+	a++;
+#endif
+	if (read(f, a, 3) != 3) {
+		close(f);
+		return NULL;
+	}
+	esi += rq->K; /* repair symbols only */
+	esi &= RQ_ESI_MAX; /* mask overflow */
+#endif
 	return rq_symbol_generate(rq, sym, sbn, esi);
 }
 
