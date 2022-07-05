@@ -2,6 +2,7 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include <lcrq_pvt.h>
+#include <arpa/inet.h>
 #include <assert.h>
 #include <gf256.h>
 #ifdef HAVE_LIBSODIUM
@@ -148,6 +149,45 @@ uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi,
 	return R.base;
 }
 
+static uint32_t rq_random_esi(uint32_t min)
+{
+	/* NB: ESI is a 24-bit unsigned integer (3.2) */
+	uint32_t esi;
+#ifdef HAVE_LIBSODIUM
+	esi = randombytes_uniform(RQ_ESI_MAX - min) + min;
+#else
+	/* read 24 bits (3 bytes) from /dev/random */
+	ssize_t byt, len = 3;
+	uint8_t *a = (uint8_t *)&esi;
+	static int f; /* we'll keep the handle until program exit */
+	if (!f) f = open("/dev/random", O_RDONLY);
+#ifdef WORDS_BIGENDIAN
+	a++;
+#endif
+	while ((byt = read(f, a, len)) != len) {
+		if (byt == -1) break;
+		a += byt; len -= byt;
+	}
+	esi += min;
+	esi &= RQ_ESI_MAX; /* mask overflow */
+#endif
+	return esi;
+}
+
+uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
+{
+	uint8_t sbn = (*pid) >> 24;
+	uint32_t esi;
+	matrix_t C = rq_matrix_C_by_SBN(rq, sbn);
+	if ((flags & RQ_RAND) == RQ_RAND) {
+		esi = rq_random_esi(rq->K);
+		*pid &= 0xff000000;
+		*pid |= htonl(esi) >> 8;
+	}
+	else esi = ntohl(*pid & 0x00ffffff);
+	return rq_encode_symbol(rq, &C, esi2isi(rq, esi), sym);
+}
+
 uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi)
 {
 	uint32_t isi = esi2isi(rq, esi);
@@ -159,26 +199,7 @@ uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, co
 
 uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
 {
-	/* NB: ESI is a 24-bit unsigned integer (3.2) */
-	uint32_t esi = 0;
-#ifdef HAVE_LIBSODIUM
-	esi = randombytes_uniform(RQ_ESI_MAX - rq->K) + rq->K;
-#else
-	/* read 24 bits (3 bytes) from /dev/random */
-	uint8_t *a = (uint8_t *)&esi;
-	static int f; /* we'll keep the handle until program exit */
-	if (!f) f = open("/dev/random", O_RDONLY);
-#ifdef WORDS_BIGENDIAN
-	a++;
-#endif
-	if (read(f, a, 3) != 3) {
-		close(f);
-		return NULL;
-	}
-	esi += rq->K; /* repair symbols only */
-	esi &= RQ_ESI_MAX; /* mask overflow */
-#endif
-	return rq_symbol_generate(rq, sym, sbn, esi);
+	return rq_symbol_generate(rq, sym, sbn, rq_random_esi(rq->K));
 }
 
 /* TODO - pass in state (threads) */
@@ -1218,6 +1239,14 @@ void rq_dump(const rq_t *rq, FILE *stream)
 	fprintf(stream, "%s\t= %u\n", "B", rq->B);
 }
 #endif
+
+uint64_t rq_F(rq_t *rq) { return rq->F; }
+uint16_t rq_T(rq_t *rq) { return rq->T; }
+uint16_t rq_Z(rq_t *rq) { return rq->Z; }
+uint16_t rq_N(rq_t *rq) { return rq->N; }
+uint8_t rq_Al(rq_t *rq) { return rq->Al; }
+uint16_t rq_KP(rq_t *rq) { return rq->KP; }
+uint16_t rq_K(rq_t *rq) { return rq->K; }
 
 void rq_free(rq_t *rq)
 {

@@ -4,6 +4,7 @@
 #ifndef LCRQ_H
 #define LCRQ_H 1
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #ifndef NDEBUG
@@ -29,7 +30,8 @@ enum {
 	RQ_SOURCE = 1,
 	RQ_REPAIR = 2,
 	RQ_REPEAT = 4,
-	RQ_ASYNC  = 8
+	RQ_ASYNC  = 8,
+	RQ_RAND   = 16,
 };
 
 typedef struct rq_s rq_t;
@@ -73,6 +75,35 @@ typedef struct rq_blkmap_s {
 	uint32_t *ESI;
 } rq_blkmap_t;
 
+/* FEC Payload IDs (3.2):
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     SBN       |               Encoding Symbol ID              |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+typedef uint32_t rq_pid_t;
+
+/* FEC Object Transmission Information (3.3):
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                      Transfer Length (F)                      |
+ * +               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |               |    Reserved   |           Symbol Size (T)     |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+typedef uint64_t rq_oti_t;
+
+/* Scheme-Specific (3.3.3):
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |       Z       |              N                |       Al      |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+typedef uint32_t rq_scheme_t;
+
 part_t rq_partition(const size_t I, const uint16_t J);
 size_t rq_rand(size_t y, uint8_t i, size_t m);
 int rq_deg(const rq_t *rq, const int v);
@@ -87,6 +118,7 @@ uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 
 uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
+uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 
 void rq_state_init(rq_t *rq, rq_state_t *state, int flags);
 void rq_state_free(rq_state_t *state);
@@ -104,6 +136,14 @@ int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint
 int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+
+uint64_t rq_F(rq_t *rq);
+uint16_t rq_T(rq_t *rq);
+uint16_t rq_Z(rq_t *rq);
+uint16_t rq_N(rq_t *rq);
+uint8_t rq_Al(rq_t *rq);
+uint16_t rq_KP(rq_t *rq);
+uint16_t rq_K(rq_t *rq);
 
 rq_t *rq_init(const size_t F, const uint16_t T);
 void rq_free(rq_t *rq);
