@@ -19,7 +19,8 @@ AC_PROG_LN_S
 AC_CHECK_LIB([dl], [dlsym])
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h stdint.h sys/param.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h stdint.h sys/param.h sys/socket.h
+		  sys/time.h unistd.h],[],AC_MSG_ERROR([required header file missing]))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
