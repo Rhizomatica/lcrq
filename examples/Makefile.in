@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
 
 LDLIBS = -llcrq
-PROGRAMS:= params
+PROGRAMS:= params scatter gather
 
 all: $(PROGRAMS)
 
