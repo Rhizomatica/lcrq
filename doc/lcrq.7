@@ -1,0 +1,73 @@
+.TH LCRQ 7 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+LCRQ \- C library implementation of RFC6330 (RaptorQ) for Librecast
+.SH DESCRIPTION
+IP Multicast is based on UDP, which is inherently unreliable. Packets may arrive
+out of order, or not at all. TCP provides unicast with a reliable messaging
+layer on top of this unreliable, connectionless medium.
+.PP
+Unicast, however, is one-to-one only. Multicast could, in theory, use all of the
+same reliability options (ACKs etc.) as TCP, at the cost of not being scalable any more.
+.PP
+Fortunately there are other ways to achieve similar reliability.  RFC3208
+describes Pragmatic General Multicast (PGM) based on NAKs (negative
+acknowledgements). This, too, has scaling issues.
+.PP
+Forwards Error Correction (FEC) offers us another approach.
+.PP
+Thanks to parity checking in the network stack, we don't generally need to worry about
+errors within packets. Every packet has a checksum, and if that doesn't match,
+the packet is dropped before it reaches us. Our encryption provides further
+checking of data
+.I received.
+We need only concern ourselves with
+.I erasures.
+ie. dropped packets.
+.PP
+RaptorQ is an implementation of a class of systematic erasure codes called
+.I fountain codes.
+.PP
+The data we want to send is split into blocks, and then pre-encoded into a set
+of intermediate symbols.  From these intermediate symbols we can generate both
+our original
+.I source
+symbols, and also additional
+.I repair
+symbols.
+.PP
+Provided the receipient receives at least a minimum value K' of these symbols
+(any unique combination of source and repair) the intermediate symbols can be
+reconstituted, and the original data recovered.
+.PP
+RaptorQ is what is called a
+.I systematic
+encoding, because the set of symbols we send includes our original data as plain
+text. Provided all source symbols are received, the original data has been
+transmitted with no decoding overhead.  It is only in the case where we need to
+supplement the source symbols with repair symbols that we must perform the
+decoding process.
+.PP
+.SH CONFORMING TO
+RFC6330 (IETF) describes the RaptorQ proposed standard, which LCRQ more-or-less
+follows. The primary focus has been on building a fast, simple and
+dependency-free FEC implementation for use with Librecast, and not on strict standards
+compliance. The code does, however, fairly closely follow the RFC.
+.SH EXAMPLES
+There is example code in the
+.I examples/
+directory of the source repository.
+.SH BUGS
+If you find one, email
+.I bugs@librecast.net
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3),
+.BR rq_query (3),
+.BR rq_encode_data_rfc (3),
+.BR rq_decode_block_rfc (3),
+.BR rq_pkt_gen (3),
+.BR rq_symbol_next (3),
+.BR rq_symbol_prev (3),
+.BR rq_symbol_random (3)
+.PP
+.I https://datatracker.ietf.org/doc/html/rfc6330
