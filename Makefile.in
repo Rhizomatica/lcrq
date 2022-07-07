@@ -26,9 +26,9 @@ install: all doc
 uninstall:
 	cd src && $(MAKE) $@
 
-.PHONY: clean realclean src test sparse
+.PHONY: clean realclean src test sparse examples
 
-src:
+src examples:
 	$(MAKE) -C $@
 
 fixme:

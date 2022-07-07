@@ -58,5 +58,6 @@ AC_CHECK_FUNCS([clock_gettime floor memset munmap])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  doc/Makefile
+                 examples/Makefile
                  test/Makefile])
 AC_OUTPUT
