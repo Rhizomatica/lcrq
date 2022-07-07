@@ -9,7 +9,7 @@ INCLUDEDIR := $(PREFIX)/include
 
 CFLAGS += -Wall -Wextra -Wpedantic
 CFLAGS += -pipe
-ifndef NDEBUG
+ifdef DEBUG
 CFLAGS += -g -Og
 else
 CFLAGS += -O3 -DNDEBUG
