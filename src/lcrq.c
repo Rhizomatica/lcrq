@@ -1041,6 +1041,8 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 			}
 		}
 	}
+#else
+	(void)u, (void)comp, (void)cmax, (void)mapsz; /* silence compiler */
 #endif
 	*r = rdex[row];
 	return (row == A->rows) ? -1 : row;
