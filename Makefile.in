@@ -21,6 +21,7 @@ all: src
 
 install: all doc
 	cd src && $(MAKE) $@
+	cd doc && $(MAKE) $@
 
 uninstall:
 	cd src && $(MAKE) $@

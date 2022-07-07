@@ -1,0 +1,55 @@
+.TH RQ_ENCODE_DATA_RFC 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+rq_encode_data_rfc \- encode data with RaptorQ
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "int rq_encode_data_rfc(rq_t *" rq ", uint8_t *" data ", const size_t " len ");"
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+This function is used to prepare data for the generation of encoding
+(original or repair) symbols.
+.PP
+Calls to API functions that generate symbols, such as
+.B rq_pkt_gen(),
+.B rq_symbol_random()
+and
+.B rq_encode_data_rfc()
+must be preceded with a call to
+.B rq_encode_data_rfc
+.
+.PP
+.B rq_encode_data_rfc
+must be called with a pointer to valid rq_t context,
+.B rq
+and a pointer to
+.B data
+to be encoded of length
+.B len
+bytes.
+.PP
+The object pointed to by
+.B data
+will be used to generate RaptorQ intermediate symbols as per RFC6330. These are
+referenced by the rq context, and will be free()d when
+.B rq_free()
+is called, along with the context itself.
+.PP
+.SH RETURN VALUE
+On success, 0 is returned.
+On error, -1 is returned, and
+.B errno
+is set appropriately.
+.SH ERRORS
+None, currently. See BUGS.
+.SH BUGS
+.B rq_encode_data_rfc()
+has a lack of proper error checking. This will be addressed presently.
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3),
+.BR rq_decode_block_rfc (3),
+.BR rq_pkt_gen (3)

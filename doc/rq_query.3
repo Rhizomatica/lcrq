@@ -1,0 +1,99 @@
+.TH "RQ Query" 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+RaptorQ Query Functions
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "uint8_t rq_Al(rq_t " "*rq" );
+.BI "uint64_t rq_F(rq_t " "*rq" );
+.BI "uint16_t rq_K(rq_t " "*rq" );
+.BI "uint16_t rq_KP(rq_t " "*rq" );
+.BI "uint16_t rq_T(rq_t " "*rq" );
+.BI "uint16_t rq_N(rq_t " "*rq" );
+.BI "uint8_t rq_Z(rq_t " "*rq" );
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+The RaptorQ query functions return the value of their respective RaptorQ parameters.
+.PP
+.B F
+Transfer Length (F): 40-bit unsigned integer.  A non-negative
+integer that is at most 946270874880.  This is the transfer length
+of the object in units of octets.
+.PP
+.B T
+Symbol Size (T): 16-bit unsigned integer.  A positive integer that
+is less than 2^^16.  This is the size of a symbol in units of
+octets. This MUST be a multiple of Al.
+.PP
+.B Al
+A symbol alignment parameter (Al): 8-bit unsigned integer.
+.PP
+.B Z
+The number of source blocks (Z): 16-bit unsigned integer.
+.PP
+.B K
+The number of source symbols.
+.PP
+.B KP (K')
+The number of source and padding symbols.
+.PP
+.SH RETURN VALUE
+These functions return the RQ parameters as unsigned integers.
+.SH ERRORS
+These functions do not return errors.
+.SH EXAMPLE
+.SS Program source
+\&
+.EX
+/* params - example program to create RaptorQ context and print derived parameters */
+
+#include <lcrq.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int usage(const char *progname)
+{
+        fprintf(stderr, "usage: `%s F T`  (F = object size, T = symbol size)\n", progname);
+}
+
+int main(int argc, char *argv[])
+{
+        rq_t *rq;
+        uint64_t F;
+        uint16_t T, K, KP, N, Z;
+        uint8_t Al;
+
+        if (argc != 3) return usage(argv[0]);
+        F = atoll(argv[1]);
+        T = atoll(argv[2]);
+
+        /* initialize RaptorQ context */
+        rq = rq_init(F, T);
+
+        /* Query parameters */
+        K = rq_K(rq);
+        KP = rq_KP(rq);
+        N = rq_N(rq);
+        Z = rq_Z(rq);
+
+        /* free RaptorQ context */
+        rq_free(rq);
+
+        printf("F  %12lu\tsize of object to encode (40 bits)\n", F);
+        printf("T  %12u\tsymbol (payload) size\n", T);
+        printf("K  %12u\tnumber of original symbols\n", K);
+        printf("K' %12u\tnumber of symbols, including padding symbols\n", KP);
+        printf("N  %12u\tnumber of sub-blocks\n", N);
+        printf("Z  %12u\tnumber of blocks\n", Z);
+
+        return 0;
+}
+
+rq_free(rq); /* free context when done */
+.EE
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3)

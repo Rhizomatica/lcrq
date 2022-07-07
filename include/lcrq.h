@@ -104,10 +104,30 @@ typedef uint64_t rq_oti_t;
  */
 typedef uint32_t rq_scheme_t;
 
-part_t rq_partition(const size_t I, const uint16_t J);
-size_t rq_rand(size_t y, uint8_t i, size_t m);
-int rq_deg(const rq_t *rq, const int v);
-rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
+/* rq_init - initialize RaptorQ context
+ * creates and returns a new RaptorQ context and sets up the environment.
+ * Call rq_free(3) when done.*/
+rq_t *rq_init(const size_t F, const uint16_t T);
+
+/* rq_free - free RaptorQ context */
+void rq_free(rq_t *rq);
+
+/* Query RaptorQ internal values */
+uint64_t rq_F(rq_t *rq);
+uint16_t rq_T(rq_t *rq);
+uint16_t rq_Z(rq_t *rq);
+uint16_t rq_N(rq_t *rq);
+uint8_t rq_Al(rq_t *rq);
+uint16_t rq_KP(rq_t *rq);
+uint16_t rq_K(rq_t *rq);
+
+int rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
+
+uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
+
+int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+
+
 
 uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi);
 
@@ -118,39 +138,19 @@ uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 
 uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
 uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 
 void rq_state_init(rq_t *rq, rq_state_t *state, int flags);
 void rq_state_free(rq_state_t *state);
 uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym);
 
 int rq_encode_data(rq_t *rq, uint8_t *data, const size_t len);
-int rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
 
 int rq_encode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc);
-
 int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
-
 int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
-int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
-uint64_t rq_F(rq_t *rq);
-uint16_t rq_T(rq_t *rq);
-uint16_t rq_Z(rq_t *rq);
-uint16_t rq_N(rq_t *rq);
-uint8_t rq_Al(rq_t *rq);
-uint16_t rq_KP(rq_t *rq);
-uint16_t rq_K(rq_t *rq);
-
-/* rq_init - initialize RaptorQ context
- * creates and returns a new RaptorQ context and sets up the environment.
- * Call rq_free(3) when done.*/
-rq_t *rq_init(const size_t F, const uint16_t T);
-
-/* rq_free - free RaptorQ context */
-void rq_free(rq_t *rq);
 
 #endif /* LCRQ_PVT_H */

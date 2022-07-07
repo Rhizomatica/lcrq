@@ -836,6 +836,12 @@ int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
 
+part_t rq_partition(const size_t I, const uint16_t J);
+size_t rq_rand(size_t y, uint8_t i, size_t m);
+int rq_deg(const rq_t *rq, const int v);
+rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
+
+
 /* debug functions - disabled when NDEBUG defined */
 #ifndef NDEBUG
 void rq_dump(const rq_t *rq, FILE *stream);

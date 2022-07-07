@@ -1,0 +1,52 @@
+.TH RQ_DECODE_BLOCK_RFC 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+rq_decode_block_rfc \- decode RaptorQ block
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "int rq_decode_block_rfc(rq_t *" rq ", uint8_t *" dec ", uint8_t *" enc ", uint32_t " ESI "[], uint32_t " nesi ");"
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+Decodes a RaptorQ block using a variation of the method described in 5.4.2 of
+RFC6330.
+.PP
+.I rq
+must be a pointer to valid rq_t context.
+.PP
+.I dec
+must be a pointer to a buffer of at least T x K bytes. The decoded data will be
+written to this buffer.
+.PP
+.I enc
+a pointer to the encoded block.
+.PP
+.I ESI[]
+ESI index. This is an array of ESIs in the same order as the encoding symbols in
+.I enc
+.PP
+.I nesi
+The Loch Ness Monster. Or the number of decoding symbols in enc. Preferably the
+latter.
+.PP
+.SH RETURN VALUE
+On success, 0 is returned.
+If decoding fails, the function returns -1.
+.SH EXAMPLE
+.EX
+/* symbols are received into enc, with their respective ESIs written to ESI
+ * OH is the number of extra (overhead) symbols in addition to the
+ * required K' (KP) symbols.
+ * Now we can decode the object into the pre-allocated buffer dec.
+ */
+for (uint8_t sbn = 0; sbn < rq_Z(rq); sbn++) {
+	rq_decode_block_rfc(rq, dec, enc[sbn], ESI[sbn], KP + OH);
+}
+.EE
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3),
+.BR rq_encode_data_rfc (3),
+.BR rq_pkt_gen (3)

@@ -1,4 +1,20 @@
-# C implementation of RFC6330 RaptorQ Codes
+# C implementation of RFC6330 RaptorQ Codes for Librecast
+
+## Documentation
+
+See `man lcrq(7)`
+
+## Installation
+
+```
+./configure
+make
+make test # (optional)
+make install
+```
+
+To build with SIMD enabled, use:
+`CFLAGS="-DINTEL_SSE3 " make`
 
 ## Other RaptorQ Implementations
 

@@ -1,0 +1,56 @@
+.TH RQ_PKT_GEN 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+rq_pkt_gen \- encode data with RaptorQ
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "int rq_pkt_gen(rq_t *" rq ", rq_pid_t *" pid ", uint8_t *" sym ", int " flags ");"
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+Generates a RaptorQ encoding symbol ready for sending.
+.PP
+Before calling
+.B rq_pkt_gen()
+the data must first be encoded with a call to \fBrq_encode_data_rfc\fP(3).
+.PP
+.I rq
+must be a pointer to valid
+.B rq_t
+context
+.PP
+.I pid
+will be set to the FEC payload ID as per Section 3.2 of RFC6330:
+.PP
+.EX
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     SBN       |               Encoding Symbol ID              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.EE
+.PP
+SBN (Source Block Number) is an 8 bit unsigned integer. The Encoding Symbol ID
+(ESI) is a 24 bit unsigned integer in network byte order.
+.PP
+On success,
+.I sym
+will be a pointer to the encoding symbol.
+.PP
+.I flags
+can be set to:
+.TP
+.BR RQ_RAND
+Generate a random repair symbol instead of returning the next ESI.
+.LP
+.SH RETURN VALUE
+Returns a pointer to the encoded symbol.
+.SH ERRORS
+None.
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3),
+.BR rq_encode_data_rfc (3),
+.BR errno (3)
