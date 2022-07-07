@@ -1,0 +1,62 @@
+.TH RQ_INIT 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+rq_init, rq_free \- create and free RaptorQ contexts
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "rq_t *rq_init(const size_t F, const uint16_t T);"
+.BI "void rq_free(rq_t " "*rq" );
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+.BR rq_init ()
+creates a new RaptorQ context and sets up the environment.
+Call
+.BR rq_free (3)
+when done.
+.PP
+.BR rq_free ()
+invalidates and frees a RaptorQ context created with
+.BR rq_init (3)
+.
+.SH RETURN VALUE
+.BR rq_init ()
+returns a pointer to a
+.I rq_t
+handle.
+On error returns NULL and sets
+.I errno
+to
+.BR ENOMEM .
+.PP
+The
+.BR rq_free ()
+function returns no value.
+.SH ERRORS
+.BR rq_init ()
+can fail with the following error:
+.TP
+.B ENOMEM
+Out of memory.
+Possibly, the application hit the
+.BR RLIMIT_AS
+or
+.BR RLIMIT_DATA
+limit described in
+.BR getrlimit (2).
+.SH EXAMPLE
+.SS Program source
+\&
+.EX
+rq_t *rq;
+rq = rq_init();
+
+/* your program here */
+
+rq_free(rq); /* free context when done */
+.EE
+.SH SEE ALSO
+.BR lc_ctx_new (3),
+.BR lc_ctx_free (3)
