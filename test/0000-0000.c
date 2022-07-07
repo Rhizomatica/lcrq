@@ -36,12 +36,12 @@ void test_parms(size_t F)
 	test_assert(rq->B <= rq->L, "B (%u) <= L (%u)", rq->B, rq->L);
 	test_assert(rq->L > rq->KP, "L > K'");
 
-	assert(rq->N == NL + NS);
-	assert(rq->F <= 946270874880);
-	assert(rq->T % rq->Al == 0); /* T must be a multiple of Al */
-	assert(rq->kl);
-	assert(1 <= rq->K);
-	assert(rq->K <= 56403);
+	test_assert(rq->N == NL + NS, "N == NL + NS");
+	test_assert(rq->F <= 946270874880, "F <= 946270874880");
+	test_assert(rq->T % rq->Al == 0, "T must be a multiple of Al");
+	test_assert(rq->kl, "kl = %u", rq->kl);
+	test_assert(1 <= rq->K, "1 <= K");
+	test_assert(rq->K <= 56403, "K <= 56403 (K' max)");
 
 	/* the object MUST be partitioned into Z = ZL + ZS contiguous source blocks */
 	test_assert(rq->Z == ZL + ZS, "Z == ZL + ZS");
@@ -53,7 +53,7 @@ int main(void)
 {
 	loginit();
 
-	test_name("Calculate and verify encoding parameters");
+	test_name("4.3 Calculate & verify encoding parameters");
 
 	/* RFC restricts F to 40 bits = 946270874880 bytes */
 	for (size_t F = 1; F <= 946270874880; F *= 2 + 1) {
