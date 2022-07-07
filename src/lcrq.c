@@ -1297,6 +1297,7 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 	if (!F || !T) return NULL;
 
 	rq = malloc(sizeof(rq_t));
+	if (!rq) return NULL;
 	memset(rq, 0, sizeof(rq_t));
 
 #ifdef INTEL_SSE3
