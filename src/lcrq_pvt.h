@@ -845,13 +845,9 @@ rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
 /* debug functions - disabled when NDEBUG defined */
 #ifndef NDEBUG
 void rq_dump(const rq_t *rq, FILE *stream);
-void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream);
-void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream);
 void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream);
 #else
 # define rq_dump(a, b)
-# define rq_dump_ldpc(a, b, c)
-# define rq_dump_hdpc(a, b, c)
 # define rq_dump_symbol(a, b, c)
 #endif
 

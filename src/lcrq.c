@@ -1177,34 +1177,6 @@ static void dump_components(unsigned char comp[], int cmax, size_t mapsz)
 }
 #endif
 
-void rq_dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)
-{
-	matrix_t H;
-	H = matrix_submatrix(A, rq->S, 0, rq->H, rq->L);
-	for (int r = 0; r < rq->H; r++) {
-		for (int c = 0; c < rq->L; c++) {
-			const uint8_t v = matrix_get(&H, r, c);
-			fprintf(stream, " %02x", (int)v);
-		}
-		fputc('\n', stream);
-	}
-}
-
-void rq_dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream)
-{
-	for (int r = 0; r < rq->S; r++) {
-		for (int c = 0; c < rq->L; c++) {
-			switch (matrix_get(A, r, c)) {
-			case 0: fputc('0', stream); break;
-			case 1: fputc('1', stream); break;
-			default:
-				fputc('-', stream); break;
-			}
-		}
-		fputc('\n', stream);
-	}
-}
-
 void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream)
 {
 	const int symwidth = MIN(rq->T, rq->F);

@@ -14,7 +14,7 @@ void rq_generate_HDPC(rq_t *rq, matrix_t *A);
 char fileHDPC[] = "0000-0010.K%u.HDPC.tmp.XXXXXX";
 char testHDPC[] = "hdpc.k%u.txt";
 
-void compare_files(FILE *f0, FILE *f1, uint16_t K)
+static void compare_files(FILE *f0, FILE *f1, uint16_t K)
 {
 	struct stat sb[2];
 	char *map[2];
@@ -40,7 +40,20 @@ void compare_files(FILE *f0, FILE *f1, uint16_t K)
 	}
 }
 
-void check_HDPC(rq_t *rq, uint16_t K)
+static void dump_hdpc(const rq_t *rq, const matrix_t *A, FILE *stream)
+{
+	matrix_t H;
+	H = matrix_submatrix(A, rq->S, 0, rq->H, rq->L);
+	for (int r = 0; r < rq->H; r++) {
+		for (int c = 0; c < rq->L; c++) {
+			const uint8_t v = matrix_get(&H, r, c);
+			fprintf(stream, " %02x", (int)v);
+		}
+		fputc('\n', stream);
+	}
+}
+
+static void check_HDPC(rq_t *rq, uint16_t K)
 {
 	matrix_t A = {0};
 	char ftmp[64];
@@ -59,7 +72,7 @@ void check_HDPC(rq_t *rq, uint16_t K)
 	matrix_new(&A, rq->L, rq->L, NULL, 0);
 	matrix_zero(&A);
 	rq_generate_HDPC(rq, &A);
-	rq_dump_hdpc(rq, &A, fout);
+	dump_hdpc(rq, &A, fout);
 	fflush(fout);
 	matrix_free(&A);
 
@@ -76,11 +89,7 @@ int main(void)
 	rq_t *rq;
 
 	loginit();
-#ifndef NDEBUG
 	test_name("check HDPC codes");
-#else
-	return test_skip("check HDPC codes");
-#endif
 
 	rq = rq_init(1500, 1024);
 

@@ -15,7 +15,7 @@ void rq_generate_LDPC(rq_t *rq, matrix_t *A);
 char fileLDPC[] = "0000-0010.K%u.LDPC.tmp.XXXXXX";
 char testLDPC[] = "ldpc.k%u.txt";
 
-void compare_files(FILE *f0, FILE *f1, uint16_t K)
+static void compare_files(FILE *f0, FILE *f1, uint16_t K)
 {
 	struct stat sb[2];
 	char *map[2];
@@ -41,7 +41,22 @@ void compare_files(FILE *f0, FILE *f1, uint16_t K)
 	}
 }
 
-void check_LDPC(rq_t *rq, uint16_t K)
+static void dump_ldpc(const rq_t *rq, const matrix_t *A, FILE *stream)
+{
+	for (int r = 0; r < rq->S; r++) {
+		for (int c = 0; c < rq->L; c++) {
+			switch (matrix_get(A, r, c)) {
+			case 0: fputc('0', stream); break;
+			case 1: fputc('1', stream); break;
+			default:
+				fputc('-', stream); break;
+			}
+		}
+		fputc('\n', stream);
+	}
+}
+
+static void check_LDPC(rq_t *rq, uint16_t K)
 {
 	matrix_t A = {0};
 	char ftmp[64];
@@ -60,7 +75,7 @@ void check_LDPC(rq_t *rq, uint16_t K)
 	matrix_new(&A, rq->L, rq->L, NULL, 0);
 	matrix_zero(&A);
 	rq_generate_LDPC(rq, &A);
-	rq_dump_ldpc(rq, &A, fout);
+	dump_ldpc(rq, &A, fout);
 	fflush(fout);
 	matrix_free(&A);
 
@@ -77,11 +92,7 @@ int main(void)
 	rq_t *rq;
 
 	loginit();
-#ifndef NDEBUG
 	test_name("check LDPC codes");
-#else
-	return test_skip("check LDPC codes");
-#endif
 
 	rq = rq_init(1500, 1024);
 
