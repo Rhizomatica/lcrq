@@ -17,6 +17,23 @@ AC_PROG_LN_S
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlsym])
+#AC_CHECK_LIB([sodium], [sodium_init])
+AC_ARG_WITH(sodium, "use libsodium for encryption and hashing",
+            [AC_SUBST([HAVE_LIBSODIUM], [])],
+            [with_sodium=check])
+        LIBSODIUM=
+          AS_IF([test "x$with_sodium" != xno],
+            [AC_CHECK_LIB([sodium], [sodium_init],
+              [AC_SUBST([LIBSODIUM], ["-lsodium"])
+               AC_SUBST([HAVE_LIBSODIUM], ["HAVE_LIBSODIUM := 1"])
+               AC_DEFINE([HAVE_LIBSODIUM], [1],
+                         [Define if you have libsodium])
+              ],
+              [if test "x$with_sodium" != xcheck; then
+                 AC_MSG_FAILURE([--with-sodium was given, but libsodium not found])
+               fi
+              ], -lsodium)])
+
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h stdint.h sys/param.h sys/socket.h
