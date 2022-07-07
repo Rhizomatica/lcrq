@@ -49,6 +49,11 @@ void test_assert(int condition, char *msg, ...)
 	free(b);
 }
 
+void test_assert_s(int condition)
+{
+	test_assert(condition, "test");
+}
+
 void test_sleep(time_t tv_sec, long tv_nsec)
 {
 	struct timespec ts = { tv_sec, tv_nsec };

@@ -171,7 +171,7 @@ static void verify_HDPC_relations(rq_t *rq, matrix_t *C)
 	rq_generate_HDPC(rq, &A);
 	HDPC = matrix_submatrix(&A, rq->S, 0, rq->H, rq->KP + rq->S);
 	fprintf(stderr, "HDPC:\n");
-	matrix_dump(&HDPC, stderr);
+	matrix_dump(&HDPC, stderr); (void)HDPC;
 
 	/* Tranpose C */
 	CT = matrix_dup(C);

@@ -27,8 +27,9 @@ void test_parms(size_t F)
 
 	/* verify 1 <= K <= 56403 (K'_max) */
 	test_assert(1 <= rq->K && rq->K <= 56403, "1 <= K (%lu) <= 56403", rq->K);
-
+#ifndef NDEBUG
 	rq_dump(rq, stderr);
+#endif
 
 	test_assert(rq->L == rq->KP + rq->S + rq->H, "L = K' + S + H");
 	test_assert(rq->P == rq->L - rq->W, "P (%u) = L(%u) - W(%u)", rq->P, rq->L, rq->W);
@@ -43,7 +44,7 @@ void test_parms(size_t F)
 	assert(rq->K <= 56403);
 
 	/* the object MUST be partitioned into Z = ZL + ZS contiguous source blocks */
-	assert(rq->Z == ZL + ZS);
+	test_assert(rq->Z == ZL + ZS, "Z == ZL + ZS");
 
 	rq_free(rq);
 }

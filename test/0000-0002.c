@@ -2,7 +2,6 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include "test.h"
-#include <assert.h>
 #include <lcrq_pvt.h>
 
 /* RFC6330 has a particular algorithm for generating pseudo-random num-nums:
@@ -41,16 +40,16 @@ int main(void)
 	x1 = ((y >> 8) + i) % (1 << 8);
 	x2 = ((y >> 16) + i) % (1 << 8);
 	x3 = ((y >> 24) + i) % (1 << 8);
-	assert(x0 == 142);
-	assert(x1 == 187);
-	assert(x2 == 54);
-	assert(x3 == 47);
-	assert(V0[142] == 3569308693);
-	assert(V1[187] == 1853869307);
-	assert(V2[54]  == 2253762642);
-	assert(V3[47]  == 2900516158);
-	assert(2423747970 == (V0[142] ^ V1[187] ^ V2[54] ^ V3[47]));
-	assert(2423747970 % 799999 == 550999);
+	test_assert_s(x0 == 142);
+	test_assert_s(x1 == 187);
+	test_assert_s(x2 == 54);
+	test_assert_s(x3 == 47);
+	test_assert_s(V0[142] == 3569308693);
+	test_assert_s(V1[187] == 1853869307);
+	test_assert_s(V2[54]  == 2253762642);
+	test_assert_s(V3[47]  == 2900516158);
+	test_assert_s(2423747970 == (V0[142] ^ V1[187] ^ V2[54] ^ V3[47]));
+	test_assert_s(2423747970 % 799999 == 550999);
 	test_rand(y, i, m, 550999);
 
 	y = 723874628; i = 199; m = 111111;
@@ -58,16 +57,16 @@ int main(void)
 	x1 = ((y >> 8) + i) % (1 << 8);
 	x2 = ((y >> 16) + i) % (1 << 8);
 	x3 = ((y >> 24) + i) % (1 << 8);
-	assert(x0 == 11);
-	assert(x1 == 58);
-	assert(x2 == 236);
-	assert(x3 == 242);
-	assert(V0[x0] == 1843948209);
-	assert(V1[x1] == 2402488407);
-	assert(V2[x2] == 3308488877);
-	assert(V3[x3] == 1522273219);
-	assert(2102720904 == (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]));
-	assert(2102720904 % 111111 == 56340);
+	test_assert_s(x0 == 11);
+	test_assert_s(x1 == 58);
+	test_assert_s(x2 == 236);
+	test_assert_s(x3 == 242);
+	test_assert_s(V0[x0] == 1843948209);
+	test_assert_s(V1[x1] == 2402488407);
+	test_assert_s(V2[x2] == 3308488877);
+	test_assert_s(V3[x3] == 1522273219);
+	test_assert_s(2102720904 == (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]));
+	test_assert_s(2102720904 % 111111 == 56340);
 	test_rand(y, i, m, 56340);
 
 	return fails;

@@ -77,7 +77,11 @@ int main(void)
 	rq_t *rq;
 
 	loginit();
+#ifndef NDEBUG
 	test_name("check LDPC codes");
+#else
+	return test_skip("check LDPC codes");
+#endif
 
 	rq = rq_init(1500, 1024);
 

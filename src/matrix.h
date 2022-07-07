@@ -101,6 +101,9 @@ typedef struct matrix_s {
 #ifndef NDEBUG
 void matrix_dump(matrix_t *mat, FILE *stream);
 void matrix_schedule_dump(matrix_sched_t *sched, FILE *stream);
+#else
+# define matrix_dump(a, b)
+# define matrix_schedule_dump(a, b)
 #endif
 
 matrix_t *matrix_new(matrix_t *mat, const int rows, const int cols, uint8_t *base, int flags);

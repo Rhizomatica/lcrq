@@ -18,6 +18,7 @@ extern int fails;
 
 void fail_msg(char *msg, ...);
 void test_assert(int condition, char *msg, ...);
+void test_assert_s(int condition);
 void test_sleep(time_t tv_sec, long tv_nsec);
 void test_strcmp(char *str1, char *str2, char *msg, ...);
 void test_strncmp(char *str1, char *str2, size_t len, char *msg, ...);
