@@ -1,16 +1,26 @@
 # TODO
 
-## Encoding (5.3.4)
+## Documentation
+- man pages
+- tutorial, examples
 
-Fix encoder such that source symbols can be generated from intermediate.
-
-## Decoding (5.4)
-### First Phase  - (5.4.2.2) Gaussian Elimination -> lower triangular form
-### Second Phase - (5.4.2.3) more Gaussian Elimination
-### Third Phase  - (5.4.2.4)
-### Fourth Phase - (5.4.2.5)
-### Fifth Phase  - (5.4.2.6)
+## API
+- extend
+- scatter/gather IO
+- callbacks
 
 ## Optimisation
 
-See discussion at https://github.com/cberner/raptorq/issues/84
+### General
+- less data copying
+- more SIMD improvements, CPU switcher
+- sparse matrices
+
+### Encoder
+- reuse Matrix A
+
+### Decoder
+- improve row chooser
+- component graph tracking
+- reuse Matrix A (except LT codes)
+- revisit Phases 3-5
