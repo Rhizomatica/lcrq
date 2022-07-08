@@ -40,9 +40,7 @@ install: $(SOFILES)
 .PHONY: clean realclean uninstall
 
 uninstall:
-	rm -f $(foreach f,$(SOFILES),$(DESTDIR)$(LIBDIR)/$f.$(VERSION))
-	$(LDCONFIG) -n $(LIBDIR)
-	cd $(LIBDIR)/ && rm -f $(SOFILES)
+	cd $(LIBDIR) && rm -f lib$(LIBNAME).so lib$(LIBNAME).so.$(ABIVERS) lib$(LIBNAME).so.$(VERSION)
 
 clean:
 	$(RM) *.o $(SOFILES) $(ABIFILES)
