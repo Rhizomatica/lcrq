@@ -56,7 +56,7 @@ int main(void)
 	test_name("4.3 Calculate & verify encoding parameters");
 
 	/* RFC restricts F to 40 bits = 946270874880 bytes */
-	for (size_t F = 1; F <= 946270874880; F *= 2 + 1) {
+	for (uint64_t F = 1; F <= 946270874880; F *= 2 + 1) {
 		test_log("--------- TESTING PARMS F = %lu\n", F);
 		test_parms(F);
 	}
