@@ -93,7 +93,9 @@ typedef uint32_t rq_pid_t;
  * |               |    Reserved   |           Symbol Size (T)     |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+#if 0
 typedef uint64_t rq_oti_t;
+#endif
 
 /* Scheme-Specific (3.3.3):
  * 0                   1                   2                   3
@@ -102,7 +104,9 @@ typedef uint64_t rq_oti_t;
  * |       Z       |              N                |       Al      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+#if 0
 typedef uint32_t rq_scheme_t;
+#endif
 
 /* rq_init - initialize RaptorQ context
  * creates and returns a new RaptorQ context and sets up the environment.
@@ -122,35 +126,8 @@ uint16_t rq_KP(rq_t *rq);
 uint16_t rq_K(rq_t *rq);
 
 int rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
-
-uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
-
 int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
-
-
-uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi);
-
-/* return a random repair symbol for block SBN
- * intermediate symbols must have been generated already by a call to
- * rq_encode_data() */
-uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-
-uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-
-void rq_state_init(rq_t *rq, rq_state_t *state, int flags);
-void rq_state_free(rq_state_t *state);
-uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym);
-
-int rq_encode_data(rq_t *rq, uint8_t *data, const size_t len);
-
-int rq_encode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc);
-int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
-int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
-
-
-int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
-
+uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 
 #endif /* LCRQ_PVT_H */

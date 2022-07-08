@@ -841,6 +841,19 @@ size_t rq_rand(size_t y, uint8_t i, size_t m);
 int rq_deg(const rq_t *rq, const int v);
 rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
 
+/* API functions that need documenting. Most probably aren't required */
+uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi);
+uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
+uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
+uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
+void rq_state_init(rq_t *rq, rq_state_t *state, int flags);
+void rq_state_free(rq_state_t *state);
+uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym);
+int rq_encode_data(rq_t *rq, uint8_t *data, const size_t len);
+int rq_encode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc);
+int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
+int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 /* debug functions - disabled when NDEBUG defined */
 #ifndef NDEBUG
