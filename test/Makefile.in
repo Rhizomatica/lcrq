@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
 # Copyright (c) 2020-2022 Brett Sheffield <bacs@librecast.net>
 
-SHELL := /bin/bash
+SHELL := bash
 CAPS = ""
 CFLAGS += -fno-builtin-malloc -fno-builtin-calloc -I../src -I ../include
 NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
