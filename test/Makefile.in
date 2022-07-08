@@ -3,7 +3,7 @@
 
 SHELL := bash
 CAPS = ""
-CFLAGS += -fno-builtin-malloc -fno-builtin-calloc -I../src -I ../include
+CFLAGS += -I../src -I ../include
 NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
 OBJS := test.o log.o misc.o falloc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
 LDFLAGS := -ldl -pthread -lsodium
