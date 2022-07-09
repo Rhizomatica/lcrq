@@ -33,6 +33,13 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
+static inline matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
+{
+	matrix_t C = {0};
+	matrix_new(&C, rq->L, rq->T, rq->C + SBN * rq->T * rq->L, 0);
+	return C;
+}
+
 static int decodeC(rq_t *rq, uint8_t *enc, uint8_t *C1)
 {
 	matrix_t D;
