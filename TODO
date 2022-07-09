@@ -4,7 +4,6 @@
 - cleanup
 - renumber tests
 - SIMD switcher
-- rq_init() - enforce T to be multiple of Al
 - error checking in API, rq_encode_data_rfc
 - rename rq_encode_data_rfc
 - remove or document all API calls

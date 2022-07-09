@@ -5,7 +5,7 @@ rq_init, rq_free \- create and free RaptorQ contexts
 .nf
 .B #include <lcrq.h>
 .PP
-.BI "rq_t *rq_init(const size_t " F ", const uint16_t " T ");"
+.BI "rq_t *rq_init(const uint64_t " F ", const uint16_t " T ");"
 .BI "void rq_free(rq_t " "*rq" );
 .fi
 .PP
@@ -13,6 +13,16 @@ Compile and link with \fI\-llcrq\fP.
 .SH DESCRIPTION
 .BR rq_init ()
 creates a new RaptorQ context and sets up the environment.
+.PP
+.I F
+The size of the object to encode.
+This must be a positive integer up to 946270874880.
+.PP
+.I T
+The symbol size. This is generally the size of the packet payload we intend to
+send.
+This must be a multiple of the Alignment parameter (4).
+.PP
 Call
 .BR rq_free (3)
 when done.
@@ -36,7 +46,7 @@ The
 function returns no value.
 .SH ERRORS
 .BR rq_init ()
-can fail with the following error:
+can fail with the following errors:
 .TP
 .B ENOMEM
 Out of memory.

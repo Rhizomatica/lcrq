@@ -111,7 +111,7 @@ typedef uint32_t rq_scheme_t;
 /* rq_init - initialize RaptorQ context
  * creates and returns a new RaptorQ context and sets up the environment.
  * Call rq_free(3) when done.*/
-rq_t *rq_init(const size_t F, const uint16_t T);
+rq_t *rq_init(const uint64_t F, const uint16_t T);
 
 /* rq_free - free RaptorQ context */
 void rq_free(rq_t *rq);

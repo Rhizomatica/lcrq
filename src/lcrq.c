@@ -4,6 +4,7 @@
 #include <lcrq_pvt.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <errno.h>
 #include <gf256.h>
 #ifdef HAVE_LIBSODIUM
 #include <sodium.h>
@@ -1262,11 +1263,12 @@ void rq_block(rq_t *rq)
 	assert(isprime(rq->W));
 }
 
-rq_t *rq_init(const size_t F, const uint16_t T)
+rq_t *rq_init(const uint64_t F, const uint16_t T)
 {
 	rq_t *rq;
 
-	if (!F || !T) return NULL;
+	assert(F); assert(F <= 946270874880);
+	assert(T); assert(T % RQ_AL == 0);
 
 	rq = malloc(sizeof(rq_t));
 	if (!rq) return NULL;
@@ -1280,9 +1282,6 @@ rq_t *rq_init(const size_t F, const uint16_t T)
 	rq->WS = RQ_WS_DEFAULT;
 	rq->Al = RQ_AL;
 	rq->T = T;
-
-	/* T MUST be a multiple of Al */
-	assert(T % rq->Al == 0);
 
 	rq->SSS = T; /* sub-symbol size */
 	rq->SS = rq->SSS / rq->Al;

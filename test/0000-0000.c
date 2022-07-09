@@ -5,8 +5,9 @@
 #include <assert.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
+#include <errno.h>
 
-void test_parms(size_t F)
+static void test_parms(size_t F)
 {
 	rq_t *rq = rq_init(F, 1024);
 
