@@ -176,7 +176,7 @@ inline static matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
 	return C;
 }
 
-uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
+uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 {
 	uint8_t sbn = (*pid) >> 24;
 	uint32_t esi;
@@ -188,6 +188,11 @@ uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 	}
 	else esi = ntohl(*pid & 0x00ffffff);
 	return rq_encode_symbol(rq, &C, esi2isi(rq, esi), sym);
+}
+
+uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
+{
+	return rq_symbol(rq, pid, sym, flags);
 }
 
 static void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)

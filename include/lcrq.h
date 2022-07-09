@@ -127,10 +127,10 @@ uint16_t rq_K(const rq_t * const rq);
 
 int rq_encode(rq_t *rq, uint8_t *data, const size_t len);
 int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 
 int __attribute__((deprecated))rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
 int __attribute__((deprecated))rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
-
-uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
+uint8_t __attribute__((deprecated))*rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 
 #endif /* LCRQ_PVT_H */

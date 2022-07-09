@@ -1,11 +1,11 @@
-.TH RQ_PKT_GEN 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.TH RQ_SYMBOL 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
 .SH NAME
-rq_pkt_gen \- encode data with RaptorQ
+rq_symbol \- generate RaptorQ encoding symbol
 .SH SYNOPSIS
 .nf
 .B #include <lcrq.h>
 .PP
-.BI "int rq_pkt_gen(rq_t *" rq ", rq_pid_t *" pid ", uint8_t *" sym ", int " flags ");"
+.BI "int rq_symbol(rq_t *" rq ", rq_pid_t *" pid ", uint8_t *" sym ", int " flags ");"
 .fi
 .PP
 Compile and link with \fI\-llcrq\fP.
@@ -13,8 +13,8 @@ Compile and link with \fI\-llcrq\fP.
 Generates a RaptorQ encoding symbol ready for sending.
 .PP
 Before calling
-.B rq_pkt_gen()
-the data must first be encoded with a call to \fBrq_encode\fP(3).
+.B rq_symbol()
+the intermediate symbols must first be created with a call to \fBrq_encode\fP(3).
 .PP
 .I rq
 must be a pointer to valid

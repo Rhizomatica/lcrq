@@ -65,7 +65,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	/* generate random repair symbols */
 	sym = enc;
 	for (int i = 0; i < nesi; i++) {
-		rq_pkt_gen(rq, &pid, sym, RQ_RAND);
+		rq_symbol(rq, &pid, sym, RQ_RAND);
 		ESI[i] = ntohl(pid << 8);
 		sym += rq->T;
 	}

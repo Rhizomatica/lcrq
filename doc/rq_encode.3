@@ -14,7 +14,7 @@ This function is used to prepare data for the generation of encoding
 (original or repair) symbols.
 .PP
 Calls to API functions that generate symbols, such as
-.B rq_pkt_gen\fP(3),
+.B rq_symbol\fP(3),
 .B rq_symbol_random\fP(3)
 and
 must be preceded with a call to
@@ -44,4 +44,4 @@ If encoding fails, the function returns -1.
 .BR rq_init (3),
 .BR rq_free (3),
 .BR rq_decode_block_rfc (3),
-.BR rq_pkt_gen (3)
+.BR rq_symbol (3)
