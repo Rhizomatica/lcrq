@@ -40,6 +40,7 @@ matrix_t *matrix_new(matrix_t *m, const int rows, const int cols, uint8_t *base,
 		m->size = (size_t)rows * m->cvec * sizeof(uint8_t);
 	}
 	m->base = (base) ? base : malloc(m->size);
+	if (!m->base) return NULL; /* ENOMEM */
 	return m;
 }
 

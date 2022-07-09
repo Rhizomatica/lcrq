@@ -133,7 +133,7 @@ uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi,
 	uint32_t b1 = tup.b1;
 	matrix_t R;
 
-	matrix_new(&R, 1, rq->T, sym, 0);
+	if (!matrix_new(&R, 1, rq->T, sym, 0)) return NULL; /* ENOMEM */
 	matrix_zero(&R);
 	matrix_row_copy(&R, 0, C, b);
 	for (uint32_t j = 1; j < tup.d; j++) {
