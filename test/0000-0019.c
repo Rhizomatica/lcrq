@@ -2,6 +2,7 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include "test.h"
+#include <arpa/inet.h>
 #include <assert.h>
 #include <gf256.h>
 #include <lcrq.h>
@@ -41,7 +42,7 @@ int decode_and_verify(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi,
 
 	rq = rq_init(F, T); assert(rq);
 	dec = malloc(rq->K * rq->T);
-	rc = rq_decode_block_rfc(rq, dec, enc, ESI, nesi);
+	rc = rq_decode(rq, dec, enc, ESI, nesi);
 	if (!rc) rc = memcmp(dec, src, F);
 	free(dec);
 	rq_free(rq);
@@ -49,21 +50,20 @@ int decode_and_verify(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi,
 	return rc;
 }
 
-uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
+static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 {
-	uint8_t *enc;
-	uint8_t sbn = 0; /* FIXME - hardcoded SBN */
-	rq_sym_t sym = {0};
+	uint8_t *enc, *sym;
+	rq_pid_t pid = 0;
 
 	assert(rq->Z == 1); /* FIXME - only one block supported by this test */
 	enc = malloc(nesi * rq->T);
 
 	/* generate random repair symbols */
-	sym.sym = enc;
+	sym = enc;
 	for (int i = 0; i < nesi; i++) {
-		rq_symbol_random(rq, &sym, sbn); /* repair symbols, random order */
-		ESI[i] = sym.ESI;
-		sym.sym += rq->T;
+		rq_pkt_gen(rq, &pid, sym, RQ_RAND);
+		ESI[i] = ntohl(pid << 8);
+		sym += rq->T;
 	}
 	return enc;
 }
@@ -80,7 +80,7 @@ int encoder_sizetest(uint8_t *src, size_t F, uint16_t T)
 		test_assert(!rq, "zero F or T, rq_init() returns  NULL");
 		return 0;
 	}
-	rc = rq_encode_data_rfc(rq, src, F);
+	rc = rq_encode(rq, src, F);
 	test_assert(rc == 0, "rq_encode_data");
 
 	nesi = rq->KP + overhead; /* NB: overhead is over and above K', not K */

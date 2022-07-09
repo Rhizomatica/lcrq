@@ -812,48 +812,22 @@ struct rq_s {
 #define T2LEN sizeof T2 / sizeof T2[0]
 #define KP_MAX 56403
 
-matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN);
 void rq_block(rq_t *rq); /* calculate params based on K */
+part_t rq_partition(const size_t I, const uint16_t J);
 
-/* generate n symbols, starting at ISI from.  pass in preallocated buffer blk.
- * ISIs >= K are repair symbols */
-uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk,
-		const uint32_t from, const uint32_t n);
-
-void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt);
-matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
-matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
-uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym);
-
-void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep);
+size_t rq_rand(size_t y, uint8_t i, size_t m);
+int rq_deg(const rq_t *rq, const int v);
+rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
 
 uint8_t *rq_decode_C(rq_t *rq, matrix_t *D);
+uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi, uint8_t *sym);
 
-void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A);
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
 		uint32_t nesi);
 int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
 
-part_t rq_partition(const size_t I, const uint16_t J);
-size_t rq_rand(size_t y, uint8_t i, size_t m);
-int rq_deg(const rq_t *rq, const int v);
-rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X);
-
-/* API functions that need documenting. Most probably aren't required */
-uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi);
-uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn);
-void rq_state_init(rq_t *rq, rq_state_t *state, int flags);
-void rq_state_free(rq_state_t *state);
-uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym);
-int rq_encode_data(rq_t *rq, uint8_t *data, const size_t len);
-int rq_encode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc);
-int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep);
-int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
-int rq_decoder_rfc6330(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 /* debug functions - disabled when NDEBUG defined */
 #ifndef NDEBUG
@@ -863,5 +837,10 @@ void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream);
 # define rq_dump(a, b)
 # define rq_dump_symbol(a, b, c)
 #endif
+
+/* FIXME - used by test 0006 */
+void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt);
+matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
+matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
 
 #endif /* LCRQ_PVT_H */

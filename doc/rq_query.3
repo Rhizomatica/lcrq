@@ -5,13 +5,13 @@ RaptorQ Query Functions
 .nf
 .B #include <lcrq.h>
 .PP
-.BI "uint8_t rq_Al(rq_t " "*rq" );
-.BI "uint64_t rq_F(rq_t " "*rq" );
-.BI "uint16_t rq_K(rq_t " "*rq" );
-.BI "uint16_t rq_KP(rq_t " "*rq" );
-.BI "uint16_t rq_T(rq_t " "*rq" );
-.BI "uint16_t rq_N(rq_t " "*rq" );
-.BI "uint8_t rq_Z(rq_t " "*rq" );
+.BI "uint8_t rq_Al(const rq_t * const " rq ");"
+.BI "uint64_t rq_F(const rq_t * const " rq ");"
+.BI "uint16_t rq_K(const rq_t * const " rq ");"
+.BI "uint16_t rq_KP(const rq_t * const " rq ");"
+.BI "uint16_t rq_T(const rq_t * const " rq ");"
+.BI "uint16_t rq_N(const rq_t * const " rq ");"
+.BI "uint8_t rq_Z(const rq_t * const " rq ");"
 .fi
 .PP
 Compile and link with \fI\-llcrq\fP.
@@ -39,6 +39,11 @@ The number of source symbols.
 .PP
 .B KP (K')
 The number of source and padding symbols.
+.PP
+The parameter
+.I rq
+must be a pointer to RaptorQ context initialized with
+.I rq_init\fP(3)
 .PP
 .SH RETURN VALUE
 These functions return the RQ parameters as unsigned integers.

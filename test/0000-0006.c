@@ -6,7 +6,6 @@
 #include <gf256.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
-#include <sodium.h>
 #include <sys/param.h>
 
 void rq_generate_HDPC(rq_t *rq, matrix_t *A);

@@ -1,11 +1,11 @@
-.TH RQ_DECODE_BLOCK_RFC 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.TH RQ_DECODE 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
 .SH NAME
-rq_decode_block_rfc \- decode RaptorQ block
+rq_decode \- decode RaptorQ block
 .SH SYNOPSIS
 .nf
 .B #include <lcrq.h>
 .PP
-.BI "int rq_decode_block_rfc(rq_t *" rq ", uint8_t *" dec ", uint8_t *" enc ", uint32_t " ESI "[], uint32_t " nesi ");"
+.BI "int rq_decode(rq_t *" rq ", uint8_t *" dec ", uint8_t *" enc ", uint32_t " ESI "[], uint32_t " nesi ");"
 .fi
 .PP
 Compile and link with \fI\-llcrq\fP.
@@ -48,5 +48,5 @@ for (uint8_t sbn = 0; sbn < rq_Z(rq); sbn++) {
 .SH SEE ALSO
 .BR rq_init (3),
 .BR rq_free (3),
-.BR rq_encode_data_rfc (3),
+.BR rq_encode (3),
 .BR rq_pkt_gen (3)

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <gf256.h>
 #include <lcrq.h>
@@ -33,6 +34,7 @@ uint8_t *generate_source_object(size_t F)
 	return obj;
 }
 
+#if 0
 static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 {
 	uint8_t *enc;
@@ -51,10 +53,28 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	}
 	return enc;
 }
+#endif
+static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
+{
+	uint8_t *enc, *sym;
+	rq_pid_t pid = 0;
+
+	assert(rq->Z == 1); /* FIXME - only one block supported by this test */
+	enc = malloc(nesi * rq->T);
+
+	/* generate random repair symbols */
+	sym = enc;
+	for (int i = 0; i < nesi; i++) {
+		rq_pkt_gen(rq, &pid, sym, RQ_RAND);
+		ESI[i] = ntohl(pid << 8);
+		sym += rq->T;
+	}
+	return enc;
+}
 
 uint8_t *encoder(rq_t *rq, uint8_t *src, uint32_t *ESI, int nesi)
 {
-	int rc = rq_encode_data_rfc(rq, src, rq->F);
+	int rc = rq_encode(rq, src, rq->F);
 	assert(rc == 0); (void)rc;
 	return encoder_generate_symbols(rq, ESI, nesi);
 }
@@ -127,7 +147,7 @@ int main(int argc, char *argv[])
 		size_t decsz = rq_dec->K * rq_dec->T;
 		dec = malloc(decsz);
 		memset(dec, 0, decsz);
-		int ok = rq_decode_block_rfc(rq_dec, dec, enc, ESI, nesi);
+		int ok = rq_decode(rq_dec, dec, enc, ESI, nesi);
 		rq_free(rq_dec);
 		clock_gettime(CLOCK_REALTIME, &ts_dec_end);
 

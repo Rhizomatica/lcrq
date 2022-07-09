@@ -117,16 +117,19 @@ rq_t *rq_init(const uint64_t F, const uint16_t T);
 void rq_free(rq_t *rq);
 
 /* Query RaptorQ internal values */
-uint64_t rq_F(rq_t *rq);
-uint16_t rq_T(rq_t *rq);
-uint16_t rq_Z(rq_t *rq);
-uint16_t rq_N(rq_t *rq);
-uint8_t rq_Al(rq_t *rq);
-uint16_t rq_KP(rq_t *rq);
-uint16_t rq_K(rq_t *rq);
+uint64_t rq_F(const rq_t * const rq);
+uint16_t rq_T(const rq_t * const rq);
+uint16_t rq_Z(const rq_t * const rq);
+uint16_t rq_N(const rq_t * const rq);
+uint8_t rq_Al(const rq_t * const rq);
+uint16_t rq_KP(const rq_t * const rq);
+uint16_t rq_K(const rq_t * const rq);
 
-int rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
-int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+int rq_encode(rq_t *rq, uint8_t *data, const size_t len);
+int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
+
+int __attribute__((deprecated))rq_encode_data_rfc(rq_t *rq, uint8_t *data, const size_t len);
+int __attribute__((deprecated))rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 
 uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 

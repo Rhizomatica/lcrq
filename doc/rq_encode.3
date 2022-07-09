@@ -1,11 +1,11 @@
-.TH RQ_ENCODE_DATA_RFC 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
+.TH RQ_ENCODE 3 2022-07-07 "LCRQ" "Librecast Programmer's Manual"
 .SH NAME
-rq_encode_data_rfc \- encode data with RaptorQ
+rq_encode \- encode data with RaptorQ
 .SH SYNOPSIS
 .nf
 .B #include <lcrq.h>
 .PP
-.BI "int rq_encode_data_rfc(rq_t *" rq ", uint8_t *" data ", const size_t " len ");"
+.BI "int rq_encode(rq_t *" rq ", uint8_t *" data ", const size_t " len ");"
 .fi
 .PP
 Compile and link with \fI\-llcrq\fP.
@@ -14,28 +14,27 @@ This function is used to prepare data for the generation of encoding
 (original or repair) symbols.
 .PP
 Calls to API functions that generate symbols, such as
-.B rq_pkt_gen(),
-.B rq_symbol_random()
+.B rq_pkt_gen\fP(3),
+.B rq_symbol_random\fP(3)
 and
-.B rq_encode_data_rfc()
 must be preceded with a call to
-.B rq_encode_data_rfc
+.B rq_encode()
 .
 .PP
-.B rq_encode_data_rfc
+.B rq_encode
 must be called with a pointer to valid rq_t context,
-.B rq
+.I rq
 and a pointer to
-.B data
+.I data
 to be encoded of length
-.B len
+.I len
 bytes.
 .PP
 The object pointed to by
-.B data
+.I data
 will be used to generate RaptorQ intermediate symbols as per RFC6330. These are
 referenced by the rq context, and will be free()d when
-.B rq_free()
+.B rq_free\fP(3)
 is called, along with the context itself.
 .PP
 .SH RETURN VALUE

@@ -14,7 +14,7 @@ Generates a RaptorQ encoding symbol ready for sending.
 .PP
 Before calling
 .B rq_pkt_gen()
-the data must first be encoded with a call to \fBrq_encode_data_rfc\fP(3).
+the data must first be encoded with a call to \fBrq_encode\fP(3).
 .PP
 .I rq
 must be a pointer to valid
@@ -52,5 +52,5 @@ None.
 .SH SEE ALSO
 .BR rq_init (3),
 .BR rq_free (3),
-.BR rq_encode_data_rfc (3),
+.BR rq_encode (3),
 .BR errno (3)

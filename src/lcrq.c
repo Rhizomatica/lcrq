@@ -6,20 +6,21 @@
 #include <assert.h>
 #include <errno.h>
 #include <gf256.h>
-#ifdef HAVE_LIBSODIUM
-#include <sodium.h>
-#else
-#include <fcntl.h>
-#include <unistd.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
 #include <time.h>
 
+#ifdef HAVE_LIBSODIUM
+# include <sodium.h>
+#else
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
 #if (defined(INTEL_SSE3) || defined(INTEL_AVX2))
-#include <emmintrin.h>
-#include <immintrin.h>
+# include <emmintrin.h>
+# include <immintrin.h>
 #endif
 
 size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
@@ -97,14 +98,6 @@ size_t rq_rand(const size_t y, const uint8_t i, const size_t m)
 	return (V0[x0] ^ V1[x1] ^ V2[x2] ^ V3[x3]) % m;
 }
 
-matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
-{
-	matrix_t C = {0};
-	assert(rq->C);
-	matrix_new(&C, rq->L, rq->T, rq->C + SBN * rq->T * rq->L, 0);
-	return C;
-}
-
 /* Encoding Symbol Generator (5.3.5.3)
    The encoding symbol generator produces a single encoding symbol as
    output (referred to as result), according to the following algorithm:
@@ -175,6 +168,14 @@ static uint32_t rq_random_esi(uint32_t min)
 	return esi;
 }
 
+inline static matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
+{
+	matrix_t C = {0};
+	assert(rq->C);
+	matrix_new(&C, rq->L, rq->T, rq->C + SBN * rq->T * rq->L, 0);
+	return C;
+}
+
 uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 {
 	uint8_t sbn = (*pid) >> 24;
@@ -189,97 +190,50 @@ uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 	return rq_encode_symbol(rq, &C, esi2isi(rq, esi), sym);
 }
 
-uint8_t *rq_symbol_generate(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn, const uint32_t esi)
+static void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)
 {
-	uint32_t isi = esi2isi(rq, esi);
-	matrix_t C = rq_matrix_C_by_SBN(rq, sbn);
-	sym->SBN = sbn;
-	sym->ESI = esi;
-	return rq_encode_symbol(rq, &C, isi, sym->sym);
+	rq->nsrc = rq->K;
+	rq->nrep = 0;
+	rq->Nesi = rq->KP;
+	rq_generate_matrix_A(rq, A, rq->KP);
+	assert(rq->sched);
+	matrix_schedule_init(rq->sched);
 }
 
-uint8_t *rq_symbol_random(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
+static int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 {
-	return rq_symbol_generate(rq, sym, sbn, rq_random_esi(rq->K));
+	matrix_t A;
+	uint8_t *sym;
+	int i = 0, u = rq->P;
+	int rc = 0;
+
+	rq->sched = malloc(sizeof(matrix_sched_t));
+	memset(rq->sched, 0, sizeof(matrix_sched_t));
+	rq_encoder_rfc6330_phase0(rq, &A);
+
+	rc = rq_decoder_rfc6330_phase1(rq, &A, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase2(rq, &A, &i, &u);
+	if (rc) goto fail;
+	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
+	if (rc) goto fail;
+	matrix_t D = rq_matrix_D(rq, src, rq->K);
+	sym = rq_decode_C(rq, &D);
+	matrix_t Cm;
+	matrix_new(&Cm, rq->L, rq->T, sym, 0);
+	memcpy(C, sym, rq->L * rq->T);
+	free(sym);
+fail:
+	matrix_free(&A);
+	matrix_free(&D);
+	matrix_schedule_free(rq->sched);
+	free(rq->sched);
+	rq->sched = NULL;
+
+	return rc;
 }
 
-/* TODO - pass in state (threads) */
-uint8_t *rq_symbol_repair_next(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
-{
-	static uint8_t sbn_last;
-	static uint32_t esi;
-	if (sbn != sbn_last || !esi || esi > RQ_ESI_MAX) esi = rq->K;
-	sbn_last = sbn;
-	return rq_symbol_generate(rq, sym, sbn, esi++);
-}
-
-/* reverse the polarity */
-uint8_t *rq_symbol_repair_prev(const rq_t *rq, rq_sym_t *sym, const uint8_t sbn)
-{
-	static uint8_t sbn_last;
-	static uint32_t esi = RQ_ESI_MAX;
-	if (sbn != sbn_last || esi < rq->K) esi = RQ_ESI_MAX;
-	sbn_last = sbn;
-	return rq_symbol_generate(rq, sym, sbn, esi--);
-}
-
-uint8_t *rq_encode_block(const rq_t *rq, const matrix_t *C, uint8_t *blk,
-		const uint32_t from, const uint32_t n)
-{
-	for (uint32_t isi = from; isi < (from + n); isi++) {
-		rq_encode_symbol(rq, C, isi, blk);
-		blk += rq->T;
-	}
-	return blk;
-}
-
-int rq_encode_data(rq_t *rq, uint8_t *data, size_t len)
-{
-	const size_t clen = rq->L * rq->T;
-	size_t blklen, off;
-	uint8_t *base;
-	uint8_t *padblk = NULL;
-	const uint8_t *srcblk = data;
-
-	/* create storage for intermediate symbols (C) */
-	rq->C = malloc(clen * rq->Z);
-	memset(rq->C, 0, clen * rq->Z);
-	base = rq->C;
-	rq->obj = data;
-	rq->sym = data;
-	for (uint8_t SBN = 0; SBN < rq->Z; SBN++) {
-		matrix_t A, D;
-		if (SBN < rq->src_part.JL) {
-			rq->K = rq->src_part.IL;
-			blklen = rq->src_part.IL * rq->T;
-		}
-		else {
-			rq->K = rq->src_part.IS;
-			blklen = rq->src_part.IS * rq->T;
-		}
-		if (SBN + 1 == rq->Z && rq->Kt * rq->T > rq->F) {
-			/* last block needs padding */
-			size_t padbyt = rq->Kt * rq->T - rq->F;
-			padblk = malloc(blklen);
-			memcpy(padblk, srcblk, blklen - padbyt);
-			memset(padblk + blklen - padbyt, 0, padbyt);
-			srcblk = padblk;
-		}
-		rq_generate_matrix_A(rq, &A, rq->KP);
-		D = rq_matrix_D(rq, srcblk, rq->K);
-		rq_intermediate_symbols(&A, &D, base);
-		matrix_free(&D);
-		matrix_free(&A);
-		free(padblk);
-		base += clen;
-		off = MIN(blklen, len);
-		srcblk += off;
-		len -= off;
-	}
-	return 0;
-}
-
-int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
+int rq_encode(rq_t *rq, uint8_t *data, size_t len)
 {
 	const size_t clen = rq->L * rq->T;
 	size_t blklen, off;
@@ -321,50 +275,9 @@ int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 	return rc;
 }
 
-uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym)
+int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 {
-	rq_t *rq = state->rq;
-	if (state->ESI < rq->K && (state->flags & RQ_SOURCE) != RQ_SOURCE)
-		state->ESI = rq->K;
-	if (state->ESI >= rq->K) {
-		if ((state->flags & RQ_REPAIR) == RQ_REPAIR) {
-			matrix_t C = rq_matrix_C_by_SBN(rq, state->SBN);
-			if (!state->rep) state->rep = malloc(rq->T);
-			rq_encode_symbol(rq, &C, esi2isi(rq, state->ESI), state->rep);
-			sym->sym = state->rep;
-		}
-		else {
-			if (state->SBN + 1 >= rq->Z) { /* last block reached */
-				if ((state->flags & RQ_REPEAT) == RQ_REPEAT) {
-					state->SBN = 0;
-					state->ESI = 0;
-				}
-				else return NULL;
-			}
-			state->SBN++; state->ESI = 0; /* advance to next block */
-		}
-	}
-	if (state->ESI < rq->K) {
-		assert(state->ESI * rq->T <= rq->F);
-		sym->sym = state->sym;
-		state->sym += rq->T;
-	}
-	sym->SBN = state->SBN;
-	sym->ESI = state->ESI++;
-	return sym->sym;
-}
-
-void rq_state_free(rq_state_t *state)
-{
-	free(state->rep);
-}
-
-void rq_state_init(rq_t *rq, rq_state_t *state, int flags)
-{
-	memset(state, 0, sizeof(rq_state_t));
-	state->rq = rq;
-	state->flags = flags;
-	state->sym = rq->obj;
+	return rq_encode(rq, data, len);
 }
 
 rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X)
@@ -571,7 +484,7 @@ void *rq_intermediate_symbols_alloc(const rq_t *rq)
 	return calloc(rq->L, rq->L);
 }
 
-void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep)
+static void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep)
 {
 	uint32_t lt = 0;
 
@@ -600,163 +513,7 @@ void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *
 	}
 }
 
-static int rq_decoding_schedule(rq_t *rq, matrix_t *A, int P[], int Q[],
-		rq_blkmap_t *sym, rq_blkmap_t *rep)
-{
-	int rank;
-
-	rq_decoding_matrix_A(rq, A, sym, rep);
-
-	/* LU decompose A */
-	if ((rank = matrix_LU_decompose(A, P, Q)) < rq->L) {
-		matrix_free(A);
-#ifndef NDEBUG
-		fprintf(stderr, "matrix_LU_decompose() FAIL rank = %i/%u\n", rank, rq->L);
-#endif
-		return -1;
-	}
-	A->rows = rank; /* discard extraneous rows */
-
-	return 0;
-}
-
-static void rq_pack_LT_symbols(rq_t *rq, matrix_t *D, int P[], rq_blkmap_t *sym, rq_blkmap_t *rep)
-{
-	uint32_t gap = 0;
-	uint32_t off = rq->S + rq->H;
-	matrix_new(D, rq->L, rq->T, NULL, 0);
-	matrix_zero(D);
-	for (int drow = 0, r = 0; drow < rq->KP; drow++) {
-		const uint32_t srow = P[drow];
-		if (drow < rq->nsrc + rq->nrep) {
-			uint8_t *rptr;
-			if (drow < rq->nsrc) {
-				while (!isset(sym->map, srow + gap)) gap++;
-				rptr = sym->p + rq->T * (srow + gap);
-			}
-			else if (drow < rq->nsrc + rq->KP - rq->K) {
-				continue;
-			}
-			else {  /* repair symbol */
-				assert(r < (int)rq->nrep);
-				rptr = rep->p + rq->T * r++;
-			}
-			memcpy(matrix_ptr_row(D, drow + off), rptr, rq->T);
-		}
-	}
-}
-
-static int rq_decode_intermediate_symbols(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep, matrix_t *C)
-{
-	const uint32_t M = rq->S + rq->H + rq->Nesi;
-	matrix_t A = {0}, D = {0};
-	int P[M], Q[rq->L];
-
-	memset(P, 0, M);
-	memset(Q, 0, rq->L);
-
-	/* Build decoding schedule */
-	if (rq_decoding_schedule(rq, &A, P, Q, sym, rep)) return -1;
-
-	/* copy LT symbols into matrix */
-	rq_pack_LT_symbols(rq, &D, P, sym, rep);
-
-	/* solve to find intermediate symbols */
-	matrix_new(C, rq->L, rq->T, NULL, 0);
-	matrix_zero(C);
-	matrix_solve_LU(C, &D, &A, P, Q);
-
-	matrix_free(&D);
-	matrix_free(&A);
-
-	return 0;
-}
-
-/* symbols will be written to sym directly as received. If the full set have
- * arrived, no decoding is required and they are already in place. If we are
- * missing any symbols, these symbols are added to the repair symbols and
- * decoding begins. We solve to find the intermediate symbols, then generate the
- * missing source symbols. */
-int rq_decode_block(rq_t *rq, rq_blkmap_t *sym, rq_blkmap_t *rep)
-{
-	matrix_t C = {0};
-
-	rq->nsrc = hamm(sym->map, sym->len);
-	rq->nrep = (rep) ? hamm(rep->map, rep->len) : 0;
-	rq->Nesi = rq->nsrc + rq->nrep + rq->KP - rq->K;
-
-	/* if we have all of the first K symbols, no decoding required */
-	if (rq->nsrc >= rq->K) return 0;
-
-	/* check if we have enough symbols (including repair symbols) */
-	/* NB: overhead is over and above K', not K */
-	if (rq->Nesi < rq->KP) return -1;
-
-	/* generate intermediate symbols */
-	if (rq_decode_intermediate_symbols(rq, sym, rep, &C) == -1) return -1;
-
-	/* generate missing source symbols */
-	for (int esi = 0; esi < rq->K; esi++) {
-		if (!isset(sym->map, esi)) {
-			rq_encode_symbol(rq, &C, esi, sym->p + rq->T * esi);
-		}
-	}
-
-	matrix_free(&C);
-
-	return 0;
-}
-
-int rq_decode_block_f(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
-{
-	const size_t maplen = howmany(rq->K, CHAR_BIT);
-	unsigned char symmap[maplen];
-	unsigned char repmap[maplen];
-	rq_blkmap_t sym = { .map = symmap, .len = maplen, .p = dec };
-	rq_blkmap_t rep = { .map = repmap, .len = maplen, .p = enc, .ESI = ESI };
-
-	memset(symmap, 0, maplen);
-	memset(repmap, 0, maplen);
-
-	for (uint32_t i = 0; i < nesi; i++) setbit(repmap, i);
-
-	return rq_decode_block(rq, &sym, &rep);
-}
-
-int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
-{
-	matrix_t A;
-	uint8_t *sym;
-	int i = 0, u = rq->P;
-	int rc = 0;
-
-	rq->sched = malloc(sizeof(matrix_sched_t));
-	memset(rq->sched, 0, sizeof(matrix_sched_t));
-	rq_encoder_rfc6330_phase0(rq, &A);
-
-	rc = rq_decoder_rfc6330_phase1(rq, &A, &i, &u);
-	if (rc) goto fail;
-	rc = rq_decoder_rfc6330_phase2(rq, &A, &i, &u);
-	if (rc) goto fail;
-	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
-	if (rc) goto fail;
-	matrix_t D = rq_matrix_D(rq, src, rq->K);
-	sym = rq_decode_C(rq, &D);
-	matrix_t Cm;
-	matrix_new(&Cm, rq->L, rq->T, sym, 0);
-	memcpy(C, sym, rq->L * rq->T);
-	free(sym);
-fail:
-	matrix_free(&A);
-	matrix_free(&D);
-	matrix_schedule_free(rq->sched);
-	free(rq->sched);
-	rq->sched = NULL;
-
-	return rc;
-}
-
-int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
+int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
 {
 	uint8_t *C;
 	matrix_t A, Cm, D;
@@ -789,6 +546,11 @@ fail:
 	matrix_free(&A);
 
 	return rc;
+}
+
+int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
+{
+	return rq_decode(rq, dec, enc, ESI, nesi);
 }
 
 uint8_t *rq_decode_C(rq_t *rq, matrix_t *D)
@@ -859,16 +621,6 @@ int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u)
 	if (rank < *u) return -1; /* decoding failure */
 	A->rows = rq->L; /* discard surplus rows */
 	return 0;
-}
-
-void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)
-{
-	rq->nsrc = rq->K;
-	rq->nrep = 0;
-	rq->Nesi = rq->KP;
-	rq_generate_matrix_A(rq, A, rq->KP);
-	assert(rq->sched);
-	matrix_schedule_init(rq->sched);
 }
 
 void rq_decoder_rfc6330_phase0(rq_t *rq, matrix_t *A, uint8_t *dec, uint8_t *enc, uint32_t ESI[],
@@ -1213,13 +965,13 @@ void rq_dump(const rq_t *rq, FILE *stream)
 }
 #endif
 
-uint64_t rq_F(rq_t *rq) { return rq->F; }
-uint16_t rq_T(rq_t *rq) { return rq->T; }
-uint16_t rq_Z(rq_t *rq) { return rq->Z; }
-uint16_t rq_N(rq_t *rq) { return rq->N; }
-uint8_t rq_Al(rq_t *rq) { return rq->Al; }
-uint16_t rq_KP(rq_t *rq) { return rq->KP; }
-uint16_t rq_K(rq_t *rq) { return rq->K; }
+uint64_t rq_F(const rq_t * const rq) { return rq->F; }
+uint16_t rq_T(const rq_t * const rq) { return rq->T; }
+uint16_t rq_Z(const rq_t * const rq) { return rq->Z; }
+uint16_t rq_N(const rq_t * const rq) { return rq->N; }
+uint8_t rq_Al(const rq_t * const rq) { return rq->Al; }
+uint16_t rq_KP(const rq_t * const rq) { return rq->KP; }
+uint16_t rq_K(const rq_t * const rq) { return rq->K; }
 
 void rq_free(rq_t *rq)
 {
