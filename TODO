@@ -1,11 +1,7 @@
 # TODO
 
 ## General
-- cleanup
-- renumber tests
 - SIMD switcher
-- rename rq_encode_data_rfc
-- remove or document all API calls
 
 ## Documentation
 - man pages
