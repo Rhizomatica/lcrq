@@ -40,14 +40,7 @@ is called, along with the context itself.
 .PP
 .SH RETURN VALUE
 On success, 0 is returned.
-On error, -1 is returned, and
-.B errno
-is set appropriately.
-.SH ERRORS
-None, currently. See BUGS.
-.SH BUGS
-.B rq_encode_data_rfc()
-has a lack of proper error checking. This will be addressed presently.
+If encoding fails, the function returns -1.
 .SH SEE ALSO
 .BR rq_init (3),
 .BR rq_free (3),

@@ -286,6 +286,7 @@ int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 	uint8_t *base;
 	uint8_t *padblk = NULL;
 	uint8_t *srcblk = data;
+	int rc = 0;
 
 	/* create storage for intermediate symbols (C) */
 	rq->C = malloc(clen * rq->Z);
@@ -293,7 +294,7 @@ int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 	base = rq->C;
 	rq->obj = data;
 	rq->sym = data;
-	for (uint8_t SBN = 0; SBN < rq->Z; SBN++) {
+	for (uint8_t SBN = 0; SBN < rq->Z && !rc; SBN++) {
 		if (SBN < rq->src_part.JL) {
 			rq->K = rq->src_part.IL;
 			blklen = rq->src_part.IL * rq->T;
@@ -310,17 +311,14 @@ int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
 			memset(padblk + blklen - padbyt, 0, padbyt);
 			srcblk = padblk;
 		}
-
-		int rc = rq_encode_block_rfc(rq, base, srcblk);
-		assert(rc == 0); (void)rc;
-
+		rc = rq_encode_block_rfc(rq, base, srcblk);
 		free(padblk);
 		base += clen;
 		off = MIN(blklen, len);
 		srcblk += off;
 		len -= off;
 	}
-	return 0;
+	return rc;
 }
 
 uint8_t *rq_symbol_next(rq_state_t *state, rq_sym_t *sym)
