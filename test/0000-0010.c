@@ -92,7 +92,7 @@ int main(void)
 	rq_t *rq;
 
 	loginit();
-	test_name("check LDPC codes");
+	test_name("5.3.3.3 check LDPC codes");
 
 	rq = rq_init(1500, 1024);
 

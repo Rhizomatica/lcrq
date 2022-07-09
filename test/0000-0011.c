@@ -89,7 +89,7 @@ int main(void)
 	rq_t *rq;
 
 	loginit();
-	test_name("check HDPC codes");
+	test_name("5.3.3.3 check HDPC codes");
 
 	rq = rq_init(1500, 1024);
 
