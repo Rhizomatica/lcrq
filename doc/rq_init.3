@@ -61,12 +61,13 @@ limit described in
 \&
 .EX
 rq_t *rq;
-rq = rq_init();
+rq = rq_init(filesize, 1024);
 
 /* your program here */
 
 rq_free(rq); /* free context when done */
 .EE
 .SH SEE ALSO
-.BR lc_ctx_new (3),
-.BR lc_ctx_free (3)
+.BR rq_encode (3),
+.BR rq_decode (3),
+.BR rq_symbol (3)
