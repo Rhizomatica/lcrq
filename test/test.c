@@ -8,6 +8,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#ifndef HAVE_LIBSODIUM
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
 int fails = 0;
 sem_t log_lock;
 
@@ -169,3 +174,16 @@ void test_rusage()
 	test_log("nvcsw:    %li\n", ru.ru_nvcsw);
 	test_log("nivcsw:   %li\n", ru.ru_nivcsw);
 }
+
+#ifndef HAVE_LIBSODIUM
+void test_randombytes(void *buf, size_t len)
+{
+	ssize_t byt;
+	uint8_t *a = (uint8_t *)buf;
+	int f = open("/dev/random", O_RDONLY);
+	while ((byt = read(f, a, len)) != (ssize_t)len) {
+		if (byt == -1) break;
+		a += byt; len -= byt;
+	}
+}
+#endif

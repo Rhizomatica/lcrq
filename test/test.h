@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
 /* Copyright (c) 2020-2022 Brett Sheffield <bacs@librecast.net> */
 
+#include "../src/config.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -11,6 +12,9 @@
 #include <time.h>
 #include "log.h"
 #include "misc.h"
+#ifdef HAVE_LIBSODIUM
+# include <sodium.h>
+#endif
 
 #define _TESTING 1
 
@@ -29,3 +33,8 @@ void test_log(char *msg, ...);
 void test_rusage();
 void test_name(char *str, ...);
 int test_skip(char *str, ...);
+#ifdef HAVE_LIBSODIUM
+#define test_randombytes randombytes_buf
+#else
+void test_randombytes(void *buf, size_t len);
+#endif

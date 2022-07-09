@@ -7,7 +7,6 @@
 #include <gf256.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
-#include <sodium.h>
 #include <sys/param.h>
 
 #define REPS 1000
@@ -21,15 +20,13 @@
 static_assert(TMIN % RQ_AL == 0);
 static_assert(TMAX % RQ_AL == 0);
 
-// FIXME - T varies when == UINT16_MAX (or just large)
-
 static uint32_t overhead;
 
 uint8_t *generate_source_object(size_t F)
 {
 	uint8_t *obj = malloc(F);
 	assert(obj);
-	randombytes_buf(obj, F);
+	test_randombytes(obj, F);
 	test_log("object of %u bytes generated\n", F);
 	return obj;
 }
@@ -42,6 +39,8 @@ int decode_and_verify(uint8_t *src, uint8_t *enc, uint32_t ESI[], uint32_t nesi,
 
 	rq = rq_init(F, T); assert(rq);
 	dec = malloc(rq->K * rq->T);
+	memset(dec, 0, rq->K * rq->T);
+	if (!memcmp(dec, src, F)) return -1; /* ensure data doesn't match before decode */
 	rc = rq_decode(rq, dec, enc, ESI, nesi);
 	if (!rc) rc = memcmp(dec, src, F);
 	free(dec);
@@ -55,7 +54,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	uint8_t *enc, *sym;
 	rq_pid_t pid = 0;
 
-	assert(rq->Z == 1); /* FIXME - only one block supported by this test */
+	assert(rq->Z == 1); /* only one block supported by this test */
 	enc = malloc(nesi * rq->T);
 
 	/* generate random repair symbols */
@@ -106,7 +105,7 @@ int main(void)
 	int rc;
 
 	loginit();
-	test_name("Encoder Size Tests");
+	test_name("5.3.3.4 Intermediate Symbol Generation + 5.3.4 Encoding");
 	for (overhead = OMIN; overhead <= OMAX; overhead++) {
 		for (int T = TMIN; T <= TMAX; T *= RQ_AL) {
 			for (size_t F = FMIN; F <= FMAX; F++) {

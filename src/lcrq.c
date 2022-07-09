@@ -456,39 +456,6 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, const uint32_t N)
 	return D;
 }
 
-/* calculate intermediate symbols (C) such that:
- *   C = (A^^-1)*D
- * where:
- *   D denotes the column vector consisting of S+H zero symbols
- *   followed by the K' source symbols C'[0], C'[1], ..., C'[K'-1]
- *
- *   if base is not NULL, symbols will be written here
- */
-matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base)
-{
-	matrix_t LU = {0};
-	matrix_t C = {0};
-	int P[matrix_rows(A)];
-	int Q[matrix_cols(A)];
-	int rank;
-
-	if (base) matrix_new(&C, matrix_rows(A), matrix_cols(D), base, 0);
-	LU = matrix_dup(A);
-	rank = matrix_LU_decompose(&LU, P, Q);
-	if (rank >= LU.cols) {
-		LU.rows = rank;
-		matrix_solve_LU(&C, D, &LU, P, Q);
-	}
-	matrix_free(&LU);
-
-	return C;
-}
-
-void *rq_intermediate_symbols_alloc(const rq_t *rq)
-{
-	return calloc(rq->L, rq->L);
-}
-
 static void rq_decoding_matrix_A(rq_t *rq, matrix_t *A, rq_blkmap_t *sym, rq_blkmap_t *rep)
 {
 	uint32_t lt = 0;

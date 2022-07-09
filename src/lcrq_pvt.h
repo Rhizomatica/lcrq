@@ -828,7 +828,6 @@ int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase2(rq_t *rq, matrix_t *A, int *i, int *u);
 int rq_decoder_rfc6330_phase3(rq_t *rq, matrix_t *A, int *i, int *u);
 
-
 /* debug functions - disabled when NDEBUG defined */
 #ifndef NDEBUG
 void rq_dump(const rq_t *rq, FILE *stream);
@@ -838,9 +837,10 @@ void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream);
 # define rq_dump_symbol(a, b, c)
 #endif
 
-/* FIXME - used by test 0006 */
 void rq_generate_matrix_A(const rq_t *rq, matrix_t *A, uint32_t lt);
 matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, uint32_t N);
+#if 0
 matrix_t rq_intermediate_symbols(matrix_t *A, const matrix_t *D, uint8_t *base);
+#endif
 
 #endif /* LCRQ_PVT_H */
