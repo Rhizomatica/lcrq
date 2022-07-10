@@ -99,8 +99,10 @@ int main(void)
 	check_LDPC(rq, 1);
 	check_LDPC(rq, 60);
 	check_LDPC(rq, 4242);
+#if 0
 	/* testing with K'max under valgrind is slow */
 	if (!RUNNING_ON_VALGRIND) check_LDPC(rq, 56403);
+#endif
 
 	rq_free(rq);
 
