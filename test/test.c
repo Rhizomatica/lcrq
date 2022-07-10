@@ -9,7 +9,12 @@
 #include <sys/resource.h>
 
 #ifndef HAVE_LIBSODIUM
-# include <sys/random.h>
+# if (defined(HAVE_GETRANDOM))
+#  include <sys/random.h>
+# else
+#  include <fcntl.h>
+#  include <unistd.h>
+# endif
 #endif
 
 int fails = 0;
@@ -178,7 +183,13 @@ void test_rusage()
 void test_randombytes(void *buf, size_t len)
 {
 	ssize_t return_ignored;
+#ifdef HAVE_GETRANDOM
 	return_ignored = getrandom(buf, len, 0);
+#else
+	static int f; /* we'll keep the handle until program exit */
+	if (!f) f = open("/dev/random", O_RDONLY);
+	return_ignored = read(f, buf, len);
+#endif
 	(void)return_ignored;
 }
 
