@@ -17,8 +17,8 @@
 #define OMIN 1
 #define OMAX 5
 
-static_assert(TMIN % RQ_AL == 0);
-static_assert(TMAX % RQ_AL == 0);
+static_assert(TMIN % RQ_AL == 0, "TMIN not divisible by Al parameter");
+static_assert(TMAX % RQ_AL == 0, "TMAX not divisible by Al parameter");
 
 static uint32_t overhead;
 
