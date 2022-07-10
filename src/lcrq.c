@@ -162,7 +162,7 @@ static uint32_t rq_random_esi(uint32_t min)
 	while ((byt = getrandom(a, len, 0)) != len) {
 #else
 	static int f; /* we'll keep the handle until program exit */
-	if (!f) f = open("/dev/random", O_RDONLY);
+	if (!f) f = open("/dev/urandom", O_RDONLY);
 	while ((byt = read(f, a, len)) != len) {
 #endif
 		if (byt == -1) break;

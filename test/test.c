@@ -187,7 +187,7 @@ void test_randombytes(void *buf, size_t len)
 	return_ignored = getrandom(buf, len, 0);
 #else
 	static int f; /* we'll keep the handle until program exit */
-	if (!f) f = open("/dev/random", O_RDONLY);
+	if (!f) f = open("/dev/urandom", O_RDONLY);
 	return_ignored = read(f, buf, len);
 #endif
 	(void)return_ignored;
