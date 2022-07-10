@@ -117,7 +117,7 @@ void test_log(char *msg, ...)
 {
 	va_list argp;
 	sem_wait(&log_lock);
-	fprintf(stderr, "%lu: ", clock());
+	fprintf(stderr, "%lu: ", (long unsigned int)clock());
 	sem_post(&log_lock);
 	va_start(argp, msg);
 	vfprintf(stderr, msg, argp);

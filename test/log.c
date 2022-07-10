@@ -55,7 +55,7 @@ void logmsg(unsigned int level, const char *fmt, ...)
 		fprintf(stdout, "%s\n", b);
 	else {
 		if (level >= LOG_TRACE) {
-			fprintf(stderr, "%li: ", clock());
+			fprintf(stderr, "%lu: ", (long unsigned int)clock());
 		}
 		fprintf(stderr, "%s\n", b);
 	}
