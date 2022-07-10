@@ -4606,6 +4606,35 @@ then :
 fi
 
 
+# Required only for example programs
+ac_fn_c_check_type "$LINENO" "mode_t" "ac_cv_type_mode_t" "$ac_includes_default"
+if test "x$ac_cv_type_mode_t" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define mode_t int" >>confdefs.h
+
+fi
+
+
+  for ac_func in strdup strtoul strtoull
+do :
+  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: function required by example programs not found" >&5
+printf "%s\n" "$as_me: WARNING: function required by example programs not found" >&2;}
+fi
+
+done
+
 ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile examples/Makefile test/Makefile"
 
 cat >confcache <<\_ACEOF

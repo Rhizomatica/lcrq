@@ -55,6 +55,11 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime floor memset munmap])
 
+# Required only for example programs
+AC_TYPE_MODE_T
+AC_CHECK_FUNCS([strdup strtoul strtoull],[],
+		AC_MSG_WARN([function required by example programs not found]))
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  doc/Makefile
