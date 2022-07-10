@@ -9,8 +9,7 @@
 #include <sys/resource.h>
 
 #ifndef HAVE_LIBSODIUM
-# include <fcntl.h>
-# include <unistd.h>
+# include <sys/random.h>
 #endif
 
 int fails = 0;
@@ -178,12 +177,13 @@ void test_rusage()
 #ifndef HAVE_LIBSODIUM
 void test_randombytes(void *buf, size_t len)
 {
-	ssize_t byt;
-	uint8_t *a = (uint8_t *)buf;
-	int f = open("/dev/random", O_RDONLY);
-	while ((byt = read(f, a, len)) != (ssize_t)len) {
-		if (byt == -1) break;
-		a += byt; len -= byt;
-	}
+	ssize_t return_ignored;
+	return_ignored = getrandom(buf, len, 0);
+	(void)return_ignored;
+}
+
+uint32_t test_randomnumber(const uint32_t upper_bound)
+{
+	return (uint32_t)random() % upper_bound;
 }
 #endif

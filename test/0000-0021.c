@@ -6,7 +6,6 @@
 #include <gf256.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
-#include <sodium.h>
 #include <sys/param.h>
 
 int main(void)
@@ -21,7 +20,7 @@ int main(void)
 	uint8_t v;
 	for (int i = 0; i < A.rows; i++) {
 		for (int j = 0; j < A.cols; j++) {
-			randombytes_buf(&v, 1);
+			test_randombytes(&v, 1);
 			matrix_set(&A, i, j, v);
 		}
 	}

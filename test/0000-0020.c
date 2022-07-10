@@ -7,7 +7,6 @@
 #include <gf256.h>
 #include <lcrq.h>
 #include <lcrq_pvt.h>
-#include <sodium.h>
 #include <sys/param.h>
 
 #define REPS 1
@@ -29,7 +28,7 @@ uint8_t *generate_source_object(size_t F)
 {
 	uint8_t *obj = malloc(F);
 	assert(obj);
-	randombytes_buf(obj, F);
+	test_randombytes(obj, F);
 	test_log("object of %u bytes generated\n", F);
 	return obj;
 }

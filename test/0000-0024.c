@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <gf256.h>
 #include <matrix.h>
-#include <sodium.h>
 
 int main(void)
 {
@@ -54,7 +53,7 @@ int main(void)
 	__m128i A, yA;
 	uint8_t out[16] = {0};
 	uint8_t in[16] = {0};
-	const uint8_t y = randombytes_uniform(0xff);
+	const uint8_t y = test_randomnumber(0xff);
 
 	/* first, lets check our tables are loaded correctly */
 	A = _mm_loadu_si128((const __m128i_u *)GF256LR[y][0]);
@@ -69,7 +68,7 @@ int main(void)
 	}
 
 	/* fill A with random bytes */
-	for (int i = 0; i < 16; i++) in[i] = randombytes_uniform(0xff);
+	for (int i = 0; i < 16; i++) in[i] = test_randomnumber(0xff);
 
 	/* load A into SIMD registers */
 	A = _mm_loadu_si128((const __m128i_u *)in);

@@ -35,6 +35,8 @@ void test_name(char *str, ...);
 int test_skip(char *str, ...);
 #ifdef HAVE_LIBSODIUM
 #define test_randombytes randombytes_buf
+#define test_randomnumber randombytes_uniform
 #else
 void test_randombytes(void *buf, size_t len);
+uint32_t test_randomnumber(const uint32_t upper_bound);
 #endif
