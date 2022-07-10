@@ -125,7 +125,7 @@ uint8_t rq_Al(const rq_t * const rq);
 uint16_t rq_KP(const rq_t * const rq);
 uint16_t rq_K(const rq_t * const rq);
 
-int rq_encode(rq_t *rq, uint8_t *data, const size_t len);
+int rq_encode(rq_t *rq, void *data, const size_t len);
 int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
 

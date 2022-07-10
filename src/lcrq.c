@@ -238,7 +238,7 @@ fail:
 	return rc;
 }
 
-int rq_encode(rq_t *rq, uint8_t *data, size_t len)
+int rq_encode(rq_t *rq, void *data, size_t len)
 {
 	const size_t clen = rq->L * rq->T;
 	size_t blklen, off;
