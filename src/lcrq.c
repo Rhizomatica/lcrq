@@ -190,11 +190,6 @@ uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 	return rq_encode_symbol(rq, &C, esi2isi(rq, esi), sym);
 }
 
-uint8_t *rq_pkt_gen(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
-{
-	return rq_symbol(rq, pid, sym, flags);
-}
-
 static void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)
 {
 	rq->nsrc = rq->K;
@@ -278,11 +273,6 @@ int rq_encode(rq_t *rq, void *data, size_t len)
 		len -= off;
 	}
 	return rc;
-}
-
-int rq_encode_data_rfc(rq_t *rq, uint8_t *data, size_t len)
-{
-	return rq_encode(rq, data, len);
 }
 
 rq_tuple_t rq_tuple(const rq_t *rq, const uint32_t X)
@@ -518,11 +508,6 @@ fail:
 	matrix_free(&A);
 
 	return rc;
-}
-
-int rq_decode_block_rfc(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi)
-{
-	return rq_decode(rq, dec, enc, ESI, nesi);
 }
 
 uint8_t *rq_decode_C(rq_t *rq, matrix_t *D)
