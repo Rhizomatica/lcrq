@@ -665,6 +665,7 @@ build_cpu
 build
 LIBSODIUM
 HAVE_LIBSODIUM
+LIBDL
 LN_S
 INSTALL_DATA
 INSTALL_SCRIPT
@@ -3718,13 +3719,10 @@ fi
 printf "%s\n" "$ac_cv_lib_dl_dlsym" >&6; }
 if test "x$ac_cv_lib_dl_dlsym" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBDL 1" >>confdefs.h
-
-  LIBS="-ldl $LIBS"
+  LIBDL="-ldl"
 
 fi
 
-#AC_CHECK_LIB([sodium], [sodium_init])
 
 # Check whether --with-sodium was given.
 if test ${with_sodium+y}

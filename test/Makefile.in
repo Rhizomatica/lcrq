@@ -6,7 +6,7 @@ CAPS = ""
 CFLAGS += -I../src -I ../include
 NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
 OBJS := test.o log.o misc.o falloc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
-LDFLAGS := -ldl -pthread -lsodium
+LDFLAGS := @LIBDL@ -pthread @LIBSODIUM@
 BOLD := "\\e[0m\\e[2m"
 RESET := "\\e[0m"
 PASS = "\\e[0m\\e[32mOK\\e[0m" # end bold, green text
@@ -42,13 +42,6 @@ build:
 	cd ../src && $(MAKE)
 	@echo -e "$(TIMESTAMP) - starting tests" >> $(LOGFILE)
 	@echo -e "\nRunning tests"
-
-0000-0001.%: LDFLAGS += -lsodium
-0000-0006.%: LDFLAGS += -lsodium
-0000-0013.%: LDFLAGS += -lsodium
-0000-0018.%: LDFLAGS += -lsodium
-0000-0019.%: LDFLAGS += -lsodium
-
 
 %.test %.clang: %.c $(OBJS)
 	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

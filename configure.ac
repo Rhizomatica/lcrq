@@ -16,8 +16,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 
 # Checks for libraries.
-AC_CHECK_LIB([dl], [dlsym])
-#AC_CHECK_LIB([sodium], [sodium_init])
+AC_CHECK_LIB([dl], [dlsym], AC_SUBST([LIBDL], ["-ldl"]))
 AC_ARG_WITH(sodium, "use libsodium for encryption and hashing",
             [AC_SUBST([HAVE_LIBSODIUM], [])],
             [with_sodium=check])
