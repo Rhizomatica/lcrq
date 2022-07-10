@@ -53,7 +53,7 @@ AC_TYPE_UINT64_T
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([clock_gettime floor memset munmap])
+AC_CHECK_FUNCS([clock_gettime floor getrandom memset munmap])
 
 # Required only for example programs
 AC_TYPE_MODE_T

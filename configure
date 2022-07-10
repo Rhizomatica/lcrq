@@ -4592,6 +4592,12 @@ then :
   printf "%s\n" "#define HAVE_FLOOR 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getrandom" "ac_cv_func_getrandom"
+if test "x$ac_cv_func_getrandom" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETRANDOM 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "memset" "ac_cv_func_memset"
 if test "x$ac_cv_func_memset" = xyes
 then :

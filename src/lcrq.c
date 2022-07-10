@@ -11,8 +11,10 @@
 #include <sys/param.h>
 #include <time.h>
 
-#ifdef HAVE_LIBSODIUM
+#if (defined(HAVE_LIBSODIUM))
 # include <sodium.h>
+#elif (defined(HAVE_GETRANDOM))
+# include <sys/random.h>
 #else
 # include <fcntl.h>
 # include <unistd.h>
@@ -153,12 +155,16 @@ static uint32_t rq_random_esi(uint32_t min)
 	/* read 24 bits (3 bytes) from /dev/random */
 	ssize_t byt, len = 3;
 	uint8_t *a = (uint8_t *)&esi;
-	static int f; /* we'll keep the handle until program exit */
-	if (!f) f = open("/dev/random", O_RDONLY);
 #ifdef WORDS_BIGENDIAN
 	a++;
 #endif
+#ifdef HAVE_GETRANDOM
+	while ((byt = getrandom(a, len, 0)) != len) {
+#else
+	static int f; /* we'll keep the handle until program exit */
+	if (!f) f = open("/dev/random", O_RDONLY);
 	while ((byt = read(f, a, len)) != len) {
+#endif
 		if (byt == -1) break;
 		a += byt; len -= byt;
 	}
