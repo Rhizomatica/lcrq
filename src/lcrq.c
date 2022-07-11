@@ -903,9 +903,9 @@ void rq_dump_symbol(const rq_t *rq, const uint8_t *sym, FILE *stream)
 /* dump all rq_t values to stream */
 void rq_dump(const rq_t *rq, FILE *stream)
 {
-	fprintf(stream, "%s\t= %llu\n", "F", rq->F);
+	fprintf(stream, "%s\t= %llu\n", "F", (long long unsigned)rq->F);
 	fprintf(stream, "%s\t= %zu\n", "WS", rq->WS);
-	fprintf(stream, "%s\t= %llu\n", "Kt", rq->Kt);
+	fprintf(stream, "%s\t= %llu\n", "Kt", (long long unsigned)rq->Kt);
 	fprintf(stream, "%s\t= %zu\n", "kl", rq->kl);
 	fprintf(stream, "%s\t= %u\n", "Al", rq->Al);
 	fprintf(stream, "%s\t= %u\n", "T", rq->T);
