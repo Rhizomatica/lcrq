@@ -7,7 +7,11 @@ LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
 
-CFLAGS += -Wall -Wextra -Wpedantic
+CC ?= @CC@
+export CC
+
+#CFLAGS += @CFLAGS@
+CFLAGS = -Wall -Wextra -pedantic
 CFLAGS += -pipe
 ifdef DEBUG
 CFLAGS += -g -Og
@@ -16,6 +20,9 @@ CFLAGS += -O3 -DNDEBUG
 endif
 CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops -flto
 export CFLAGS
+
+CPPFLAGS += @CPPFLAGS@
+export CPPFLAGS
 
 all: src
 
@@ -55,7 +62,7 @@ clangtest: clean
 
 gcc: clean all
 
-check test sanitize: clean src
+check test sanitize: src
 	cd test && $(MAKE) $@
 
 %.test %.check %.debug: src
