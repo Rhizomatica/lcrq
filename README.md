@@ -13,6 +13,14 @@ make test # (optional)
 make install
 ```
 
+To best performance, you will want to set some CFLAGS appropriate to your
+platform.  Something like:
+
+```
+./configure CFLAGS="-O3 -march=native -mpopcnt -pipe -ffast-math -funroll-loops -flto -DNDEBUG"
+```
+can make a huge difference.
+
 To build with SIMD enabled, use:
 `CFLAGS="-DINTEL_SSE3 " make`
 

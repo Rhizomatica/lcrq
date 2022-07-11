@@ -12,15 +12,10 @@ CC = @CC@
 endif
 export CC
 
-#CFLAGS += @CFLAGS@
-CFLAGS = -Wall -Wextra -pedantic
-CFLAGS += -pipe
+CFLAGS ?= @CFLAGS@
 ifdef DEBUG
 CFLAGS += -g -Og
-else
-CFLAGS += -O3 -DNDEBUG
 endif
-CFLAGS += -march=native -mpopcnt -ffast-math -funroll-loops -flto
 export CFLAGS
 
 CPPFLAGS += @CPPFLAGS@

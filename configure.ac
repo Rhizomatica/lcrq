@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([lcrq], [0.0.0], [bugs@librecast.net])
+AC_INIT([lcrq],[0.0.0],[bugs@librecast.net])
 AC_SUBST(PACKAGE_ABIVERS, 0.0)
 AC_COPYRIGHT(Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
 See COPYING for license details.
@@ -37,6 +37,7 @@ AC_ARG_WITH(sodium, "use libsodium for encryption and hashing",
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h stdint.h sys/param.h sys/socket.h
 		  sys/time.h unistd.h],[],AC_MSG_ERROR([required header file missing]))
+AC_CHECK_HEADERS([immintrin.h pmmintrin.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN

@@ -3838,6 +3838,19 @@ else $as_nop
 fi
 
 done
+ac_fn_c_check_header_compile "$LINENO" "immintrin.h" "ac_cv_header_immintrin_h" "$ac_includes_default"
+if test "x$ac_cv_header_immintrin_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_IMMINTRIN_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "pmmintrin.h" "ac_cv_header_pmmintrin_h" "$ac_includes_default"
+if test "x$ac_cv_header_pmmintrin_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PMMINTRIN_H 1" >>confdefs.h
+
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
