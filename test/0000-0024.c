@@ -2,6 +2,7 @@
 /* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
 
 #include "test.h"
+#include <lcrq_pvt.h>
 #include <assert.h>
 #include <gf256.h>
 #include <matrix.h>

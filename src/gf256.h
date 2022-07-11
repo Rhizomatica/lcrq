@@ -4,12 +4,18 @@
 #ifndef GF256_H
 #define GF256_H
 
+#include <config.h>
 #include <stdint.h>
 #include <assert.h>
 
-#ifdef INTEL_SSE3
-#include <emmintrin.h>
-#include <immintrin.h>
+#ifdef USE_SIMD
+# ifdef HAVE_IMMINTRIN_H
+#  include <immintrin.h>
+# endif
+# ifdef HAVE_PMMINTRIN_H
+#  include <pmmintrin.h>
+# endif
+# define INTEL_SSE3 1
 #endif
 
 /* GF(256) operations as per RFC6330 (5.7) */

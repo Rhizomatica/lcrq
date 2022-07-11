@@ -5,6 +5,17 @@
 #define LCRQ_PVT_H 1
 
 #include <config.h>
+
+#ifdef USE_SIMD
+# ifdef HAVE_IMMINTRIN_H
+#  include <immintrin.h>
+# endif
+# ifdef HAVE_PMMINTRIN_H
+#  include <pmmintrin.h>
+# endif
+# define INTEL_SSE3 1
+#endif
+
 #include <lcrq.h>
 #include <matrix.h>
 #include <stdint.h>

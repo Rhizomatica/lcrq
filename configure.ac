@@ -10,6 +10,14 @@ See COPYING for license details.
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([src/config.h])
 
+# Enable features.
+AC_ARG_ENABLE([simd], AS_HELP_STRING([--enable-simd], [use SIMD vectorisation (default is no)]))
+AS_IF([test "x$enable_simd" = "xyes"], [
+	dnl append the minimum SIMD requirements if user hasn't supplied any CFLAGS
+	: ${CFLAGS="-g -O2 -march=native"}
+	AC_DEFINE([USE_SIMD],[1],[Use SIMD])
+])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -18,7 +26,7 @@ AC_PROG_LN_S
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlsym], AC_SUBST([LIBDL], ["-ldl"]))
 AC_ARG_WITH(sodium,
-	    AS_HELP_STRING([--with-sodium], [use libsodium for encryption and
+	    AS_HELP_STRING([--with-sodium], [use libsodium for encryption and \
 			   hashing (default is yes, if available)]),
             [AC_SUBST([HAVE_LIBSODIUM], [])],
             [with_sodium=check])
@@ -39,7 +47,10 @@ AC_ARG_WITH(sodium,
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h stdint.h sys/param.h sys/socket.h
 		  sys/time.h unistd.h],[],AC_MSG_ERROR([required header file missing]))
-AC_CHECK_HEADERS([immintrin.h pmmintrin.h])
+AC_CHECK_HEADERS([immintrin.h pmmintrin.h], [], [
+		  AS_IF([test "x$enable_simd" = "xyes"], [
+			 AC_MSG_FAILURE([--enable-simd was given, but required headers are missing])])
+		  ])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN

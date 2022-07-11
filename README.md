@@ -21,8 +21,17 @@ platform.  Something like:
 ```
 can make a huge difference.
 
-To build with SIMD enabled, use:
-`CFLAGS="-DINTEL_SSE3 " make`
+To build with SIMD enabled (highly recommended), append `--enable-simd` to your configure command. You
+must enable at least `-mssse3` to use this. `-march=native` is probably a better
+bet.
+
+Putting that all together:
+
+```
+./configure CFLAGS="-O3 -march=native -mpopcnt -pipe -ffast-math -funroll-loops -flto -DNDEBUG" --enable-simd
+make
+make install
+```
 
 ## Other RaptorQ Implementations
 

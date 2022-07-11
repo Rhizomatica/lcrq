@@ -20,11 +20,6 @@
 # include <unistd.h>
 #endif
 
-#if (defined(INTEL_SSE3) || defined(INTEL_AVX2))
-# include <emmintrin.h>
-# include <immintrin.h>
-#endif
-
 size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
 
 #define POPCOUNT_BUILTIN 1

@@ -8,11 +8,6 @@
 #include <sys/param.h>
 #include <unistd.h>
 
-#if (defined(INTEL_SSE3) || defined(INTEL_AVX2))
-#include <emmintrin.h>
-#include <immintrin.h>
-#endif
-
 #define VSZ 256
 
 uint8_t reclen[5] = {
