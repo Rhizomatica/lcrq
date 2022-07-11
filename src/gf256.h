@@ -51,7 +51,9 @@ static const uint8_t OCT_EXP[] = {
 	22, 44, 88, 176, 125, 250, 233, 207, 131, 27, 54, 108, 216, 173, 71,
 	142
 };
+#ifdef static_assert
 static_assert(sizeof(OCT_EXP) == 510, "OCT_EXP table has wrong size.");
+#endif
 
 /*
 5.7.4.  The Table OCT_LOG
@@ -84,7 +86,9 @@ static const uint8_t OCT_LOG[] = {
 	79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80,
 	88, 175
 };
+#ifdef static_assert
 static_assert(sizeof(OCT_LOG) == 255 + 1, "OCT_LOG table has wrong size.");
+#endif
 
 extern uint8_t GF256LR[256][2][16];
 

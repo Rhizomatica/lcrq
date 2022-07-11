@@ -19,8 +19,10 @@
 
 #define TEST_DEBUG 1
 
+#ifdef static_assert
 static_assert(TMIN % RQ_AL == 0, "TMIN not divisible by Al parameter");
 static_assert(TMAX % RQ_AL == 0, "TMAX not divisible by Al parameter");
+#endif
 
 static uint32_t overhead;
 
