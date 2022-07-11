@@ -7,7 +7,9 @@ LIBDIR := $(PREFIX)/lib
 LIBFILE := lib${LIBNAME}.so
 INCLUDEDIR := $(PREFIX)/include
 
-CC ?= @CC@
+ifeq ($(origin CC),default)
+CC = @CC@
+endif
 export CC
 
 #CFLAGS += @CFLAGS@
