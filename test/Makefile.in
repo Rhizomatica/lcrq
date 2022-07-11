@@ -30,7 +30,7 @@ sanitize: CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 sanitize: test
 
 speedtest.00: speedtest.00.o $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 speedtest: speedtest.00
 	./speedtest.00
