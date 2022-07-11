@@ -1351,7 +1351,8 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-"use libsodium for encryption and hashing"
+  --with-sodium           use libsodium for encryption and hashing (default is
+                          yes, if available)
 
 Some influential environment variables:
   CC          C compiler command
