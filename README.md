@@ -89,6 +89,9 @@ A rough indication of encoding and decoding performance can be garnered by
 running  `make speedtest`. This is useful for observing the effects of various
 optimizations. It is not a proper benchmark test.
 
+NB: if rebuilding with different compiler options, don't forget to run
+`make realclean` first.
+
 ## Other RaptorQ Implementations
 
 TvRQ
