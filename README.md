@@ -27,7 +27,7 @@ The  data we want to send is split into blocks, and then pre-encoded into a set
 of intermediate symbols.  From these intermediate symbols we can generate both
 our original  source  symbols, and also additional repair symbols.
 
-Provided  the  receipient  receives  at least a minimum value K' of these
+Provided  the  recipient  receives  at least a minimum value K' of these
 symbols (any unique combination of source and repair) the intermediate symbols
 can  be  reconstituted,  and  the original data recovered.
 
