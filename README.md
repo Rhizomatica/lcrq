@@ -85,6 +85,10 @@ make
 make install
 ```
 
+A rough indication of encoding and decoding performance can be garnered by
+running  `make speedtest`. This is useful for observing the effects of various
+optimizations. It is not a proper benchmark test.
+
 ## Other RaptorQ Implementations
 
 TvRQ
