@@ -1,5 +1,9 @@
 # C implementation of RFC6330 RaptorQ Codes for Librecast
 
+<a href="https://opensource.org"><img height="150" align="right" src="https://opensource.org/files/OSIApprovedCropped.png" alt="Open Source Initiative Approved License logo"></a>
+
+![Librecast Logo](https://secure.gravatar.com/avatar/52295d18e59ef41aeac21f3745250288?s=200)
+
 IP  Multicast  is based on UDP, which is inherently unreliable. Packets may
 arrive out of order, or not at all. TCP provides unicast with a reliable
 messaging layer on top of this unreliable, connectionless medium.
@@ -55,8 +59,11 @@ See the man pages:
 ./configure
 make
 make test # (optional)
-make install
+sudo make install
 ```
+
+The code compiles using either gcc or clang.  There is a `make clang` target.
+The default is whatever your default CC is.
 
 To best performance, you will want to set some CFLAGS appropriate to your
 platform.  Something like:
@@ -103,3 +110,19 @@ raptorq
 - https://www.cberner.com/2020/10/12/building-fastest-raptorq-rfc6330-codec-rust/
 
 - https://github.com/cberner/raptorq/blob/master/RFC6330_ERRATA.md
+
+<hr />
+
+<p class="bigbreak">
+This project was funded through the <a href="https://nlnet.nl/discovery"> NGI0 Discovery </a> Fund, a fund established by NLnet with financial support from the European
+Commission's <a href="https://ngi.eu">Next Generation Internet</a> programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 825322. *Applications are still open, you can <a href="https://nlnet.nl/propose">apply today</a>*
+</p>
+
+<p>
+  <a href="https://nlnet.nl/project/LibrecastLive/">
+      <img width="250" src="https://nlnet.nl/logo/banner.png" alt="Logo NLnet: abstract logo of four people seen from above" class="logocenter" />
+  </a>
+  <a href="https://ngi.eu/">
+      <img width="250" align="right" src="https://nlnet.nl/image/logos/NGI0_tag.png" alt="Logo NGI Zero: letterlogo shaped like a tag" class="logocenter" />
+  </a>
+</p>
