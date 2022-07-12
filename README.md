@@ -92,6 +92,11 @@ optimizations. It is not a proper benchmark test.
 NB: if rebuilding with different compiler options, don't forget to run
 `make realclean` first.
 
+### *BSD
+
+Users of *BSD will need to use gmake instead of make. `gmake test` requires
+bash.
+
 ## Other RaptorQ Implementations
 
 TvRQ
