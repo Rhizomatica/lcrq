@@ -238,8 +238,9 @@ int rq_encode(rq_t *rq, void *data, size_t len)
 {
 	const size_t clen = rq->L * rq->T;
 	size_t blklen, off;
+	const size_t maxblk = rq->src_part.IL * rq->T;
 	uint8_t *base;
-	uint8_t *padblk = NULL;
+	uint8_t padblk[maxblk];
 	uint8_t *srcblk = data;
 	int rc = 0;
 
@@ -261,13 +262,11 @@ int rq_encode(rq_t *rq, void *data, size_t len)
 		if (SBN + 1 == rq->Z && rq->Kt * rq->T > rq->F) {
 			/* last block needs padding */
 			size_t padbyt = rq->Kt * rq->T - rq->F;
-			padblk = malloc(blklen);
 			memcpy(padblk, srcblk, blklen - padbyt);
 			memset(padblk + blklen - padbyt, 0, padbyt);
 			srcblk = padblk;
 		}
 		rc = rq_encode_block_rfc(rq, base, srcblk);
-		free(padblk);
 		base += clen;
 		off = MIN(blklen, len);
 		srcblk += off;
