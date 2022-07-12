@@ -33,7 +33,7 @@ speedtest.00: speedtest.00.o $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lrt
 
 speedtest: speedtest.00
-	./speedtest.00
+	time ./speedtest.00 32768 1024 1000
 	rm -f gmon.out
 
 test: clean build $(shell echo ????-????.c | sed 's/\.c/\.test/g') result
