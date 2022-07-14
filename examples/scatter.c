@@ -47,14 +47,14 @@ static int scatter_file(const size_t F, uint8_t *map, const char *basename, mode
 	rq = rq_init(F, T);
 
 	/* data precoding (generate intermediate symbols */
-	rc = rq_encode_data_rfc(rq, map, F);
+	rc = rq_encode(rq, map, F);
 	if (rc) goto exit_err;
 
 	/* generate K' + overhead symbols and write to disk */
 	KP = rq_KP(rq);
 	rq_pid_t pid = 0; /* payload id => SBN (8 bits) + 24 bit ESI in network byte order */
 	for (uint16_t i = 0; rc == 0 && i < KP + RQ_OVERHEAD; i++) {
-		rq_pkt_gen(rq, &pid, sym, RQ_RAND);
+		rq_symbol(rq, &pid, sym, RQ_RAND);
 		rc = write_symbol(F, pid, sym, basename, mode);
 		if (rc == 0) syms++;
 	}

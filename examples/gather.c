@@ -28,7 +28,7 @@ static int decode_symbols(const char *file, size_t F, mode_t mode, uint8_t *enc,
 	/* decode symbols */
 	rq = rq_init(F, T);
 	dec = calloc(rq_KP(rq), T);
-	rc = rq_decode_block_rfc(rq, dec, enc, ESI, nesi);
+	rc = rq_decode(rq, dec, enc, ESI, nesi);
 	if (rc == 0) {
 		/* write decoded data to file */
 		fd = open(file, O_CREAT | O_EXCL | O_WRONLY, mode);
