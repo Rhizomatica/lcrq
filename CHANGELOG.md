@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bit shifting macros rq_pid2sbn(3), rq_pid2esi(3) rq_pidsetsbn(3) rq_pidsetesi(3)
 
 ### Fixed
+- CID 274792: Resource leak
 - fix big endian bug in rq_symbol(3)
 - update examples/ to use renamed API calls
 
