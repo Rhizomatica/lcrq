@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([lcrq],[0.0.0],[bugs@librecast.net])
+AC_INIT([lcrq],[0.0.0.0],[bugs@librecast.net])
 AC_SUBST(PACKAGE_ABIVERS, 0.0)
 AC_COPYRIGHT(Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
 See COPYING for license details.
