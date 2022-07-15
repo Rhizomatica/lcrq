@@ -235,7 +235,7 @@ fail:
 
 int rq_encode(rq_t *rq, void *data, size_t len)
 {
-	const size_t clen = rq->L * rq->T;
+	const size_t clen = (uint32_t)rq->L * rq->T;
 	size_t blklen, off;
 	const size_t maxblk = rq->src_part.IL * rq->T;
 	uint8_t *base;
