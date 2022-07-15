@@ -61,7 +61,7 @@ static uint64_t KL(const uint64_t WS, const uint16_t Al, const uint16_t T, const
 {
 	uint64_t v;
 	for (int i = T2LEN - 1; i >= 0 ; i--) {
-		v = WS/(Al*(CEIL(T,(Al*n))));
+		v = WS/(Al*(CEIL(T,((uint64_t)Al*n))));
 		assert(v);
 		if (T2[i].k <= v) return T2[i].k;
 	}
