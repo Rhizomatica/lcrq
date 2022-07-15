@@ -65,6 +65,7 @@ static uint64_t KL(const uint64_t WS, const uint16_t Al, const uint16_t T, const
 		assert(v);
 		if (T2[i].k <= v) return T2[i].k;
 	}
+	assert(0); /* not reached */
 	return 0;
 }
 
