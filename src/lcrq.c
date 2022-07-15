@@ -792,7 +792,7 @@ inline static void create_rdex(const matrix_t *A, const int i, const int u, int 
 int rq_decoder_rfc6330_phase1(const rq_t *rq, matrix_t *A, int *i, int *u)
 {
 	int odeg[A->rows + 1];
-	int rdex[A->rows];
+	int rdex[A->rows + 1];
 	int row, r;
 	int cmax = A->rows - rq->P;
 	const size_t mapsz = howmany(cmax, CHAR_BIT);
