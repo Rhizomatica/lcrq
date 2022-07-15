@@ -79,7 +79,7 @@ int rq_deg(const rq_t *rq, const int v)
 
 	assert(v >= 0); assert(v < (1 << 20));
 
-	for (d = 1; d <= DEGMAX; d++) {
+	for (d = 1; d < DEGMAX; d++) {
 		if (DEG[d-1] <= v && v < DEG[d]) break;
 	}
 	return MIN(d, rq->W-2);
