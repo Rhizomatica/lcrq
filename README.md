@@ -4,6 +4,11 @@
 
 ![Librecast Logo](https://secure.gravatar.com/avatar/52295d18e59ef41aeac21f3745250288?s=200)
 
+<a href="https://scan.coverity.com/projects/lcrq">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/25261/badge.svg"/>
+</a>
+
 IP  Multicast  is based on UDP, which is inherently unreliable. Packets may
 arrive out of order, or not at all. TCP provides unicast with a reliable
 messaging layer on top of this unreliable, connectionless medium.
