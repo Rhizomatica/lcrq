@@ -438,7 +438,7 @@ matrix_t rq_matrix_D(const rq_t *rq, const unsigned char *blk, const uint32_t N)
 	matrix_new(&D, M, rq->T, NULL, 0);
 	matrix_zero(&D);
 	/* first S + H symbols are zero */
-	ptr = D.base + (rq->S + rq->H) * rq->T * sizeof(uint8_t);
+	ptr = D.base + ((uint32_t)rq->S + rq->H) * rq->T * sizeof(uint8_t);
 	/* copy N symbols of size T into D */
 	memcpy(ptr, blk, N * rq->T);
 
