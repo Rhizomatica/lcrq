@@ -221,7 +221,7 @@ static int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 	sym = rq_decode_C(rq, &D);
 	matrix_t Cm;
 	matrix_new(&Cm, rq->L, rq->T, sym, 0);
-	memcpy(C, sym, rq->L * rq->T);
+	memcpy(C, sym, (uint32_t)rq->L * rq->T); /* cast to avoid sign-extension */
 	free(sym);
 fail:
 	matrix_free(&A);
