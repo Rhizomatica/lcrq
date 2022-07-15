@@ -495,7 +495,7 @@ int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nes
 	matrix_zero(&D);
 	uint16_t off = rq->S + rq->H + rq->KP - rq->K;
 	uint8_t *ptr = D.base + off * rq->T;
-	memcpy(ptr, enc, rq->nrep * rq->T);
+	memcpy(ptr, enc, (uint32_t)rq->nrep * rq->T);
 	C = rq_decode_C(rq, &D);
 	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C, 0);
