@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- bit shifting macros rq_pid2sbn(3), rq_pid2esi(3) rq_pidsetsbn(3) rq_pidsetesi(3)
+
 ### Fixed
+- fix big endian bug in rq_symbol(3)
 - update examples/ to use renamed API calls
 
 ## [0.0.0.0] - 2022-07-14

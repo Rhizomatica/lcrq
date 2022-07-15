@@ -53,7 +53,9 @@ AC_CHECK_HEADERS([immintrin.h pmmintrin.h], [], [
 		  ])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_BIGENDIAN
+AC_C_BIGENDIAN([AC_DEFINE([WORDS_BIGENDIAN],[1],[Define WORDS_BIGENDIAN to 1 if your processor stores words with the most significant byte first])
+		AC_SUBST([HAVE_BIGENDIAN],["#define HAVE_BIGENDIAN 1"])],
+               [AC_SUBST([HAVE_BIGENDIAN],["/* #undef HAVE_BIGENDIAN */"])])
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
@@ -77,5 +79,6 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  doc/Makefile
                  examples/Makefile
-                 test/Makefile])
+                 test/Makefile
+		 include/lcrq.h])
 AC_OUTPUT

@@ -63,7 +63,7 @@ static uint8_t *encoder_generate_symbols(rq_t *rq, uint32_t ESI[], int nesi)
 	sym = enc;
 	for (int i = 0; i < nesi; i++) {
 		rq_symbol(rq, &pid, sym, RQ_RAND);
-		ESI[i] = ntohl(pid << 8);
+		ESI[i] = rq_pid2esi(pid);
 		sym += rq->T;
 	}
 	return enc;

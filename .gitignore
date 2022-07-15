@@ -14,3 +14,4 @@ Makefile
 src/Makefile
 test/Makefile
 src/config.h
+include/lcrq.h

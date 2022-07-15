@@ -1,0 +1,70 @@
+.TH "RQ_PID2SBN" 3 2022-07-15 "LCRQ" "Librecast Programmer's Manual"
+.SH NAME
+rq_pid2sbn, rq_pid2esi, rq_pidsetsbn, rq_pidsetesi - get/set SBN,ESI in rq_pid_t
+.SH SYNOPSIS
+.nf
+.B #include <lcrq.h>
+.PP
+.BI "uint8_t rq_pid2sbn(rq_pid_t " pid ");"
+.BI "uint32_t rq_pid2esi(rq_pid_t " pid ");"
+.BI "rq_pid_t rq_pidsetsbn(rq_pid_t " pid ", uint8_t " sbn ");"
+.BI "rq_pid_t rq_pidsetesi(rq_pid_t " pid ", uint32_t " esi ");"
+.fi
+.PP
+Compile and link with \fI\-llcrq\fP.
+.SH DESCRIPTION
+Bitshifting macros for getting and setting the SBN and ESI bits of rq_pid_t.
+.PP
+.EX
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     SBN       |               Encoding Symbol ID              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.EE
+.PP
+SBN (Source Block Number) is an 8 bit unsigned integer. The Encoding Symbol ID
+(ESI) is a 24 bit unsigned integer in network byte order.
+.PP
+.SH RETURN VALUE
+.B rq_pid2sbn()
+and
+.B rq_pid2esi()
+return the uint8_t SBN and uint32_t ESI numbers respectively.
+.B rq_pidsetsbn()
+and
+.B rq_pidsetesi()
+both return rq_pid_t with the appropriate bits set.
+.SH ERRORS
+These macros do not return errors.
+.SH EXAMPLE
+.SS Program source
+\&
+.EX
+#include <assert.h>
+#include <lcrq.h>
+
+int main(void)
+{
+	rq_pid_t pid = 0;
+	uint32_t esi = 19;
+	uint8_t sbn = 42;
+
+	/* set SBN and ESI bits */
+	pid = rq_pidsetsbn(pid, sbn);
+	pid = rq_pidsetesi(pid, esi);
+
+	/* make sure we can read them back */
+	assert(sbn == rq_pid2sbn(pid));
+	assert(esi == rq_pid2esi(pid));
+
+	return 0;
+}
+.EE
+.SH SEE ALSO
+.BR rq_init (3),
+.BR rq_free (3),
+.BR rq_decode (3),
+.BR rq_encode (3),
+.BR rq_symbol (3),
+.BR lcrq (7)

@@ -4,12 +4,15 @@
 #ifndef LCRQ_H
 #define LCRQ_H 1
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #ifndef NDEBUG
 #include <stdio.h>
 #endif
+
+@HAVE_BIGENDIAN@
 
 #define RQ_AL 4
 
@@ -106,6 +109,16 @@ typedef uint64_t rq_oti_t;
  */
 #if 0
 typedef uint32_t rq_scheme_t;
+#endif
+
+#define rq_pid2sbn(pid) ((pid) >> 24)
+#define rq_pidsetsbn(pid, sbn) (pid) & 0x00ffffff | ((sbn) << 24)
+#ifdef HAVE_BIGENDIAN
+# define rq_pid2esi(pid) ntohl((pid) & 0x00ffffff)
+# define rq_pidsetesi(pid, esi) (pid) & 0xff000000 | htonl(esi)
+#else
+# define rq_pid2esi(pid) ntohl(pid << 8)
+# define rq_pidsetesi(pid, esi) (pid) & 0xff000000 | (htonl(esi) >> 8)
 #endif
 
 /* rq_init - initialize RaptorQ context

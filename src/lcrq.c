@@ -179,15 +179,14 @@ inline static matrix_t rq_matrix_C_by_SBN(const rq_t *rq, const uint8_t SBN)
 
 uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 {
-	uint8_t sbn = (*pid) >> 24;
+	uint8_t sbn = rq_pid2sbn(*pid);
 	uint32_t esi;
 	matrix_t C = rq_matrix_C_by_SBN(rq, sbn);
 	if ((flags & RQ_RAND) == RQ_RAND) {
 		esi = rq_random_esi(rq->K);
-		*pid &= 0xff000000;
-		*pid |= htonl(esi) >> 8;
+		*pid = rq_pidsetesi(*pid, esi);
 	}
-	else esi = ntohl(*pid & 0x00ffffff);
+	else esi = rq_pid2esi(*pid);
 	return rq_encode_symbol(rq, &C, esi2isi(rq, esi), sym);
 }
 

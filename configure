@@ -663,6 +663,7 @@ build_os
 build_vendor
 build_cpu
 build
+HAVE_BIGENDIAN
 LIBSODIUM
 HAVE_LIBSODIUM
 LIBDL
@@ -4108,10 +4109,14 @@ fi
 printf "%s\n" "$ac_cv_c_bigendian" >&6; }
  case $ac_cv_c_bigendian in #(
    yes)
-     printf "%s\n" "#define WORDS_BIGENDIAN 1" >>confdefs.h
+
+printf "%s\n" "#define WORDS_BIGENDIAN 1" >>confdefs.h
+
+		HAVE_BIGENDIAN="#define HAVE_BIGENDIAN 1"
 ;; #(
    no)
-      ;; #(
+     HAVE_BIGENDIAN="/* #undef HAVE_BIGENDIAN */"
+ ;; #(
    universal)
 
 printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
@@ -4688,7 +4693,7 @@ fi
 
 done
 
-ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile examples/Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile examples/Makefile test/Makefile include/lcrq.h"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5382,6 +5387,7 @@ do
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+    "include/lcrq.h") CONFIG_FILES="$CONFIG_FILES include/lcrq.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
