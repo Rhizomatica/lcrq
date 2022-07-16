@@ -12,6 +12,7 @@ CFLAGS += -I. -I../include
 HEADERS = ../include/$(LIBNAME).h $(LIBNAME)_pvt.h $(sort $(wildcard ../include/$(LIBNAME)/*.h))
 INSTALL ?= install
 LDCONFIG ?= ldconfig
+LDLIBS := @LIBSODIUM@
 INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
@@ -25,7 +26,7 @@ ABIFILES := $(foreach f,$(SOFILES),$f.$(ABIVERS))
 all: $(SOFILES)
 
 lib$(LIBNAME).so: $(OBJECTS)
-	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^
+	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c %.h $(HEADERS)
 
