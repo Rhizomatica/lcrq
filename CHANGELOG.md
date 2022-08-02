@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Fixed
+- only install necessary files from include/
 - src/Makefile.in: Use LDFLAGS when building .so file
 - if libsodium is enabled, compile liblcrq with an explicit dependency
 
