@@ -35,8 +35,8 @@ install: $(SOFILES)
 	$(INSTALL) -d $(INCLUDEDIR)
 	$(INSTALL_DATA) lib$(LIBNAME).so $(LIBDIR)/lib$(LIBNAME).so.$(VERSION)
 	cp -r ../include/*.h $(INCLUDEDIR)
-	$(LDCONFIG) -n $(LIBDIR)
 	ln -sf lib$(LIBNAME).so.$(ABIVERS) $(LIBDIR)/lib$(LIBNAME).so
+	ln -sf lib$(LIBNAME).so.$(VERSION) $(LIBDIR)/lib$(LIBNAME).so.$(ABIVERS)
 
 .PHONY: clean realclean uninstall
 
