@@ -42,7 +42,7 @@ If decoding fails, the function returns -1.
  * Now we can decode the object into the pre-allocated buffer dec.
  */
 for (uint8_t sbn = 0; sbn < rq_Z(rq); sbn++) {
-	rq_decode_block_rfc(rq, dec, enc[sbn], ESI[sbn], KP + OH);
+	rq_decode(rq, dec, enc[sbn], ESI[sbn], KP + OH);
 }
 .EE
 .SH SEE ALSO
