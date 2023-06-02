@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net> */
 
 #ifndef LCRQ_H
 #define LCRQ_H 1
@@ -112,13 +112,13 @@ typedef uint32_t rq_scheme_t;
 #endif
 
 #define rq_pid2sbn(pid) ((pid) >> 24)
-#define rq_pidsetsbn(pid, sbn) (pid) & 0x00ffffff | ((sbn) << 24)
+#define rq_pidsetsbn(pid, sbn) ((pid) & 0x00ffffff) | ((sbn) << 24)
 #ifdef HAVE_BIGENDIAN
 # define rq_pid2esi(pid) ntohl((pid) & 0x00ffffff)
 # define rq_pidsetesi(pid, esi) (pid) & 0xff000000 | htonl(esi)
 #else
 # define rq_pid2esi(pid) ntohl(pid << 8)
-# define rq_pidsetesi(pid, esi) (pid) & 0xff000000 | (htonl(esi) >> 8)
+# define rq_pidsetesi(pid, esi) ((pid) & 0xff000000) | (htonl(esi) >> 8)
 #endif
 
 /* rq_init - initialize RaptorQ context
