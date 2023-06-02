@@ -237,19 +237,24 @@ fail:
 int rq_encode(rq_t *rq, void *data, size_t len)
 {
 	const size_t clen = (uint32_t)rq->L * rq->T;
-	size_t blklen, off;
 	const size_t maxblk = rq->src_part.IL * rq->T;
+	const size_t szC = clen * rq->Z;
+	size_t blklen, off;
 	uint8_t *base;
-	uint8_t padblk[maxblk];
+	uint8_t *padblk;
 	uint8_t *srcblk = data;
-	int rc = 0;
+	int rc = -1;
 
 	/* create storage for intermediate symbols (C) */
-	rq->C = malloc(clen * rq->Z);
-	memset(rq->C, 0, clen * rq->Z);
-	base = rq->C;
+	padblk = malloc(maxblk);
+	if (!padblk) goto exit_0;
+	base = malloc(szC);
+	if (!base) goto exit_1;
+	memset(base, 0, szC);
+	rq->C = base;
 	rq->obj = data;
 	rq->sym = data;
+	rc = 0;
 	for (uint8_t SBN = 0; SBN < rq->Z && !rc; SBN++) {
 		if (SBN < rq->src_part.JL) {
 			rq->K = rq->src_part.IL;
@@ -272,6 +277,9 @@ int rq_encode(rq_t *rq, void *data, size_t len)
 		srcblk += off;
 		len -= off;
 	}
+exit_1:
+	free(padblk);
+exit_0:
 	return rc;
 }
 
