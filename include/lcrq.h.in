@@ -96,9 +96,7 @@ typedef uint32_t rq_pid_t;
  * |               |    Reserved   |           Symbol Size (T)     |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-#if 0
 typedef uint64_t rq_oti_t;
-#endif
 
 /* Scheme-Specific (3.3.3):
  * 0                   1                   2                   3
@@ -107,9 +105,7 @@ typedef uint64_t rq_oti_t;
  * |       Z       |              N                |       Al      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-#if 0
 typedef uint32_t rq_scheme_t;
-#endif
 
 #define rq_pid2sbn(pid) ((pid) >> 24)
 #define rq_pidsetsbn(pid, sbn) ((pid) & 0x00ffffff) | ((sbn) << 24)
@@ -141,5 +137,11 @@ uint16_t rq_K(const rq_t * const rq);
 int rq_encode(rq_t *rq, void *data, const size_t len);
 int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nesi);
 uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags);
+int rq_oti(rq_t *rq, rq_oti_t *oti, rq_scheme_t *scheme);
+uint64_t rq_oti_F(rq_oti_t oti);
+uint16_t rq_oti_T(rq_oti_t oti);
+uint8_t rq_oti_Z(rq_oti_t scheme);
+uint16_t rq_oti_N(rq_oti_t scheme);
+uint8_t rq_oti_Al(rq_oti_t scheme);
 
 #endif /* LCRQ_PVT_H */
