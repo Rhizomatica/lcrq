@@ -23,6 +23,9 @@ export CFLAGS
 CPPFLAGS += @CPPFLAGS@
 export CPPFLAGS
 
+LDFLAGS ?= @LDFLAGS@
+export LDFLAGS
+
 all: src
 
 install: all doc
