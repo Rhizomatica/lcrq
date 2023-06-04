@@ -4,7 +4,7 @@
 AC_PREREQ([2.71])
 AC_INIT([lcrq],[0.0.1],[bugs@librecast.net])
 AC_SUBST(PACKAGE_ABIVERS, 0.0)
-AC_COPYRIGHT(Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
+AC_COPYRIGHT(Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net>
 See COPYING for license details.
 )
 AC_CONFIG_SRCDIR([src/])
@@ -51,6 +51,7 @@ AC_CHECK_HEADERS([immintrin.h pmmintrin.h], [], [
 		  AS_IF([test "x$enable_simd" = "xyes"], [
 			 AC_MSG_FAILURE([--enable-simd was given, but required headers are missing])])
 		  ])
+AC_CHECK_HEADERS([endian.h sys/endian.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN([AC_DEFINE([WORDS_BIGENDIAN],[1],[Define WORDS_BIGENDIAN to 1 if your processor stores words with the most significant byte first])
