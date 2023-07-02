@@ -1038,8 +1038,7 @@ void rq_block(rq_t *rq)
 	rq->B = rq->W - rq->S;
 
 	/* P1 denotes the smallest prime number greater than or equal to P */
-	rq->P1 = rq->P;
-	while (!isprime(rq->P1)) rq->P1++;
+	for (rq->P1 = rq->P; !isprime(rq->P1); rq->P1++);
 
 	/* verify primes */
 	assert(isprime(rq->P1));
