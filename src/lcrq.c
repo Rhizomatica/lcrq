@@ -29,31 +29,6 @@ size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
 
 #define POPCOUNT_BUILTIN 1
 
-#define packF_LE(x) \
-	(( \
-	(((x) & 0x000000ff00000000ull) >> 8)     \
-	| (((x) & 0x00000000ff000000ull) << 8)   \
-	| (((x) & 0x0000000000ff0000ull) << 24)  \
-	| (((x) & 0x000000000000ff00ull) << 40)  \
-	| (((x) & 0x00000000000000ffull) << 56)) \
-	)
-
-#define unpackF_LE(x) \
-	((((x) & 0xff00000000000000ull) >> 56)  \
-	| (((x) & 0x00ff000000000000ull) >> 40) \
-	| (((x) & 0x0000ff0000000000ull) >> 24) \
-	| (((x) & 0x000000ff00000000ull) >> 8)  \
-	| (((x) & 0x00000000ff000000ull) << 8)  \
-	)
-
-# if __BYTE_ORDER == __LITTLE_ENDIAN
-# define packF(x) packF_LE(x)
-# define unpackF(x) unpackF_LE(x)
-#else
-# define packF(x) ((x) << 24)
-# define unpackF(x) ((x) >> 24)
-#endif
-
 static int isprime(const int n)
 {
 	if (n <= 1) return 0;
@@ -972,37 +947,36 @@ uint16_t rq_K(const rq_t * const rq) { return rq->K; }
 
 uint64_t rq_oti_F(rq_oti_t oti)
 {
-	return unpackF(oti);
+	return (be64toh(oti) >> 24);
 }
 
 uint16_t rq_oti_T(rq_oti_t oti)
 {
-	return be16toh(oti & 0xffff);
+	return be64toh(oti) & 0xffff;
 }
 
 uint8_t rq_oti_Z(rq_oti_t scheme)
 {
-	return scheme >> 24;
+	return be32toh(scheme) >> 24;
 }
 
 uint16_t rq_oti_N(rq_oti_t scheme)
 {
-	return be16toh((scheme & 0xffff00) >> 8);
+	return (be32toh(scheme) & 0x00ffff00) >> 8;
 }
 
 uint8_t rq_oti_Al(rq_oti_t scheme)
 {
-	return scheme & 0xff;
+	return be32toh(scheme) & 0xff;
 }
 
 int rq_oti(rq_t *rq, rq_oti_t *oti, rq_scheme_t *scheme)
 {
 	if (oti) {
-		*oti = packF(rq->F);
-		*oti |= htobe16(rq->T);
+		*oti = htobe64((rq->F << 24) | rq->T);
 	}
 	if (scheme) {
-		*scheme = (rq->Z << 24) | (htobe16(rq->N) << 8) | rq->Al;
+		*scheme = htobe32((rq->Z << 24) | (rq->N << 8) | rq->Al);
 	}
 	return 0;
 }

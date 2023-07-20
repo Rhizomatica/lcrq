@@ -107,15 +107,11 @@ typedef uint64_t rq_oti_t;
  */
 typedef uint32_t rq_scheme_t;
 
-#define rq_pid2sbn(pid) ((pid) >> 24)
-#define rq_pidsetsbn(pid, sbn) ((pid) & 0x00ffffff) | ((sbn) << 24)
-#ifdef HAVE_BIGENDIAN
-# define rq_pid2esi(pid) ntohl((pid) & 0x00ffffff)
-# define rq_pidsetesi(pid, esi) (pid) & 0xff000000 | htonl(esi)
-#else
-# define rq_pid2esi(pid) ntohl(pid << 8)
-# define rq_pidsetesi(pid, esi) ((pid) & 0xff000000) | (htonl(esi) >> 8)
-#endif
+#define rq_pid2sbn(pid) ntohl(pid) >> 24
+#define rq_pidsetsbn(pid, sbn) htonl((ntohl(pid) & 0x00ffffff) | (sbn << 24))
+#define rq_pid2esi(pid) (ntohl(pid) & 0x00ffffff)
+#define rq_pidsetesi(pid, esi) htonl((ntohl(pid) & 0xff000000) | esi)
+#define rq_pidset(sbn, esi) htonl((sbn << 24) | (esi & 0x00ffffff));
 
 /* rq_init - initialize RaptorQ context
  * creates and returns a new RaptorQ context and sets up the environment.
