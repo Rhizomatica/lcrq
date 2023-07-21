@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
-# Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
+# Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net>
 
 PREFIX ?= /usr/local
 export PREFIX
@@ -61,10 +61,6 @@ check test sanitize: src
 %.test %.check %.debug: src
 	cd test && $(MAKE) $@
 
-test sanitize: src
-	$(MAKE) -C libs $@
-	$(MAKE) -C test $@
-
 test memcheck: src
 	$(MAKE) -C test $@/all
 
@@ -75,5 +71,5 @@ test/% memcheck/%: .FORCE src
 
 
 coverity: clean
-	PATH=$(PATH):../coverity/bin/ cov-build --dir cov-int $(MAKE) src
+	PATH=$(PATH):../../coverity/bin/ cov-build --dir cov-int $(MAKE) src
 	tar czvf $(COVERITY_TGZ) $(COVERITY_DIR)
