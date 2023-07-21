@@ -102,5 +102,5 @@ int main(void)
 
 	test_log("test done\n");
 
-	return fails;
+	return test_status;
 }

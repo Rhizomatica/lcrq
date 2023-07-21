@@ -53,5 +53,5 @@ int main(void)
 
 	matrix_free(&A);
 
-	return fails;
+	return test_status;
 }

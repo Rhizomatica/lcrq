@@ -75,5 +75,5 @@ int main(void)
 	matrix_free(&R);
 	matrix_free(&LU);
 
-	return fails;
+	return test_status;
 }

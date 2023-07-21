@@ -87,5 +87,5 @@ int main(void)
 	return test_skip("Galois Field 256 SIMD (SSE) multiplication (requires SSE3)");
 #endif
 
-	return fails;
+	return test_status;
 }

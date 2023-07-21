@@ -49,5 +49,5 @@ int main(void)
 	matrix_dump(&C, stderr);
 	matrix_free(&C);
 
-	return fails;
+	return test_status;
 }

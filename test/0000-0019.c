@@ -131,5 +131,5 @@ int main(void)
 //test_done:
 	test_log("test done\n");
 
-	return fails;
+	return test_status;
 }

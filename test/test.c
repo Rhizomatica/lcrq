@@ -1,23 +1,25 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2020-2022 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2020-2023 Brett Sheffield <bacs@librecast.net> */
 
 #include "test.h"
-#include "log.h"
+#include <fcntl.h>
 #include <semaphore.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <unistd.h>
 
-#ifndef HAVE_LIBSODIUM
-# if (defined(HAVE_GETRANDOM))
-#  include <sys/random.h>
-# else
-#  include <fcntl.h>
-#  include <unistd.h>
-# endif
-#endif
+#define DEFAULT_TERM_COLS 80
+#define TESTID_WIDTH 16
 
-int fails = 0;
+int COLS = DEFAULT_TERM_COLS;
+int MSGW;
+int test_status = TEST_OK; /* test exit status (not a count of failures) */
+int capreqd = 0;
+int capfail = 0;
 sem_t log_lock;
 
 void vfail_msg(char *msg, va_list argp)
@@ -25,9 +27,9 @@ void vfail_msg(char *msg, va_list argp)
 	char *b;
 	b = malloc(_vscprintf(msg, argp) + 1);
 	vsprintf(b, msg, argp);
-	printf("\n            %-70s", b);
+	printf("\n            %-*s", MSGW, b);
 	free(b);
-	fails++;
+	test_status = TEST_FAIL;
 }
 
 void fail_msg(char *msg, ...)
@@ -38,24 +40,15 @@ void fail_msg(char *msg, ...)
 	va_end(argp);
 }
 
-void test_assert(int condition, char *msg, ...)
+int test_assert(int condition, char *msg, ...)
 {
-	char *b;
-	va_list argp;
-	va_start(argp, msg);
-	b = malloc(_vscprintf(msg, argp) + 1);
-	vsprintf(b, msg, argp);
-	va_end(argp);
-	va_start(argp, msg);
 	if (!condition) {
+		va_list argp;
+		va_start(argp, msg);
 		vfail_msg(msg, argp);
-		test_log("%s(): %s FAIL\n", __func__, b);
+		va_end(argp);
 	}
-	else {
-		test_log("%s(): %s OK\n", __func__, b);
-	}
-	va_end(argp);
-	free(b);
+	return condition;
 }
 
 void test_assert_s(int condition)
@@ -63,78 +56,87 @@ void test_assert_s(int condition)
 	test_assert(condition, "test");
 }
 
-void test_sleep(time_t tv_sec, long tv_nsec)
-{
-	struct timespec ts = { tv_sec, tv_nsec };
-	test_log("test thread sleeping");
-	nanosleep(&ts, NULL);
-	test_log("test thread waking");
-}
-
-void test_strcmp(char *str1, char *str2, char *msg, ...)
+int test_strcmp(char *str1, char *str2, char *msg, ...)
 {
 	if (str1 == NULL || str2 == NULL || strcmp(str1, str2)) {
 		va_list argp;
 		va_start(argp, msg);
 		vfail_msg(msg, argp);
 		va_end(argp);
+		return 0;
 	}
+	return 1;
 }
 
-void test_strncmp(char *str1, char *str2, size_t len, char *msg, ...)
+int test_strncmp(char *str1, char *str2, size_t len, char *msg, ...)
 {
 	if (str1 == NULL || str2 == NULL || strncmp(str1, str2, len)) {
 		va_list argp;
 		va_start(argp, msg);
 		vfail_msg(msg, argp);
 		va_end(argp);
+		return 0;
 	}
+	return 1;
 }
 
-void test_expect(char *expected, char *got)
+int test_expect(char *expected, char *got)
 {
-	test_strcmp(expected, got, "expected: '%s', got: '%s'", expected, got);
+	return test_strcmp(expected, got, "expected: '%s', got: '%s'", expected, got);
 }
 
-void test_expectn(char *expected, char *got, size_t len)
+int test_expectn(char *expected, char *got, size_t len)
 {
-	test_strncmp(expected, got, len, "expected: '%s', got: '%s'", expected, got);
-}
-
-void test_expectiov(struct iovec *expected, struct iovec *got)
-{
-	test_assert(expected->iov_len == got->iov_len, "expected '%.*s' (length mismatch) %zu != %zu",
-			(int)expected->iov_len, (char *)expected->iov_base,
-			expected->iov_len, got->iov_len);
-	if (expected->iov_len != got->iov_len) return;
-	test_strncmp(expected->iov_base, got->iov_base, expected->iov_len,
-			"expected: '%.*s', got: '%.*s'",
-			(int)expected->iov_len, (char *)expected->iov_base,
-			(int)got->iov_len, (char *)got->iov_base);
+	return test_strncmp(expected, got, len, "expected: '%s', got: '%s'", expected, got);
 }
 
 void test_log(char *msg, ...)
 {
+	char *b;
 	va_list argp;
-	sem_wait(&log_lock);
-	fprintf(stderr, "%lu: ", (long unsigned int)clock());
-	sem_post(&log_lock);
 	va_start(argp, msg);
-	vfprintf(stderr, msg, argp);
+	b = malloc(_vscprintf(msg, argp) + 1);
+	vsprintf(b, msg, argp);
+	sem_wait(&log_lock);
+	fprintf(stderr, "%s\n", b);
+	sem_post(&log_lock);
 	va_end(argp);
+	free(b);
+}
+
+static void init_terminal(void)
+{
+#if HAVE_SYS_IOCTL_H
+	if (isatty(fileno(stdout))) {
+		/* get terminal size */
+		struct winsize w;
+		COLS = (ioctl(fileno(stdout), TIOCGWINSZ, &w) != -1) ? w.ws_col : DEFAULT_TERM_COLS;
+	}
+	else COLS = DEFAULT_TERM_COLS;
+#endif
+	MSGW = COLS - TESTID_WIDTH;
 }
 
 void test_name(char *str, ...)
 {
 	char *b;
 	va_list argp;
-	loglevel = 127;
+
+	init_terminal();
 	sem_init(&log_lock, 0, 1);
+	if (capfail) {
+		printf("%-*s", MSGW, "----- requires capabilities (skipping) -----");
+		exit(test_status);
+	}
+	else if (!capreqd && geteuid() == 0) {
+		printf("%-*s", MSGW, "----- does not require root (skipping) -----");
+		exit(test_status);
+	}
 	va_start(argp, str);
 	b = malloc(_vscprintf(str, argp) + 1);
 	vsprintf(b, str, argp);
-	printf("%-70s", b);
-	test_log("  (%s)\n", b);
+	test_log("  (%s)", b);
+	printf("%-*s", MSGW, b);
 	va_end(argp);
 	free(b);
 }
@@ -143,15 +145,34 @@ int test_skip(char *str, ...)
 {
 	char *b;
 	va_list argp;
+
+	init_terminal();
 	sem_init(&log_lock, 0, 1);
 	va_start(argp, str);
 	b = malloc(_vscprintf(str, argp) + 1);
 	vsprintf(b, str, argp);
-	printf("(skipped) %-60s", b);
+	printf("(skipped) %-*s", MSGW - 10, b);
 	test_log("  (%s)", b);
 	va_end(argp);
 	free(b);
 	return 0;
+}
+
+void test_cap_require(int cap)
+{
+	(void) cap;
+	// TODO check for capabilities on Linux
+	if (geteuid()) capfail++;
+	capreqd++;
+}
+
+void test_require_linux(void)
+{
+#ifndef __linux__
+	init_terminal();
+	printf("%-*s", MSGW, "----- linux only (skipping) -----");
+	exit(test_status);
+#endif
 }
 
 void test_rusage()

@@ -12,30 +12,42 @@
 #include <time.h>
 #include "log.h"
 #include "misc.h"
+#include "valgrind.h"
+#ifdef __linux__
+#include <linux/capability.h>
+#else
+#define CAP_NET_ADMIN 12
+#endif
 #ifdef HAVE_LIBSODIUM
 # include <sodium.h>
 #endif
 
-#define _TESTING 1
+enum {
+	TEST_ERR  = -1,
+	TEST_OK   = 0,
+	TEST_WARN = 1,
+	TEST_FAIL = 2,
+	TEST_UNKN = 3
+};
 
-extern int fails;
+extern int test_status;
 
 void fail_msg(char *msg, ...);
-void test_assert(int condition, char *msg, ...);
+int test_assert(int condition, char *msg, ...);
 void test_assert_s(int condition);
-void test_sleep(time_t tv_sec, long tv_nsec);
-void test_strcmp(char *str1, char *str2, char *msg, ...);
-void test_strncmp(char *str1, char *str2, size_t len, char *msg, ...);
-void test_expect(char *expected, char *got);
-void test_expectn(char *expected, char *got, size_t len);
-void test_expectiov(struct iovec *expected, struct iovec *got);
+int test_strcmp(char *str1, char *str2, char *msg, ...);
+int test_strncmp(char *str1, char *str2, size_t len, char *msg, ...);
+int test_expect(char *expected, char *got);
+int test_expectn(char *expected, char *got, size_t len);
 void test_log(char *msg, ...);
 void test_rusage();
 void test_name(char *str, ...);
 int test_skip(char *str, ...);
+void test_cap_require(int cap);
+void test_require_linux(void);
 #ifdef HAVE_LIBSODIUM
-#define test_randombytes randombytes_buf
-#define test_randomnumber randombytes_uniform
+# define test_randombytes randombytes_buf
+# define test_randomnumber randombytes_uniform
 #else
 void test_randombytes(void *buf, size_t len);
 uint32_t test_randomnumber(const uint32_t upper_bound);

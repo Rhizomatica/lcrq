@@ -47,30 +47,32 @@ todo:
 	grep -n TODO src/*.{c,h} test/*.{c,h}
 
 speedtest: src
-	cd test && $(MAKE) $@
+	$(MAKE) -C test $@
 
 clean realclean:
-	cd src && $(MAKE) $@
-	cd test && $(MAKE) $@
+	$(MAKE) -C src $@
+	$(MAKE) -C test $@
 	rm -rf ./$(COVERITY_DIR)
 	rm -f $(COVERITY_TGZ)
-
-sparse: clean
-	CC=cgcc $(MAKE) src
-
-clang: clean
-	CC=clang $(MAKE) src
-
-clangtest: clean
-	CC=clang $(MAKE) test
-
-gcc: clean all
 
 check test sanitize: src
 	cd test && $(MAKE) $@
 
 %.test %.check %.debug: src
 	cd test && $(MAKE) $@
+
+test sanitize: src
+	$(MAKE) -C libs $@
+	$(MAKE) -C test $@
+
+test memcheck: src
+	$(MAKE) -C test $@/all
+
+test/% memcheck/%: .FORCE src
+	$(MAKE) -C test $@
+
+.FORCE: # always recompile
+
 
 coverity: clean
 	PATH=$(PATH):../coverity/bin/ cov-build --dir cov-int $(MAKE) src

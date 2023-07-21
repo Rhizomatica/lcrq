@@ -60,5 +60,5 @@ int main(void)
 	/* and compare */
 	test_assert(!memcmp(data, copy, F), "regenerated data matches original");
 
-	return fails;
+	return test_status;
 }

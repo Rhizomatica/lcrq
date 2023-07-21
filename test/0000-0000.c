@@ -52,8 +52,6 @@ static void test_parms(size_t F)
 
 int main(void)
 {
-	loginit();
-
 	test_name("4.3 Calculate & verify encoding parameters");
 
 	/* RFC restricts F to 40 bits = 946270874880 bytes */
@@ -62,7 +60,5 @@ int main(void)
 		test_parms(F);
 	}
 
-	test_rusage();
-
-	return fails;
+	return test_status;
 }

@@ -1,77 +1,97 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
-# Copyright (c) 2020-2022 Brett Sheffield <bacs@librecast.net>
+# Copyright (c) 2017-2023 Brett Sheffield <bacs@librecast.net>
 
-SHELL := bash
-CAPS = ""
-CFLAGS += -I../src -I ../include
-NOTOBJS := ../src/$(PROGRAM).o ../src/mdextest.o
+TESTRUNNER := @TESTRUNNER@
+CFLAGS := -I../src -I ../include $(CFLAGS)
+CPPFLAGS := @CPPFLAGS@
+TEST_SOURCES := $(wildcard ????-????.c)
+TEST_PROGS ?= $(TEST_SOURCES:.c=.test)
+LDFLAGS := -L../src $(LDFLAGS)
+LDLIBS := @LIBDL@ -pthread @LIBSODIUM@
 OBJS := test.o log.o misc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
-LIBS += @LIBDL@ -pthread @LIBSODIUM@
-BOLD := "\\e[0m\\e[2m"
-RESET := "\\e[0m"
-PASS = "\\e[0m\\e[32mOK\\e[0m" # end bold, green text
-SKIP = "----- requires capabilities \(skipping\) -----\\e[0m"
-FAIL = "\\e[0m\\e[31mFAIL\\e[0m" # end bold, red text
-LEAK = "\\e[0m\\e[31mFAIL \| LEAK\\e[0m\\n\\tSee $@.valgrind"
 LASTLOG := lastlog.log
-LOGFILE := $(shell mktemp "lsdb-test-XXXXXX")
-TIMESTAMP = $(shell date +"%Y-%m-%d %H:%M:%S")
-VALGRIND = valgrind --leak-check=full --error-exitcode=2 --errors-for-leak-kinds=all --track-origins=yes --log-file=$@.valgrind
+LOGFILE := $(shell mktemp "testlog-XXXXXX")
+ANSI_RESET = "\033[0m"
+ANSI_BOLD := "\033[0m\033[2m"
+ANSI_GREEN = "\033[32m"
+ANSI_RED = "\033[31m"
+ANSI_YELLOW = "\033[33m"
+ANSI_WHITE = "\033[37m"
+PASS = $(ANSI_RESET)$(ANSI_GREEN)\ OK$(ANSI_RESET)
+WARN = $(ANSI_RESET)$(ANSI_YELLOW)WARN$(ANSI_RESET)
+FAIL = $(ANSI_RESET)$(ANSI_RED)FAIL$(ANSI_RESET)
+UNKN = $(ANSI_RESET)$(ANSI_WHITE)????$(ANSI_RESET)
+VALGRIND = valgrind --leak-check=full --max-stackframe=20480160 --error-exitcode=2 --errors-for-leak-kinds=all --track-origins=yes
 
-.PHONY: test clean realclean build result check cap speedtest
+define runtest =
+@printf $(ANSI_BOLD)
+@echo -n " $(1:.test=) "
+@$(MEMCHECK) ./$(1) 2>>$(LOGFILE)
+ret=$$?
+@if [ $$ret -eq 0 ]; then \
+	printf $(PASS); echo; \
+elif [ $$ret -eq 1 ]; then \
+	printf $(WARN); echo; \
+elif [ $$ret -eq 2 ]; then \
+	printf $(FAIL); echo; \
+	fails=$$(( fails + 1 )) ; \
+else \
+	printf $(UNKN); echo; \
+fi
+$(eval tests_run=$(shell echo $$(($(tests_run)+1))))
 
-cap: SKIP = "----- capabilities not required \(skipping\) -----\\e[0m"
+endef
 
-check: MEMCHECK = $(VALGRIND)
-check: FAIL = $(LEAK)
-check: test
+.PHONY: test clean speedtest
 
-sanitize: CFLAGS += -fsanitize=address -fno-omit-frame-pointer
-sanitize: test
+test: $(TESTRUNNER)
 
 speedtest.00: speedtest.00.o $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 speedtest: speedtest.00
 	time ./speedtest.00 32768 1024 1000
 	rm -f gmon.out
 
-test: clean build $(shell echo ????-????.c | sed 's/\.c/\.test/g') result
+%.test: %.c $(OBJS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $< $(OBJS) $(LDLIBS)
 
-build:
-	cd ../src && $(MAKE)
-	@echo -e "$(TIMESTAMP) - starting tests" >> $(LOGFILE)
-	@echo -e "\nRunning tests"
+lctest: $(TEST_PROGS)
+	lctest -b $^
 
-%.test %.clang: %.c $(OBJS)
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
-	@if [[ $EUID -eq 0 && -n $(CAPS) ]]; then setcap $(CAPS) $@; fi
-	@echo -ne "\e[2m" $* " "
-	@echo -ne "\n== $@" >> $(LOGFILE)
-	@if [[ (-n $(CAPS) && $EUID -ne 0) || (-z $(CAPS) && $EUID -eq 0) ]]; then echo -e "$(SKIP)"; else $(MEMCHECK) ./$@ 2>> $(LOGFILE) && echo -e " $(PASS)" || echo -e " $(FAIL)"; fi
-	@ln -sf $(LOGFILE) $(LASTLOG)
-	@$(eval tests_run=$(shell echo $$(($(tests_run)+1))))
+memcheck:
+	MEMCHECK="$(VALGRIND)" $(MAKE) test
 
-%.check: MEMCHECK = $(VALGRIND)
-%.check: FAIL = $(LEAK)
-%.check: %.test
-	@echo "check completed"
-	@echo -e "    logfile:   " $(BOLD) $(LOGFILE) / $(LASTLOG) $(RESET)
-	@echo -e "    valgrind:  " $(BOLD) "$^.valgrind" $(RESET)
+memcheck/%:
+	MEMCHECK="$(VALGRIND)" $(MAKE) test/$(@F)
 
-%.debug: MEMCHECK = gdb
-%.debug: %.test
-	@echo "exiting debugger"
+# if $(@F) is a directory, run tests in that directory
+test/%:
+	@if [ -d "$(@F)" ]; then
+		$(eval TEST_PROGS=$(notdir $(wildcard $(@F)/*.test)))
+		TEST_PROGS="$(TEST_PROGS)" $(MAKE) maketest
+	else
+		$(eval TEST_PROGS=0000-$(@F).test)
+		TEST_PROGS="$(TEST_PROGS)" $(MAKE) maketest
+	fi
 
-test.o: test.h
+.ONESHELL: maketest
 
-result:
+maketest: $(TEST_PROGS)
+	@fails=0
+	$(foreach x,$^,$(call runtest,$(x)))
+	ln -sf $(LOGFILE) $(LASTLOG)
 	@echo -e "\n$(TIMESTAMP) - tests done" >> $(LOGFILE)
 	@echo -e "$(tests_run) tests run\nlogfile: $(LOGFILE)\n"
+	@if [ $$fails -gt 0 ]; then \
+		echo ", $$fails tests failed"; \
+		/bin/false;
+	else
+		echo
+	fi
 
 clean:
-	rm -f *.test *.o
-	@rm -f $(LOGFILE) $(LASTLOG)
+	rm -f *.o *.test testlog-?????? $(LASTLOG)
 
 realclean: clean
 	rm -f lsdb-test-?????? ????-????.test.valgrind

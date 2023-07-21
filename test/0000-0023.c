@@ -28,5 +28,5 @@ int main(void)
 		test_assert(esi == rq_pid2esi(pid), "%i: esi:%06x == %06x", i, esi, rq_pid2esi(pid));
 	}
 
-	return fails;
+	return test_status;
 }

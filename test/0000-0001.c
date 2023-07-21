@@ -34,5 +34,5 @@ int main(void)
 
 	rq_free(rq);
 
-	return fails;
+	return test_status;
 }

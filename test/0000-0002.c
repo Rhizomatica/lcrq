@@ -69,5 +69,5 @@ int main(void)
 	test_assert_s(2102720904 % 111111 == 56340);
 	test_rand(y, i, m, 56340);
 
-	return fails;
+	return test_status;
 }
