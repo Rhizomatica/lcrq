@@ -1,4 +1,4 @@
-.TH "RQ_PID2SBN" 3 2022-07-15 "LCRQ" "Librecast Programmer's Manual"
+.TH "RQ_PID2SBN" 3 2023-07-21 "LCRQ" "Librecast Programmer's Manual"
 .SH NAME
 rq_pid2sbn, rq_pid2esi, rq_pidsetsbn, rq_pidsetesi - get/set SBN,ESI in rq_pid_t
 .SH SYNOPSIS
@@ -7,6 +7,7 @@ rq_pid2sbn, rq_pid2esi, rq_pidsetsbn, rq_pidsetesi - get/set SBN,ESI in rq_pid_t
 .PP
 .BI "uint8_t rq_pid2sbn(rq_pid_t " pid ");"
 .BI "uint32_t rq_pid2esi(rq_pid_t " pid ");"
+.BI "rq_pid_t rq_pidset(uint8_t " sbn ", uint32_t " esi ");"
 .BI "rq_pid_t rq_pidsetsbn(rq_pid_t " pid ", uint8_t " sbn ");"
 .BI "rq_pid_t rq_pidsetesi(rq_pid_t " pid ", uint32_t " esi ");"
 .fi
@@ -53,6 +54,9 @@ int main(void)
 	/* set SBN and ESI bits */
 	pid = rq_pidsetsbn(pid, sbn);
 	pid = rq_pidsetesi(pid, esi);
+
+	/* or set both at once */
+	pid = rq_pidset(sbn, esi);
 
 	/* make sure we can read them back */
 	assert(sbn == rq_pid2sbn(pid));
