@@ -7,9 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int usage(const char *progname)
+int usage(const char *progname, int rc)
 {
 	fprintf(stderr, "usage: `%s F T`  (F = object size, T = symbol size)\n", progname);
+	return rc;
 }
 
 int main(int argc, char *argv[])
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
 	uint16_t T, K, KP, N, Z;
 	uint8_t Al;
 
-	if (argc != 3) return usage(argv[0]);
+	if (argc != 3) return usage(argv[0], EXIT_FAILURE);
 	F = atoll(argv[1]);
 	T = atoll(argv[2]);
 
