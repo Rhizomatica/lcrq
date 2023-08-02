@@ -26,6 +26,7 @@ AC_CHECK_PROG([testrunner], [lctest], [lctest], [maketest])
 AC_SUBST([TESTRUNNER],[$testrunner])
 
 # Checks for libraries.
+AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_LIB([dl], [dlsym], AC_SUBST([LIBDL], ["-ldl"]))
 AC_ARG_WITH(sodium,
 	    AS_HELP_STRING([--with-sodium], [use libsodium for encryption and \
