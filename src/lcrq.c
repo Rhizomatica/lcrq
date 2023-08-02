@@ -40,6 +40,7 @@ static int isprime(const int n)
 }
 
 /* return number of bits set in bitmap (Hamming Weight / popcount) */
+#ifdef RQ_TRACK_COMPONENTS
 inline static unsigned int hamm(const unsigned char *map, size_t len)
 {
 	unsigned int c = 0;
@@ -50,6 +51,7 @@ inline static unsigned int hamm(const unsigned char *map, size_t len)
 #endif
 	return c;
 }
+#endif
 
 /* convert ESI to ISI (5.3.1) */
 inline static uint32_t esi2isi(const rq_t *rq, const uint32_t esi)
