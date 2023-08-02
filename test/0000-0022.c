@@ -9,7 +9,7 @@
 static uint64_t F = 16;
 static uint16_t T = 4;
 
-static void dump_buffer(const rq_t *rq, const uint8_t *sym, FILE *stream)
+static void dump_buffer(const uint8_t *sym, FILE *stream)
 {
 	for (uint64_t i = 0; i < F; i++) {
 		fprintf(stream, " %02x", sym[i]);
@@ -54,8 +54,8 @@ int main(void)
 	rq_free(rq);
 
 	/* log results */
-	fprintf(stderr, "orig: "); dump_buffer(rq, data, stderr);
-	fprintf(stderr, "copy: "); dump_buffer(rq, copy, stderr);
+	fprintf(stderr, "orig: "); dump_buffer(data, stderr);
+	fprintf(stderr, "copy: "); dump_buffer(copy, stderr);
 
 	/* and compare */
 	test_assert(!memcmp(data, copy, F), "regenerated data matches original");
