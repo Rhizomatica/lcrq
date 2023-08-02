@@ -55,7 +55,7 @@ clean realclean:
 	rm -rf ./$(COVERITY_DIR)
 	rm -f $(COVERITY_TGZ)
 
-check test sanitize: src
+check sanitize: src
 	cd test && $(MAKE) $@
 
 %.test %.check %.debug: src
