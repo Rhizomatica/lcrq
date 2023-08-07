@@ -516,7 +516,9 @@ int rq_decode(rq_t *rq, uint8_t *dec, uint8_t *enc, uint32_t ESI[], uint32_t nes
 	matrix_free(&D);
 	matrix_new(&Cm, rq->L, rq->T, C, 0);
 	for (int esi = 0; esi < rq->K; esi++) {
-		rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi);
+		if (!rq_encode_symbol(rq, &Cm, esi, dec + rq->T * esi)) {
+			rc = -1; break;
+		}
 	}
 	free(C);
 fail:
