@@ -17,7 +17,7 @@
 #define DECODER_RFC 1
 #define DECODER_DEFAULT DECODER_RFC
 
-#define NANO 1000000000
+#define NANO 1000000000ULL
 
 #define DEFAULT_REPS 1
 #define DEFAULT_F 42
@@ -136,8 +136,8 @@ int main(int argc, char *argv[])
 		clock_gettime(CLOCK_REALTIME, &ts_enc_end);
 
 		/* encoder stats */
-		uint64_t ensec = (ts_enc_end.tv_sec * NANO + ts_enc_end.tv_nsec);
-		ensec -= (ts_enc_start.tv_sec * NANO + ts_enc_start.tv_nsec);
+		uint64_t ensec = ((uint64_t)ts_enc_end.tv_sec * NANO + (uint64_t)ts_enc_end.tv_nsec);
+		ensec -= ((uint64_t)ts_enc_start.tv_sec * NANO + (uint64_t)ts_enc_start.tv_nsec);
 		double edsec = (double)ensec / NANO;
 		bytes_total_encoder += F;
 		s_total_encoder += edsec;
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 		free(dec);
 
 		/* decoder stats */
-		uint64_t dnsec = (ts_dec_end.tv_sec * NANO + ts_dec_end.tv_nsec);
-		dnsec -= (ts_dec_start.tv_sec * NANO + ts_dec_start.tv_nsec);
+		uint64_t dnsec = ((uint64_t)ts_dec_end.tv_sec * NANO + (uint64_t)ts_dec_end.tv_nsec);
+		dnsec -= ((uint64_t)ts_dec_start.tv_sec * NANO + (uint64_t)ts_dec_start.tv_nsec);
 		double ddsec = (double)dnsec / NANO;
 		s_total_decoder += ddsec;
 		if (ok == 0) bytes_total_decoder += F;
