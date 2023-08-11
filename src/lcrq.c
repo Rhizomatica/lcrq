@@ -154,6 +154,8 @@ static uint32_t rq_random_esi(uint32_t min)
 	uint32_t esi = -1;
 #ifdef HAVE_LIBSODIUM
 	esi = randombytes_uniform(RQ_ESI_MAX - min) + min;
+#elif defined (HAVE_ARC4RANDOM_UNIFORM)
+	esi = arc4random_uniform(RQ_ESI_MAX - min) + min;
 #else
 	/* read 24 bits (3 bytes) from /dev/random */
 	ssize_t byt, len = 3;

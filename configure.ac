@@ -28,6 +28,7 @@ AC_SUBST([TESTRUNNER],[$testrunner])
 # Checks for libraries.
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_LIB([dl], [dlsym], AC_SUBST([LIBDL], ["-ldl"]))
+AC_SEARCH_LIBS([arc4random_uniform], [libbsd])
 AC_ARG_WITH(sodium,
 	    AS_HELP_STRING([--with-sodium], [use libsodium for encryption and \
 			   hashing (default is yes, if available)]),
@@ -72,7 +73,7 @@ AC_TYPE_UINT64_T
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([clock_gettime floor getrandom memset munmap])
+AC_CHECK_FUNCS([arc4random_uniform clock_gettime floor getrandom memset munmap])
 
 # Required only for example programs
 AC_TYPE_MODE_T
