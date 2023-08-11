@@ -151,7 +151,7 @@ uint8_t *rq_encode_symbol(const rq_t *rq, const matrix_t *C, const uint32_t isi,
 static uint32_t rq_random_esi(uint32_t min)
 {
 	/* NB: ESI is a 24-bit unsigned integer (3.2) */
-	uint32_t esi;
+	uint32_t esi = -1;
 #ifdef HAVE_LIBSODIUM
 	esi = randombytes_uniform(RQ_ESI_MAX - min) + min;
 #else
@@ -165,14 +165,16 @@ static uint32_t rq_random_esi(uint32_t min)
 	while ((byt = getrandom(a, len, 0)) != len) {
 #else
 	static int f; /* we'll keep the handle until program exit */
-	if (!f) f = open("/dev/urandom", O_RDONLY);
+	if (!f) {
+		f = open("/dev/urandom", O_RDONLY);
+		if (f == -1) return (f = 0), -1;
+	}
 	while ((byt = read(f, a, len)) != len) {
 #endif
 		if (byt == -1) break;
 		a += byt; len -= byt;
 	}
-	esi += min;
-	esi &= RQ_ESI_MAX; /* mask overflow */
+	esi = min + (esi % (RQ_ESI_MAX - min));
 #endif
 	return esi;
 }
@@ -192,6 +194,7 @@ uint8_t *rq_symbol(const rq_t *rq, rq_pid_t *pid, uint8_t *sym, int flags)
 	matrix_t C = rq_matrix_C_by_SBN(rq, sbn);
 	if ((flags & RQ_RAND) == RQ_RAND) {
 		esi = rq_random_esi(rq->K);
+		if (esi == -1) return NULL;
 		*pid = rq_pidsetesi(*pid, esi);
 	}
 	else esi = rq_pid2esi(*pid);
