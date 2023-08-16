@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2023-08-16
+
+Minor bugfixes.
+
+### Added
+- added arc4random_uniform() support to rq_random_esi()
+
+### Fixed
+- install/uninstall targets use ABI version correctly
+- fix realclean make target - remove all built files
+- rq_random_esi(): bugfix: ensure value is >= min and <= RQ_ESI_MAX when reading from /dev/urandom
+- fix time_t overflow on 32 bit systems
+- remove `time` from make speedtest target (not a builtin)
+- rq_decode: check return value of rq_encode_symbol
+- configure: test if clock_gettime() requires -lrt
+- fix warning in example program
+- fixing compiler warnings
+
 ## [0.1.0] - 2023-07-21
 
 ### Added
