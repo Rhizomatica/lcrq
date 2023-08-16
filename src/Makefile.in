@@ -5,6 +5,10 @@ SHELL = /bin/sh
 LIBNAME := @PACKAGE_NAME@
 VERSION := @PACKAGE_VERSION@
 ABIVERS := @PACKAGE_ABIVERS@
+ABIPARTS = $(subst ., ,$(ABIVERS))
+SOMAJOR := $(word 1, $(ABIPARTS))
+SOMINOR := $(word 2, $(ABIPARTS))
+SOBUILD := $(word 3, $(ABIPARTS))
 .SUFFIXES:
 .SUFFIXES: .c .o
 CFLAGS += -fPIC
@@ -33,17 +37,18 @@ lib$(LIBNAME).so: $(OBJECTS)
 install: $(SOFILES)
 	$(INSTALL) -d $(LIBDIR)
 	$(INSTALL) -d $(INCLUDEDIR)
-	$(INSTALL_DATA) lib$(LIBNAME).so $(LIBDIR)/lib$(LIBNAME).so.$(VERSION)
+	$(INSTALL_DATA) lib$(LIBNAME).so $(LIBDIR)/lib$(LIBNAME).so.$(ABIVERS)
 	cp -r ../include/*.h $(INCLUDEDIR)
 	ln -sf lib$(LIBNAME).so.$(ABIVERS) $(LIBDIR)/lib$(LIBNAME).so
-	ln -sf lib$(LIBNAME).so.$(VERSION) $(LIBDIR)/lib$(LIBNAME).so.$(ABIVERS)
+	ln -sf lib$(LIBNAME).so.$(ABIVERS) $(LIBDIR)/lib$(LIBNAME).so.$(SOMAJOR)
 
 .PHONY: clean realclean uninstall
 
 uninstall:
-	cd $(LIBDIR) && rm -f lib$(LIBNAME).so lib$(LIBNAME).so.$(ABIVERS) lib$(LIBNAME).so.$(VERSION)
+	cd $(LIBDIR) && $(RM) lib$(LIBNAME).so lib$(LIBNAME).so.$(ABIVERS) lib$(LIBNAME).so.$(SOMAJOR)
 
 clean:
 	$(RM) *.o $(SOFILES) $(ABIFILES)
 
 realclean: clean
+	$(RM) Makefile config.h

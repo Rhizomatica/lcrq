@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 
-.PHONY: doc install
+.PHONY: clean doc install realclean
 
 doc: install
 
@@ -9,3 +9,8 @@ install:
 	install *.3 $(DESTDIR)$(PREFIX)/share/man/man3/
 	install -d $(DESTDIR)$(PREFIX)/share/man/man7
 	install *.7 $(DESTDIR)$(PREFIX)/share/man/man7/
+
+clean:
+
+realclean: clean
+	$(RM) -f Makefile

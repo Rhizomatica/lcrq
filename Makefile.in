@@ -29,11 +29,11 @@ export LDFLAGS
 all: src
 
 install: all doc
-	cd src && $(MAKE) $@
-	cd doc && $(MAKE) $@
+	$(MAKE) -C src $@
+	$(MAKE) -C doc $@
 
 uninstall:
-	cd src && $(MAKE) $@
+	$(MAKE) -C src $@
 
 .PHONY: clean realclean src test sparse examples
 
@@ -49,17 +49,24 @@ todo:
 speedtest: src
 	$(MAKE) -C test $@
 
-clean realclean:
+clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C test $@
-	rm -rf ./$(COVERITY_DIR)
-	rm -f $(COVERITY_TGZ)
+
+realclean: clean
+	$(MAKE) -C src $@
+	$(MAKE) -C test $@
+	$(RM) -r ./$(COVERITY_DIR)
+	$(RM) $(COVERITY_TGZ)
+	$(RM) Makefile
+	$(RM) config.{log,status}
+	$(RM) include/lcrq.h
 
 check sanitize: src
-	cd test && $(MAKE) $@
+	$(MAKE) -C test $@
 
 %.test %.check %.debug: src
-	cd test && $(MAKE) $@
+	$(MAKE) -C test $@
 
 test memcheck: src
 	$(MAKE) -C test $@/all

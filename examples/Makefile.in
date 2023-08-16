@@ -10,6 +10,8 @@ all: $(PROGRAMS)
 .PHONY: clean realclean
 
 clean:
-	rm -f $(PROGRAMS)
+	$(RM) -f $(PROGRAMS)
 
 realclean: clean
+	$(RM) -f Makefile
+
