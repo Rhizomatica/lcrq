@@ -55,7 +55,7 @@ AC_CHECK_HEADERS([immintrin.h pmmintrin.h], [], [
 		  AS_IF([test "x$enable_simd" = "xyes"], [
 			 AC_MSG_FAILURE([--enable-simd was given, but required headers are missing])])
 		  ])
-AC_CHECK_HEADERS([endian.h sys/endian.h sys/ioctl.h])
+AC_CHECK_HEADERS([endian.h sys/endian.h sys/random.h sys/ioctl.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN([AC_DEFINE([WORDS_BIGENDIAN],[1],[Define WORDS_BIGENDIAN to 1 if your processor stores words with the most significant byte first])

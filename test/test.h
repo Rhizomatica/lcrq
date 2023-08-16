@@ -48,6 +48,9 @@ void test_require_linux(void);
 #ifdef HAVE_LIBSODIUM
 # define test_randombytes randombytes_buf
 # define test_randomnumber randombytes_uniform
+#elif defined(HAVE_ARC4RANDOM_UNIFORM)
+# define test_randombytes arc4random_buf
+# define test_randomnumber arc4random_uniform
 #else
 void test_randombytes(void *buf, size_t len);
 uint32_t test_randomnumber(const uint32_t upper_bound);

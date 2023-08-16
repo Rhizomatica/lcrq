@@ -163,7 +163,7 @@ static uint32_t rq_random_esi(uint32_t min)
 #ifdef WORDS_BIGENDIAN
 	a++;
 #endif
-#ifdef HAVE_GETRANDOM
+#if defined(HAVE_GETRANDOM) && defined(HAVE_SYS_RANDOM_H)
 	while ((byt = getrandom(a, len, 0)) != len) {
 #else
 	static int f; /* we'll keep the handle until program exit */

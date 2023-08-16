@@ -11,6 +11,9 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#ifdef HAVE_SYS_RANDOM_H
+# include <sys/random.h>
+#endif
 
 #define DEFAULT_TERM_COLS 80
 #define TESTID_WIDTH 16
@@ -204,7 +207,7 @@ void test_rusage()
 void test_randombytes(void *buf, size_t len)
 {
 	ssize_t return_ignored;
-#ifdef HAVE_GETRANDOM
+#if defined(HAVE_GETRANDOM) && defined(HAVE_SYS_RANDOM_H)
 	return_ignored = getrandom(buf, len, 0);
 #else
 	static int f; /* we'll keep the handle until program exit */
