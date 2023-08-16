@@ -13,4 +13,4 @@ install:
 clean:
 
 realclean: clean
-	$(RM) -f Makefile
+	$(RM) Makefile
