@@ -37,6 +37,7 @@ elif [ $$ret -eq 2 ]; then \
 	fails=$$(( fails + 1 )) ; \
 else \
 	printf $(UNKN); echo; \
+	fails=$$(( fails + 1 )) ; \
 fi
 $(eval tests_run=$(shell echo $$(($(tests_run)+1))))
 

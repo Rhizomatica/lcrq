@@ -102,6 +102,7 @@ void test_log(char *msg, ...)
 	vsprintf(b, msg, argp);
 	sem_wait(&log_lock);
 	fprintf(stderr, "%s\n", b);
+	fflush(stderr);
 	sem_post(&log_lock);
 	va_end(argp);
 	free(b);
@@ -140,6 +141,7 @@ void test_name(char *str, ...)
 	vsprintf(b, str, argp);
 	test_log("  (%s)", b);
 	printf("%-*s", MSGW, b);
+	fflush(stdout);
 	va_end(argp);
 	free(b);
 }
