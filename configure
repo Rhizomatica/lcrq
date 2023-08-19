@@ -4088,6 +4088,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_ENDIAN_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "libkern/OSByteOrder.h" "ac_cv_header_libkern_OSByteOrder_h" "$ac_includes_default"
+if test "x$ac_cv_header_libkern_OSByteOrder_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBKERN_OSBYTEORDER_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/random.h" "ac_cv_header_sys_random_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_random_h" = xyes
 then :

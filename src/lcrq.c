@@ -4,17 +4,22 @@
 #include <lcrq_pvt.h>
 #include <arpa/inet.h>
 #include <assert.h>
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#elif HAVE_SYS_ENDIAN_H
-#include <sys/endian.h>
-#endif
 #include <errno.h>
 #include <gf256.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
 #include <time.h>
+
+#ifdef HAVE_ENDIAN_H
+# include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+# include <sys/endian.h>
+#elif defined(HAVE_LIBKERN_OSBYTEORDER_H)
+# include <libkern/OSByteOrder.h>
+# define htobe64(x) OSSwapHostToBigInt64(x)
+# define be64toh(x) OSSwapBigToHostInt64(x)
+#endif
 
 #if (defined(HAVE_LIBSODIUM))
 # include <sodium.h>
