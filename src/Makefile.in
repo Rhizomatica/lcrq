@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
-# Copyright (c) 2022 Brett Sheffield <bacs@librecast.net>
+# Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net>
 
 SHELL = /bin/sh
 LIBNAME := @PACKAGE_NAME@
@@ -23,32 +23,39 @@ LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 OBJECTS := gf256.o lcrq.o matrix.o
 
-SOFILES := lib$(LIBNAME).so
-SOVFILES := $(foreach f,$(SOFILES),$f.$(VERSION))
-ABIFILES := $(foreach f,$(SOFILES),$f.$(ABIVERS))
+ifeq ($(UNAME),Darwin)
+SOFILE := lib$(LIBNAME).dylib
+SOOPT := -install_name
+else
+SOFILE := lib$(LIBNAME).so
+SOOPT := -soname
+endif
 
-all: $(SOFILES)
+ABIFILE := $(SOFILE).$(ABIVERS)
+MAJFILE := $(SOFILE).$(SOMAJOR)
 
-lib$(LIBNAME).so: $(OBJECTS)
-	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname,lib$(LIBNAME).so.$(ABIVERS) -o $@ $^ $(LDLIBS)
+all: $(SOFILE)
+
+$(SOFILE): $(OBJECTS)
+	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,$(SOOPT),$(ABIFILE) -o $@ $^ $(LDLIBS)
 
 %.o: %.c %.h $(HEADERS)
 
 install: $(SOFILES)
 	$(INSTALL) -d $(LIBDIR)
 	$(INSTALL) -d $(INCLUDEDIR)
-	$(INSTALL_DATA) lib$(LIBNAME).so $(LIBDIR)/lib$(LIBNAME).so.$(ABIVERS)
+	$(INSTALL_DATA) $(SOFILE) $(LIBDIR)/$(ABIFILE)
 	cp -r ../include/*.h $(INCLUDEDIR)
-	ln -sf lib$(LIBNAME).so.$(ABIVERS) $(LIBDIR)/lib$(LIBNAME).so
-	ln -sf lib$(LIBNAME).so.$(ABIVERS) $(LIBDIR)/lib$(LIBNAME).so.$(SOMAJOR)
+	ln -sf $(ABIFILE) $(LIBDIR)/$(SOFILE)
+	ln -sf $(ABIFILE) $(LIBDIR)/$(MAJFILE)
 
 .PHONY: clean realclean uninstall
 
 uninstall:
-	cd $(LIBDIR) && $(RM) lib$(LIBNAME).so lib$(LIBNAME).so.$(ABIVERS) lib$(LIBNAME).so.$(SOMAJOR)
+	cd $(LIBDIR) && $(RM) $(SOFILE) $(ABIFILE) $(MAJFILE)
 
 clean:
-	$(RM) *.o $(SOFILES) $(ABIFILES)
+	$(RM) *.o $(SOFILE) $(ABIFILE)
 
 realclean: clean
 	$(RM) Makefile config.h
