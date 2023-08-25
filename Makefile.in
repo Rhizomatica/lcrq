@@ -8,6 +8,8 @@ LIBDIR := $(PREFIX)/lib
 INCLUDEDIR := $(PREFIX)/include
 COVERITY_DIR := cov-int
 COVERITY_TGZ := $(LIBNAME).tgz
+OSNAME := $(shell uname -s)
+export OSNAME
 
 ifeq ($(origin CC),default)
 CC = @CC@

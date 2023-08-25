@@ -18,7 +18,9 @@
 #elif defined(HAVE_LIBKERN_OSBYTEORDER_H)
 # include <libkern/OSByteOrder.h>
 # define htobe64(x) OSSwapHostToBigInt64(x)
+# define htobe32(x) OSSwapHostToBigInt32(x)
 # define be64toh(x) OSSwapBigToHostInt64(x)
+# define be32toh(x) OSSwapBigToHostInt32(x)
 #endif
 
 #if (defined(HAVE_LIBSODIUM))

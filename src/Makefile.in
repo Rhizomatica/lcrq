@@ -23,7 +23,7 @@ LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 OBJECTS := gf256.o lcrq.o matrix.o
 
-ifeq ($(UNAME),Darwin)
+ifeq ($(OSNAME),Darwin)
 SOFILE := lib$(LIBNAME).dylib
 SOOPT := -install_name
 else
