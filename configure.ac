@@ -29,6 +29,7 @@ AC_SUBST([TESTRUNNER],[$testrunner])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_LIB([dl], [dlsym], AC_SUBST([LIBDL], ["-ldl"]))
 AC_SEARCH_LIBS([arc4random_uniform], [libbsd])
+AC_SEARCH_LIBS([sem_post], [pthread])
 AC_ARG_WITH(sodium,
 	    AS_HELP_STRING([--with-sodium], [use libsodium for encryption and \
 			   hashing (default is yes, if available)]),
