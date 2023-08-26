@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2023-08-26
+
+Darwin support + minor bugfixes.
+
+### Added
+- Darwin support (macOS/aarch64)
+- define byteorder macros for macOS/Darwin
+
+### Changed
+- tests: prefer arc4random* if available for random bytes
+
+### Fixed
+- Ensure tests fail when they exit with an unknown error (eg. SIGSEGV)
+- configure: check for <sys/random.h>
+- only use getrandom() if header and library found
+- minor Makefile fixes
+
 ## [0.1.1] - 2023-08-16
 
 Minor bugfixes.
