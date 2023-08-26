@@ -7,7 +7,7 @@ CPPFLAGS := @CPPFLAGS@
 TEST_SOURCES := $(wildcard ????-????.c)
 TEST_PROGS ?= $(TEST_SOURCES:.c=.test)
 LDFLAGS := -L../src $(LDFLAGS)
-LDLIBS := @LIBDL@ -pthread @LIBSODIUM@
+LDLIBS := @LIBS@ @LIBDL@ @LIBSODIUM@
 OBJS := test.o log.o misc.o $(filter-out $(NOTOBJS), $(wildcard ../src/*.o))
 LASTLOG := lastlog.log
 LOGFILE := $(shell mktemp "testlog-XXXXXX")
