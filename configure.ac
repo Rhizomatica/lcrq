@@ -4,7 +4,7 @@
 AC_PREREQ([2.71])
 AC_INIT([lcrq],[0.1.2],[bugs@librecast.net])
 AC_SUBST(PACKAGE_ABIVERS, 0.0)
-AC_COPYRIGHT(Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net>
+AC_COPYRIGHT(Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net>
 See COPYING for license details.
 )
 AC_CONFIG_SRCDIR([src/])
@@ -24,6 +24,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_CHECK_PROG([testrunner], [lctest], [lctest], [maketest])
 AC_SUBST([TESTRUNNER],[$testrunner])
+AC_CHECK_PROGS([FALSE], [false], [/usr/bin/env false])
 
 # Checks for libraries.
 AC_SEARCH_LIBS([clock_gettime], [rt])

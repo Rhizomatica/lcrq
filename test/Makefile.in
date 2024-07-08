@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
-# Copyright (c) 2017-2023 Brett Sheffield <bacs@librecast.net>
+# Copyright (c) 2017-2024 Brett Sheffield <bacs@librecast.net>
 
 TESTRUNNER := @TESTRUNNER@
 CFLAGS := -I../src -I ../include $(CFLAGS)
 CPPFLAGS := @CPPFLAGS@
+FALSE := @FALSE@
 TEST_SOURCES := $(wildcard ????-????.c)
 TEST_PROGS ?= $(TEST_SOURCES:.c=.test)
 LDFLAGS := -L../src $(LDFLAGS)
@@ -86,7 +87,7 @@ maketest: $(TEST_PROGS)
 	@echo -e "$(tests_run) tests run\nlogfile: $(LOGFILE)\n"
 	@if [ $$fails -gt 0 ]; then \
 		echo ", $$fails tests failed"; \
-		/bin/false;
+		$(FALSE);
 	else
 		echo
 	fi
