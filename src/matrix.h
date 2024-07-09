@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net> */
 
 #ifndef MATRIX_H
 #define MATRIX_H 1
@@ -139,7 +139,10 @@ int matrix_is_zero(matrix_t *m);
 
 void matrix_col_copy(matrix_t *dst, const int dcol, const matrix_t *src, const int scol);
 uint8_t *matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
-void matrix_row_add(matrix_t *dst, const int drow, const matrix_t *src, const int srow);
+
+/* pointers for dispatched SIMD functions */
+extern void (*matrix_row_add)(matrix_t *, const int, const matrix_t *, const int);
+
 void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val);
 void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
 void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val);
