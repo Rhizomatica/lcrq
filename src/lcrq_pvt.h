@@ -5,6 +5,7 @@
 #define LCRQ_PVT_H 1
 
 #include <config.h>
+#include <cpu.h>
 
 #ifdef USE_SIMD
 # ifdef HAVE_IMMINTRIN_H

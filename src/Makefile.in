@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
-# Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net>
+# Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net>
 
 SHELL = /bin/sh
 LIBNAME := @PACKAGE_NAME@
@@ -21,7 +21,7 @@ INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
-OBJECTS := gf256.o lcrq.o matrix.o
+OBJECTS := cpu.o gf256.o lcrq.o matrix.o
 
 ifeq ($(OSNAME),Darwin)
 SOFILE := lib$(LIBNAME).dylib
