@@ -47,7 +47,7 @@ lcrq.o: lcrq.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 matrix_avx2.o: matrix_avx2.c matrix.h $(HEADERS)
-	$(CC) $(CFLAGS) -mavx2 -c $< -o $@
+	$(CC) $(CFLAGS) -mavx2 -mpopcnt -c $< -o $@
 
 matrix_ssse3.o: matrix_ssse3.c matrix.h $(HEADERS)
 	$(CC) $(CFLAGS) -mssse3 -c $< -o $@
