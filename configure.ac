@@ -16,12 +16,6 @@ AS_IF([test "x$enable_native" = "xyes"], [
        AC_DEFINE([USE_NATIVE],[1],[Use native build])
        AC_SUBST([NATIVE], ["1"])
 ])
-AC_ARG_ENABLE([simd], AS_HELP_STRING([--enable-simd], [use SIMD vectorisation (default is no)]))
-AS_IF([test "x$enable_simd" = "xyes"], [
-	dnl append the minimum SIMD requirements if user hasn't supplied any CFLAGS
-	: ${CFLAGS="-g -O2 -march=native"}
-	AC_DEFINE([USE_SIMD],[1],[Use SIMD])
-])
 
 # Checks for programs.
 AC_PROG_CC

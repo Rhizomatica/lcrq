@@ -136,9 +136,6 @@
 /* Use native build */
 #undef USE_NATIVE
 
-/* Use SIMD */
-#undef USE_SIMD
-
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first */
 #undef WORDS_BIGENDIAN

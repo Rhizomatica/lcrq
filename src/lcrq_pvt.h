@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net> */
 
 #ifndef LCRQ_PVT_H
 #define LCRQ_PVT_H 1
@@ -7,18 +7,18 @@
 #include <config.h>
 #include <cpu.h>
 
-#ifdef USE_SIMD
-# ifdef HAVE_IMMINTRIN_H
-#  include <immintrin.h>
-# endif
-# ifdef HAVE_PMMINTRIN_H
-#  include <pmmintrin.h>
-# endif
-# define INTEL_SSSE3 1
-# define INTEL_SSE3 1
+#ifdef HAVE_IMMINTRIN_H
+# include <immintrin.h>
+#endif
+#ifdef HAVE_PMMINTRIN_H
+# include <pmmintrin.h>
+#endif
+
+#define INTEL_SSSE3 1
+#define INTEL_SSE3 1
+
 #ifndef __m128i_u
 typedef long long __m128i_u __attribute__ ((__vector_size__ (16), __may_alias__, __aligned__ (1)));
-#endif
 #endif
 
 #include <lcrq.h>
