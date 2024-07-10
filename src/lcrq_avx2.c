@@ -10,6 +10,8 @@
 int count_r_avx2(uint8_t *p, int len)
 {
 	int c = 0;
+	/* FIXME - AVX2 should be faster. It isn't. */
+#if 0
 	for (int vlen = len / 32; vlen; vlen--, p += 32) {
 		__m256i v = _mm256_loadu_si256((const __m256i_u *)p);
 		__m256i cmp = _mm256_cmpeq_epi8(v, _mm256_setzero_si256());
@@ -17,6 +19,7 @@ int count_r_avx2(uint8_t *p, int len)
 		c +=  __builtin_popcount(bitmask);
 	}
 	len &= 0xff;
+#endif
 	for (int vlen = len / 16; vlen; vlen--, p += 16) {
 		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
 		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
