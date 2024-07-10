@@ -142,10 +142,10 @@ uint8_t *matrix_row_copy(matrix_t *dst, const int drow, const matrix_t *src, con
 
 /* pointers for dispatched SIMD functions */
 extern void (*matrix_row_add)(matrix_t *, const int, const matrix_t *, const int);
+extern void (*matrix_row_mul)(matrix_t *, const int, const int, const uint8_t);
 
 void matrix_row_add_val(matrix_t *m, const int row, const uint8_t val);
 void matrix_col_mul(matrix_t *m, const int col, const int off, const uint8_t v);
-void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t val);
 
 void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc,
 		const uint8_t y);

@@ -31,7 +31,7 @@ static __m128i mul_128(__m128i A, uint8_t y)
 	return _mm_xor_si128(h, l);
 }
 
-void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t y)
+void matrix_row_mul_ssse3(matrix_t *m, const int row, const int off, const uint8_t y)
 {
 	uint8_t *d = matrix_ptr_row(m, row) + off;
 	const int max = m->cols - off;
