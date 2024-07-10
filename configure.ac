@@ -11,6 +11,11 @@ AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([src/config.h])
 
 # Enable features.
+AC_ARG_ENABLE([native], AS_HELP_STRING([--enable-native], [use native build (default is no)]))
+AS_IF([test "x$enable_native" = "xyes"], [
+       AC_DEFINE([USE_NATIVE],[1],[Use native build])
+       AC_SUBST([NATIVE], ["1"])
+])
 AC_ARG_ENABLE([simd], AS_HELP_STRING([--enable-simd], [use SIMD vectorisation (default is no)]))
 AS_IF([test "x$enable_simd" = "xyes"], [
 	dnl append the minimum SIMD requirements if user hasn't supplied any CFLAGS

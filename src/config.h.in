@@ -133,6 +133,9 @@
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
+/* Use native build */
+#undef USE_NATIVE
+
 /* Use SIMD */
 #undef USE_SIMD
 

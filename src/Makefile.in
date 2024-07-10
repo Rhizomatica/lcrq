@@ -21,7 +21,12 @@ INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
+NATIVE := @NATIVE@
+ifeq ($(NATIVE),1)
+OBJECTS_MATRIX := matrix.o
+else
 OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o matrix.o
+endif
 OBJECTS := cpu.o gf256.o lcrq.o $(OBJECTS_MATRIX)
 
 ifeq ($(OSNAME),Darwin)

@@ -681,6 +681,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+NATIVE
 PACKAGE_ABIVERS
 target_alias
 host_alias
@@ -724,6 +725,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_native
 enable_simd
 with_sodium
 '
@@ -1357,6 +1359,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-native         use native build (default is no)
   --enable-simd           use SIMD vectorisation (default is no)
 
 Optional Packages:
@@ -2584,6 +2587,22 @@ ac_config_headers="$ac_config_headers src/config.h"
 
 
 # Enable features.
+# Check whether --enable-native was given.
+if test ${enable_native+y}
+then :
+  enableval=$enable_native;
+fi
+
+if test "x$enable_native" = "xyes"
+then :
+
+
+printf "%s\n" "#define USE_NATIVE 1" >>confdefs.h
+
+       NATIVE="1"
+
+
+fi
 # Check whether --enable-simd was given.
 if test ${enable_simd+y}
 then :
