@@ -442,6 +442,12 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	}
 }
 
+/*
+ * Method adapted from the technique described in:
+ * J. S. Plank and K. M. Greenan and E. L. Miller (2013)
+ * "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions"
+ * http://web.eecs.utk.edu/~jplank/plank/papers/FAST-2013-GF.html
+ */
 #if INTEL_SSSE3
 static __m128i mul_128(__m128i A, uint8_t y)
 {
@@ -450,7 +456,6 @@ static __m128i mul_128(__m128i A, uint8_t y)
 	__m128i mask1 = _mm_set1_epi8((uint8_t)0x0f);
 	__m128i mask2 = _mm_set1_epi8((uint8_t)0xf0);
 	__m128i l, h;
-
 	l = _mm_and_si128(A, mask1);
 	l = _mm_shuffle_epi8(table1, l);
 	h = _mm_and_si128(A, mask2);
