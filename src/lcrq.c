@@ -36,6 +36,7 @@ size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
 
 #define POPCOUNT_BUILTIN 1
 
+int count_r_avx2(uint8_t *p, int len);
 int count_r_sse2(uint8_t *p, int len);
 static int count_r_dispatch(uint8_t *p, int len);
 int (*count_r)(uint8_t *, int) = &count_r_dispatch;
@@ -800,7 +801,8 @@ static int count_r_nosimd(uint8_t *p, int len)
 static int count_r_dispatch(uint8_t *p, int len)
 {
 	int isets = cpu_instruction_set();
-	if (isets & SSE2) count_r = &count_r_sse2;
+	if (isets & AVX2) count_r = &count_r_avx2;
+	else if (isets & SSE2) count_r = &count_r_sse2;
 	else count_r = &count_r_nosimd;
 	return count_r(p, len);
 }

@@ -26,7 +26,7 @@ ifeq ($(NATIVE),1)
 OBJECTS_LCRQ := lcrq.o
 OBJECTS_MATRIX := matrix.o
 else
-OBJECTS_LCRQ := lcrq_sse2.o lcrq.o
+OBJECTS_LCRQ := lcrq_avx2.o lcrq_sse2.o lcrq.o
 OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o matrix.o
 endif
 OBJECTS := cpu.o gf256.o $(OBJECTS_LCRQ) $(OBJECTS_MATRIX)
@@ -49,6 +49,9 @@ $(SOFILE): $(OBJECTS) $(HEADERS)
 
 gf256.o: gf256.c gf256.h $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+lcrq_avx2.o: lcrq_avx2.c $(HEADERS)
+	$(CC) $(CFLAGS) -mavx2 -mpopcnt -c $< -o $@
 
 lcrq_sse2.o: lcrq_sse2.c $(HEADERS)
 	$(CC) $(CFLAGS) -msse2 -c $< -o $@
