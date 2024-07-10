@@ -36,7 +36,7 @@ MAJFILE := $(SOFILE).$(SOMAJOR)
 
 all: $(SOFILE)
 
-$(SOFILE): $(OBJECTS)
+$(SOFILE): $(OBJECTS) $(HEADERS)
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,$(SOOPT),$(ABIFILE) -o $@ $^ $(LDLIBS)
 
 %.o: %.c %.h $(HEADERS)
