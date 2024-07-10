@@ -21,7 +21,8 @@ INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
-OBJECTS := cpu.o gf256.o lcrq.o matrix.o
+OBJECTS_MATRIX := matrix_ssse3.o matrix.o
+OBJECTS := cpu.o gf256.o lcrq.o $(OBJECTS_MATRIX)
 
 ifeq ($(OSNAME),Darwin)
 SOFILE := lib$(LIBNAME).dylib
@@ -44,6 +45,9 @@ gf256.o: gf256.c gf256.h $(HEADERS)
 
 lcrq.o: lcrq.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+matrix_ssse3.o: matrix_ssse3.c matrix.h $(HEADERS)
+	$(CC) $(CFLAGS) -mssse3 -c $< -o $@
 
 matrix.o: matrix.c matrix.h $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
