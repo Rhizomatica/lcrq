@@ -39,7 +39,14 @@ all: $(SOFILE)
 $(SOFILE): $(OBJECTS) $(HEADERS)
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,$(SOOPT),$(ABIFILE) -o $@ $^ $(LDLIBS)
 
-%.o: %.c %.h $(HEADERS)
+gf256.o: gf256.c gf256.h $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+lcrq.o: lcrq.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+matrix.o: matrix.c matrix.h $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 install: $(SOFILES)
 	$(INSTALL) -d $(LIBDIR)
