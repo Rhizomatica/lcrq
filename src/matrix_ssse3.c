@@ -48,7 +48,7 @@ void matrix_row_mul_ssse3(matrix_t *m, const int row, const int off, const uint8
 	}
 }
 
-void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
+void matrix_row_mul_byrow_ssse3(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
 {
 	assert(y);
 	uint8_t *d = matrix_ptr_row(m, rdst) + off;
