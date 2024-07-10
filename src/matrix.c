@@ -442,8 +442,8 @@ void matrix_inverse_LU(matrix_t *IA, const matrix_t *LU, const int P[])
 	}
 }
 
-#ifdef INTEL_SSE3
-inline static __m128i mul_128(__m128i A, uint8_t y)
+#if INTEL_SSSE3
+static __m128i mul_128(__m128i A, uint8_t y)
 {
 	__m128i table1 = _mm_loadu_si128((const __m128i_u *)GF256LR[y][0]);
 	__m128i table2 = _mm_loadu_si128((const __m128i_u *)GF256LR[y][1]);
@@ -464,7 +464,7 @@ void matrix_row_mul(matrix_t *m, const int row, const int off, const uint8_t y)
 {
 	uint8_t *d = matrix_ptr_row(m, row) + off;
 	const int max = m->cols - off;
-#ifdef INTEL_SSE3
+#if INTEL_SSSE3
 	const int mod = max % 16;
 	const int maxv = max - mod;
 	int j;
@@ -487,7 +487,7 @@ void matrix_row_mul_byrow(matrix_t *m, const int rdst, const int off, const int 
 	assert(y);
 	uint8_t *d = matrix_ptr_row(m, rdst) + off;
 	uint8_t *s = matrix_ptr_row(m, rsrc) + off;
-#ifdef INTEL_SSE3
+#if INTEL_SSSE3
 	const int max = m->cols - off;
 	const int mod = max % 16;
 	const int maxv = max - mod;

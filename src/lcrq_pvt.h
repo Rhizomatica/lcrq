@@ -14,6 +14,7 @@
 # ifdef HAVE_PMMINTRIN_H
 #  include <pmmintrin.h>
 # endif
+# define INTEL_SSSE3 1
 # define INTEL_SSE3 1
 #ifndef __m128i_u
 typedef long long __m128i_u __attribute__ ((__vector_size__ (16), __may_alias__, __aligned__ (1)));
