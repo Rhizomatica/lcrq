@@ -202,8 +202,7 @@ raptorq
 LCRQ uses the fast Galois field multiplication technique described in:
 
  J. S. Plank and K. M. Greenan and E. L. Miller (2013)
- "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions"
- http://web.eecs.utk.edu/~jplank/plank/papers/FAST-2013-GF.html
+ ["Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions"](http://web.eecs.utk.edu/~jplank/plank/papers/FAST-2013-GF.html)
 
 ## References
 
