@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net> */
 
 #include <gf256.h>
 
@@ -46,7 +46,10 @@ uint8_t gf256_div(const uint8_t u, const uint8_t v)
  * "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions"
  * http://web.eecs.utk.edu/~jplank/plank/papers/FAST-2013-GF.html
  */
-#ifdef INTEL_SSSE3
+/* This function "belongs" here, but presently the only compilation unit that
+ * uses it is matrix_ssse3.c, so it has been copied there as mul_128() for
+ * performance and so we're not relying on -flto */
+#if INTEL_SSSE3
 __m128i gf256_mul_128(__m128i A, uint8_t y)
 {
 	__m128i table1 = _mm_loadu_si128((const __m128i_u *)GF256LR[y][0]);
