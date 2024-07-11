@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2024-07-11
+
+### Added
+- Runtime CPU Dispatcher
+- configure: `--enable-native` combine compilation units into a single build with all supported isets
+
+### Removed
+- configure: `--enable-simd` - removed obsolete option
+
+### Fixed
+- Makefile: ensure header changes trigger rebuild
+- configure: check for false
+- configure: check if pthreads required for `sem_post()`
+- pass configure-detected LIBS to LDLIBS
+
 ## [0.1.2] - 2023-08-26
 
 Darwin support + minor bugfixes.
