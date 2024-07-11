@@ -23,13 +23,15 @@ LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 NATIVE := @NATIVE@
 ifeq ($(NATIVE),1)
+OBJECTS_GF256 := gf256.o
 OBJECTS_LCRQ := lcrq.o
 OBJECTS_MATRIX := matrix.o
 else
+OBJECTS_GF256 := gf256_ssse3.o gf256.o
 OBJECTS_LCRQ := lcrq_avx2.o lcrq_sse2.o lcrq.o
 OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o matrix.o
 endif
-OBJECTS := cpu.o gf256.o $(OBJECTS_LCRQ) $(OBJECTS_MATRIX)
+OBJECTS := cpu.o $(OBJECTS_GF256) $(OBJECTS_LCRQ) $(OBJECTS_MATRIX)
 
 ifeq ($(OSNAME),Darwin)
 SOFILE := lib$(LIBNAME).dylib
@@ -46,6 +48,9 @@ all: $(SOFILE)
 
 $(SOFILE): $(OBJECTS) $(HEADERS)
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,$(SOOPT),$(ABIFILE) -o $@ $^ $(LDLIBS)
+
+gf256_ssse3.o: gf256_ssse3.c gf256.h $(HEADERS)
+	$(CC) $(CFLAGS) -mssse3 -c $< -o $@
 
 gf256.o: gf256.c gf256.h $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
