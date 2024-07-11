@@ -219,16 +219,21 @@ LCRQ uses the fast Galois field multiplication technique described in:
 
 <hr />
 
+## Funding
+
 <p class="bigbreak">
-This project was funded through the <a href="https://nlnet.nl/discovery"> NGI0 Discovery </a> Fund, a fund established by NLnet with financial support from the European
-Commission's <a href="https://ngi.eu">Next Generation Internet</a> programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 825322. *Applications are still open, you can <a href="https://nlnet.nl/propose">apply today</a>*
+This project received funding through [NGI Assure](https://nlnet.nl/assure), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/LibreCastLiveStudio).
+</p>
+
+<p class="bigbreak">
+This project received funding through [NGI0 Discovery](https://nlnet.nl/discovery), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/LibrecastLive).
 </p>
 
 <p>
-  <a href="https://nlnet.nl/project/LibrecastLive/">
+  <a href="https://nlnet.nl/project/LibreCastLiveStudio/">
       <img width="250" src="https://nlnet.nl/logo/banner.png" alt="Logo NLnet: abstract logo of four people seen from above" class="logocenter" />
   </a>
   <a href="https://ngi.eu/">
-      <img width="250" align="right" src="https://nlnet.nl/image/logos/NGI0_tag.png" alt="Logo NGI Zero: letterlogo shaped like a tag" class="logocenter" />
+      <img width="250" align="right" src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="Logo NGI Assure letterlogo shaped like a tag" class="logocenter" />
   </a>
 </p>
