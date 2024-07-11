@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net> */
 
 #include <lcrq_pvt.h>
 #include <arpa/inet.h>
@@ -35,6 +35,10 @@
 size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
 
 #define POPCOUNT_BUILTIN 1
+
+int count_r_sse2(uint8_t *p, int len);
+static int count_r_dispatch(uint8_t *p, int len);
+int (*count_r)(uint8_t *, int) = &count_r_dispatch;
 
 static int isprime(const int n)
 {
@@ -786,32 +790,22 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 }
 
 /* just sum the elements to get r, they are 1 or 0 except for HDPC */
-inline static int count_r(uint8_t *p, int len)
+static int count_r_nosimd(uint8_t *p, int len)
 {
 	int c = 0;
-#if defined(INTEL_AVX2)
-	for (int vlen = len / 32; vlen; vlen--, p += 32) {
-		__m256i v = _mm256_loadu_si256((const __m256i_u *)p);
-		__m256i cmp = _mm256_cmpeq_epi8(v, _mm256_setzero_si256());
-		uint16_t bitmask = ~_mm256_movemask_epi8(cmp);
-		c +=  __builtin_popcount(bitmask);
-	}
-	len &= 0xff;
-#endif
-#if defined(INTEL_SSE3)
-	for (int vlen = len / 16; vlen; vlen--, p += 16) {
-		__m128i v = _mm_loadu_si128((const __m128i_u *)p);
-		__m128i cmp = _mm_cmpeq_epi8(v, _mm_setzero_si128());
-		uint16_t bitmask = ~_mm_movemask_epi8(cmp);
-		c +=  __builtin_popcount(bitmask);
-	}
-	len &= 0x0f;
-#endif
 	for (; len; len--, p++) c += *p;
 	return c;
 }
 
-inline static void create_rdex(const matrix_t *A, const int i, const int u, int r[])
+static int count_r_dispatch(uint8_t *p, int len)
+{
+	int isets = cpu_instruction_set();
+	if (isets & SSE2) count_r = &count_r_sse2;
+	else count_r = &count_r_nosimd;
+	return count_r(p, len);
+}
+
+static void create_rdex(const matrix_t *A, const int i, const int u, int r[])
 {
 	memset(r, 0, A->rows);
 	for (int x = i; x < A->rows; x++) {
@@ -1047,7 +1041,7 @@ rq_t *rq_init(const uint64_t F, const uint16_t T)
 	if (!rq) return NULL;
 	memset(rq, 0, sizeof(rq_t));
 
-#ifdef INTEL_SSE3
+#ifdef INTEL_SSSE3
 	GF256LR_INIT;
 #endif
 
