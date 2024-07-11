@@ -278,7 +278,7 @@ void matrix_row_mul_default(matrix_t *m, const int row, const int off, const uin
 	for (int j = 0; j < max; j++) d[j] = GF256MUL(d[j], y);
 }
 
-void matrix_row_mul_byrow_default(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
+void matrix_row_mul_byrow_nosimd(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
 {
 	assert(y);
 	uint8_t *d = matrix_ptr_row(m, rdst) + off;
@@ -295,9 +295,9 @@ static void matrix_row_add_dispatch(matrix_t *dst, const int drow, const matrix_
 	matrix_row_add = &matrix_row_add_avx2;
 #else
 	const int isets = cpu_instruction_set();
-	if (isets & AVX2) matrix_row_add = &matrix_row_add_avx2;
+	if      (isets & AVX2) matrix_row_add = &matrix_row_add_avx2;
 	else if (isets & SSE2) matrix_row_add = &matrix_row_add_sse2;
-	else matrix_row_add = &matrix_row_add_nosimd;
+	else                   matrix_row_add = &matrix_row_add_nosimd;
 #endif
 	matrix_row_add(dst, drow, src, srow);
 }
@@ -321,7 +321,7 @@ static void matrix_row_mul_byrow_dispatch(matrix_t *m, const int rdst, const int
 #else
 	int isets = cpu_instruction_set();
 	if (isets & SSSE3) matrix_row_mul_byrow = &matrix_row_mul_byrow_ssse3;
-	else matrix_row_mul_byrow = &matrix_row_mul_byrow_default;
+	else               matrix_row_mul_byrow = &matrix_row_mul_byrow_nosimd;
 #endif
 	matrix_row_mul_byrow(m, rdst, off, rsrc, y);
 }

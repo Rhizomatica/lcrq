@@ -804,7 +804,7 @@ static int count_r_nosimd(uint8_t *p, int len)
 	for (; len; len--, p++) c += *p;
 	return c;
 }
-#endif
+#endif /* USE_NATIVE */
 
 static int count_r_dispatch(uint8_t *p, int len)
 {
@@ -812,9 +812,9 @@ static int count_r_dispatch(uint8_t *p, int len)
 	count_r = &count_r_avx2;
 #else
 	int isets = cpu_instruction_set();
-	if (isets & AVX2) count_r = &count_r_avx2;
+	if      (isets & AVX2) count_r = &count_r_avx2;
 	else if (isets & SSE2) count_r = &count_r_sse2;
-	else count_r = &count_r_nosimd;
+	else                   count_r = &count_r_nosimd;
 #endif
 	return count_r(p, len);
 }
