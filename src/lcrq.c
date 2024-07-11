@@ -36,10 +36,13 @@ size_t RQ_WS_DEFAULT = 1073741824; /* 1 GiB */
 
 #define POPCOUNT_BUILTIN 1
 
-int count_r_avx2(uint8_t *p, int len);
-int count_r_sse2(uint8_t *p, int len);
 static int count_r_dispatch(uint8_t *p, int len);
 int (*count_r)(uint8_t *, int) = &count_r_dispatch;
+
+#if !(USE_NATIVE)
+int count_r_avx2(uint8_t *p, int len);
+int count_r_sse2(uint8_t *p, int len);
+#endif /* USE_NATIVE */
 
 static int isprime(const int n)
 {
@@ -790,6 +793,10 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 	return (row == A->rows) ? -1 : row;
 }
 
+#if USE_NATIVE
+# include "lcrq_avx2.c"
+# include "lcrq_sse2.c"
+#else
 /* just sum the elements to get r, they are 1 or 0 except for HDPC */
 static int count_r_nosimd(uint8_t *p, int len)
 {
@@ -797,13 +804,18 @@ static int count_r_nosimd(uint8_t *p, int len)
 	for (; len; len--, p++) c += *p;
 	return c;
 }
+#endif
 
 static int count_r_dispatch(uint8_t *p, int len)
 {
+#if USE_NATIVE
+	count_r = &count_r_avx2;
+#else
 	int isets = cpu_instruction_set();
 	if (isets & AVX2) count_r = &count_r_avx2;
 	else if (isets & SSE2) count_r = &count_r_sse2;
 	else count_r = &count_r_nosimd;
+#endif
 	return count_r(p, len);
 }
 
