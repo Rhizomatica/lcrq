@@ -221,13 +221,9 @@ LCRQ uses the fast Galois field multiplication technique described in:
 
 ## Funding
 
-<p class="bigbreak">
 This project received funding through [NGI Assure](https://nlnet.nl/assure), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/LibreCastLiveStudio).
-</p>
 
-<p class="bigbreak">
 This project received funding through [NGI0 Discovery](https://nlnet.nl/discovery), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/LibrecastLive).
-</p>
 
 <p>
   <a href="https://nlnet.nl/project/LibreCastLiveStudio/">
