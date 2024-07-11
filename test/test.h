@@ -40,7 +40,7 @@ int test_strncmp(char *str1, char *str2, size_t len, char *msg, ...);
 int test_expect(char *expected, char *got);
 int test_expectn(char *expected, char *got, size_t len);
 void test_log(char *msg, ...);
-void test_rusage();
+void test_rusage(void);
 void test_name(char *str, ...);
 int test_skip(char *str, ...);
 void test_cap_require(int cap);

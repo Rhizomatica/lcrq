@@ -180,7 +180,7 @@ void test_require_linux(void)
 #endif
 }
 
-void test_rusage()
+void test_rusage(void)
 {
 	struct rusage ru = {0};
 	if (getrusage(RUSAGE_SELF, &ru)) {
