@@ -60,33 +60,75 @@ See the man pages:
 
 ## Installation
 
+Oh good. You're one of those people who reads documentation. Phew! Please, do
+NOT just build the sources with the usual `configure && make`. It will run like a
+dog with no legs.
+
+C convention says that I absolutely MUST NOT mess with CFLAGS and try to help
+you in any way by setting sane defaults.  That means you need to do it.
+
+How you build LCRQ depends on whether you are building it to just run on your
+local machine, or if you are building binaries that need to support multiple
+CPUs, such as when building packages for a binary distribution.
+
+There should be no compiler warnings, even with `-Wall -Wextra -pedantic`.
+Please raise a bug if you see any.
+
+### Supported Compiliers
+
+The code compiles and has been tested with gcc and clang.  The default is
+whatever your default CC is, which you can set when calling `configure`. eg.
+`./configure CC=clang`.
+
+### Configure Options
+
+#### Native Compilation (best performance)
+
+LCRQ makes heavy use of SIMD instructions when available. For best performance,
+a native build targeting your local machine is best.
+
+If you are compiling lcrq for use only on your local machine, you will want to
+set some CFLAGS appropriate to your platform. You can read more about these
+options in the [GCC manual](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html).
+
+Consider:
+
+`-O3`
+: Optimize aggressively. Highly recommended.
+
+`-march=native`
+: Enable all CPU instruction sets available on the local machine, and tuning for
+your CPU. Combine this with `--enable-native` for best results.
+
+`-mpopcnt`
+: In theory this will be enabled by `-march=native`, but it doesn't hurt to be
+explicit if your CPU supports it.
+
+`--enable-native`
+: Enable native optimizations in the LCRQ build. Combine supported instruction
+sets into one compilation unit, rather than building separately. NB: Requires that
+your CPU supports AVX2.
+
+`-flto`
+: Enable link-time optimization to allow compiler optimization across
+compilation units. Generally safe to use and highly recommended.
+
+`-funroll-loops`
+: Give the compiler a bit more encouragement to unroll loops.
+
+`-ffast-math`
+: Recommended, but might be unsafe in some circumstances. Try it. If you have
+problems, turn it off.
+
+`-DNDEBUG`
+: Disable assertions and other debugging code.
+
+So, putting that all together, we get something like:
+
 ```
-./configure
+./configure CFLAGS="-Wall -Wextra -pedantic -O3 -march=native -mpopcnt -ffast-math -funroll-loops -flto -DNDEBUG" --enable-native
 make
-make test # (optional)
-sudo make install
-```
-
-The code compiles using either gcc or clang.  There is a `make clang` target.
-The default is whatever your default CC is.
-
-To best performance, you will want to set some CFLAGS appropriate to your
-platform.  Something like:
-
-```
-./configure CFLAGS="-O3 -march=native -mpopcnt -pipe -ffast-math -funroll-loops -flto -DNDEBUG"
-```
-can make a huge difference.
-
-To build with SIMD enabled (highly recommended), append `--enable-simd` to your
-configure command. You must enable at least `-mssse3` to use this.
-`-march=native` is probably a better bet.
-
-Putting that all together:
-
-```
-./configure CFLAGS="-O3 -march=native -mpopcnt -pipe -ffast-math -funroll-loops -flto -DNDEBUG" --enable-simd
-make
+make test      # make sure all tests PASS
 make install
 ```
 
@@ -95,12 +137,51 @@ running  `make speedtest`. This is useful for observing the effects of various
 optimizations. It is not a proper benchmark test.
 
 NB: if rebuilding with different compiler options, don't forget to run
-`make realclean` first.
+`make clean` first.
 
-### *BSD
+#### Portable Compilation (for binary distributions)
 
-Users of *BSD will need to use gmake instead of make. `gmake test` requires
+If you are packaging LCRQ, or otherwise building it to run on a whole family of
+CPUs (like x86\_64) then some of the optimizations in the previous section
+aren't applicable.  You can probably safely use:
+
+`-O3`
+: Optimize aggressively. Highly recommended.
+
+`-flto`
+: Enable link-time optimization to allow compiler optimization across
+compilation units. Generally safe to use and highly recommended.
+
+`-funroll-loops`
+: Give the compiler a bit more encouragement to unroll loops.
+
+`-ffast-math`
+: Recommended, but might be unsafe in some circumstances. Try it. If you have
+problems, turn it off.
+
+`-DNDEBUG`
+: Disable assertions and other debugging code.
+
+So, putting that all together, we get something like:
+
+```
+./configure CFLAGS="-Wall -Wextra -pedantic -O3 -flto -funroll-loops -ffast-math -DNDEBUG"
+make
+make test      # make sure all tests PASS
+make install
+```
+
+Please run `make speedtest` in your build scripts and pay attention to the
+output. Does it seem reasonable for the target system? Compare it to a build on
+your own machine.
+
+
+### \*BSD
+
+Users of \*BSD will need to use gmake instead of make. `gmake test` requires
 bash.
+
+We test all releases on FreeBSD, NetBSD and OpenBSD.
 
 ## Other RaptorQ Implementations
 
