@@ -47,7 +47,7 @@ MAJFILE := $(SOFILE).$(SOMAJOR)
 all: $(SOFILE)
 
 $(SOFILE): $(OBJECTS) $(HEADERS)
-	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,$(SOOPT),$(ABIFILE) -o $@ $(OBJECTS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -shared -Wl,$(SOOPT),$(ABIFILE) -o $@ $(OBJECTS) $(LDLIBS)
 
 gf256_ssse3.o: gf256_ssse3.c gf256.h $(HEADERS)
 	$(CC) $(CFLAGS) -mssse3 -c $< -o $@
