@@ -10,7 +10,7 @@
 int main(void)
 {
 	loginit();
-#ifdef INTEL_SSE3
+#ifdef __SSSE3__
 	test_name("Galois Field 256 SIMD (SSE3) multiplication");
 
 	gf256_init();

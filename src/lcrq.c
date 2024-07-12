@@ -1055,9 +1055,7 @@ rq_t *rq_init(const uint64_t F, const uint16_t T)
 	if (!rq) return NULL;
 	memset(rq, 0, sizeof(rq_t));
 
-#ifdef INTEL_SSSE3
-	GF256LR_INIT;
-#endif
+	if (cpu_instruction_set() & SSSE3) GF256LR_INIT;
 
 	rq->F = F;
 	rq->WS = RQ_WS_DEFAULT;

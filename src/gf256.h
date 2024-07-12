@@ -117,9 +117,7 @@ uint8_t gf256_mul(const uint8_t a, const uint8_t b);
 
 uint8_t gf256_div(const uint8_t u, const uint8_t v);
 
-#ifdef INTEL_SSE3
 __m128i gf256_mul_128(__m128i A, uint8_t y);
 void gf256_init(void);
-#endif
 
 #endif /* GF256_H */
