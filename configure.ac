@@ -10,6 +10,10 @@ See COPYING for license details.
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([src/config.h])
 
+# Check arch
+AC_CANONICAL_TARGET
+AC_SUBST([CPU],[$target_cpu])
+
 # Enable features.
 AC_ARG_ENABLE([native], AS_HELP_STRING([--enable-native], [use native build (default is no)]))
 AS_IF([test "x$enable_native" = "xyes"], [

@@ -261,7 +261,8 @@ matrix_t *matrix_swap_cols(matrix_t *m, const int c1, const int c2)
 # include "matrix_avx2.c"
 # include "matrix_ssse3.c"
 # include "matrix_sse2.c"
-#else
+#endif /* USE_NATIVE */
+
 static void matrix_row_add_nosimd(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	assert(matrix_cols(dst) == matrix_cols(src));
@@ -271,7 +272,7 @@ static void matrix_row_add_nosimd(matrix_t *dst, const int drow, const matrix_t 
 	for (int j = 0; j < mcols; j++) d[j] ^= s[j];
 }
 
-void matrix_row_mul_default(matrix_t *m, const int row, const int off, const uint8_t y)
+void matrix_row_mul_nosimd(matrix_t *m, const int row, const int off, const uint8_t y)
 {
 	uint8_t *d = matrix_ptr_row(m, row) + off;
 	const int max = m->cols - off;
@@ -287,41 +288,33 @@ void matrix_row_mul_byrow_nosimd(matrix_t *m, const int rdst, const int off, con
 	for (int i = 0; i < max; i++) d[i] ^= GF256MUL(s[i], y);
 }
 
-#endif /* USE_NATIVE */
-
 static void matrix_row_add_dispatch(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
-#if USE_NATIVE
-	matrix_row_add = &matrix_row_add_avx2;
-#else
 	const int isets = cpu_instruction_set();
+	matrix_row_add = &matrix_row_add_nosimd;
+#if defined(__x86_64__)
 	if      (isets & AVX2) matrix_row_add = &matrix_row_add_avx2;
 	else if (isets & SSE2) matrix_row_add = &matrix_row_add_sse2;
-	else                   matrix_row_add = &matrix_row_add_nosimd;
 #endif
 	matrix_row_add(dst, drow, src, srow);
 }
 
 static void matrix_row_mul_dispatch(matrix_t *m, const int row, const int off, const uint8_t y)
 {
-#if USE_NATIVE
-	matrix_row_mul = &matrix_row_mul_ssse3;
-#else
-	int isets = cpu_instruction_set();
+	const int isets = cpu_instruction_set();
+	matrix_row_mul = &matrix_row_mul_nosimd;
+#if defined(__x86_64__)
 	if (isets & SSSE3) matrix_row_mul = &matrix_row_mul_ssse3;
-	else matrix_row_mul = &matrix_row_mul_default;
 #endif
 	matrix_row_mul(m, row, off, y);
 }
 
 static void matrix_row_mul_byrow_dispatch(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
 {
-#if USE_NATIVE
-	matrix_row_mul_byrow = &matrix_row_mul_byrow_ssse3;
-#else
-	int isets = cpu_instruction_set();
+	const int isets = cpu_instruction_set();
+	matrix_row_mul_byrow = &matrix_row_mul_byrow_nosimd;
+#if defined(__x86_64__)
 	if (isets & SSSE3) matrix_row_mul_byrow = &matrix_row_mul_byrow_ssse3;
-	else               matrix_row_mul_byrow = &matrix_row_mul_byrow_nosimd;
 #endif
 	matrix_row_mul_byrow(m, rdst, off, rsrc, y);
 }

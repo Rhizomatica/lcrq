@@ -796,7 +796,8 @@ static int rq_phase1_choose_row(const matrix_t *A, const int i, const int u, int
 #if USE_NATIVE
 # include "lcrq_avx2.c"
 # include "lcrq_sse2.c"
-#else
+#endif /* USE_NATIVE */
+
 /* just sum the elements to get r, they are 1 or 0 except for HDPC */
 static int count_r_nosimd(uint8_t *p, int len)
 {
@@ -804,17 +805,14 @@ static int count_r_nosimd(uint8_t *p, int len)
 	for (; len; len--, p++) c += *p;
 	return c;
 }
-#endif /* USE_NATIVE */
 
 static int count_r_dispatch(uint8_t *p, int len)
 {
-#if USE_NATIVE
-	count_r = &count_r_avx2;
-#else
-	int isets = cpu_instruction_set();
+	const int isets = cpu_instruction_set();
+	count_r = &count_r_nosimd;
+#if defined (__x86_64__)
 	if      (isets & AVX2) count_r = &count_r_avx2;
 	else if (isets & SSE2) count_r = &count_r_sse2;
-	else                   count_r = &count_r_nosimd;
 #endif
 	return count_r(p, len);
 }

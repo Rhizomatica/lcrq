@@ -2,6 +2,7 @@
 # Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net>
 
 SHELL = /bin/sh
+CPU := @CPU@
 LIBNAME := @PACKAGE_NAME@
 VERSION := @PACKAGE_VERSION@
 ABIVERS := @PACKAGE_ABIVERS@
@@ -22,15 +23,20 @@ PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
 NATIVE := @NATIVE@
-ifeq ($(NATIVE),1)
-OBJECTS_GF256 := gf256.o
-OBJECTS_LCRQ := lcrq.o
-OBJECTS_MATRIX := matrix.o
-else
-OBJECTS_GF256 := gf256_ssse3.o gf256.o
-OBJECTS_LCRQ := lcrq_avx2.o lcrq_sse2.o lcrq.o
-OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o matrix.o
+ifneq ($(NATIVE),1)
+ifeq ($(CPU),x86_64)
+OBJECTS_GF256 := gf256_ssse3.o
+OBJECTS_LCRQ := lcrq_avx2.o lcrq_sse2.o
+OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o
 endif
+ifeq ($(CPU),i386)
+OBJECTS_LCRQ := lcrq_sse2.o
+OBJECTS_MATRIX := matrix_sse2.o
+endif
+endif
+OBJECTS_GF256 += gf256.o
+OBJECTS_LCRQ += lcrq.o
+OBJECTS_MATRIX += matrix.o
 OBJECTS := cpu.o $(OBJECTS_GF256) $(OBJECTS_LCRQ) $(OBJECTS_MATRIX)
 
 ifeq ($(OSNAME),Darwin)
