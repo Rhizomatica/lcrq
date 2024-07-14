@@ -808,9 +808,9 @@ static int count_r_nosimd(uint8_t *p, int len)
 
 static int count_r_dispatch(uint8_t *p, int len)
 {
-	const int isets = cpu_instruction_set();
 	count_r = &count_r_nosimd;
 #if defined (__x86_64__)
+	const int isets = cpu_instruction_set();
 	if      (isets & AVX2) count_r = &count_r_avx2;
 	else if (isets & SSE2) count_r = &count_r_sse2;
 #endif
