@@ -22,16 +22,19 @@ INSTALL_DATA := $(INSTALL) -m 644
 PREFIX ?= /usr/local
 LIBDIR := $(DESTDIR)$(PREFIX)/lib
 INCLUDEDIR := $(DESTDIR)$(PREFIX)/include
+
 NATIVE := @NATIVE@
-ifneq ($(NATIVE),1)
 ifeq ($(CPU),x86_64)
+USE_SIMD_x86 := 1
+endif
+ifeq ($(CPU),i686)
+USE_SIMD_x86 := 1
+endif
+ifneq ($(NATIVE),1)
+ifeq ($(USE_SIMD_x86),1)
 OBJECTS_GF256 := gf256_ssse3.o
 OBJECTS_LCRQ := lcrq_avx2.o lcrq_sse2.o
 OBJECTS_MATRIX := matrix_avx2.o matrix_ssse3.o matrix_sse2.o
-endif
-ifeq ($(CPU),i386)
-OBJECTS_LCRQ := lcrq_sse2.o
-OBJECTS_MATRIX := matrix_sse2.o
 endif
 endif
 OBJECTS_GF256 += gf256.o

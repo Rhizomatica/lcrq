@@ -291,7 +291,7 @@ void matrix_row_mul_byrow_nosimd(matrix_t *m, const int rdst, const int off, con
 static void matrix_row_add_dispatch(matrix_t *dst, const int drow, const matrix_t *src, const int srow)
 {
 	matrix_row_add = &matrix_row_add_nosimd;
-#if defined(__x86_64__)
+#ifdef USE_SIMD_x86
 	const int isets = cpu_instruction_set();
 	if      (isets & AVX2) matrix_row_add = &matrix_row_add_avx2;
 	else if (isets & SSE2) matrix_row_add = &matrix_row_add_sse2;
@@ -302,7 +302,7 @@ static void matrix_row_add_dispatch(matrix_t *dst, const int drow, const matrix_
 static void matrix_row_mul_dispatch(matrix_t *m, const int row, const int off, const uint8_t y)
 {
 	matrix_row_mul = &matrix_row_mul_nosimd;
-#if defined(__x86_64__)
+#ifdef USE_SIMD_x86
 	const int isets = cpu_instruction_set();
 	if (isets & SSSE3) matrix_row_mul = &matrix_row_mul_ssse3;
 #endif
@@ -312,7 +312,7 @@ static void matrix_row_mul_dispatch(matrix_t *m, const int row, const int off, c
 static void matrix_row_mul_byrow_dispatch(matrix_t *m, const int rdst, const int off, const int rsrc, const uint8_t y)
 {
 	matrix_row_mul_byrow = &matrix_row_mul_byrow_nosimd;
-#if defined(__x86_64__)
+#ifdef USE_SIMD_x86
 	const int isets = cpu_instruction_set();
 	if (isets & SSSE3) matrix_row_mul_byrow = &matrix_row_mul_byrow_ssse3;
 #endif

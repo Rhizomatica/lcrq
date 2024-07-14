@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only */
-/* Copyright (c) 2022-2023 Brett Sheffield <bacs@librecast.net> */
+/* Copyright (c) 2022-2024 Brett Sheffield <bacs@librecast.net> */
 /*
  * cpu.h - test CPU instruction set support
  *
@@ -16,6 +16,10 @@
 # include <immintrin.h>
 #endif
 #include <stdint.h>
+
+#if defined (__x86_64__) || defined(__i686__)
+# define USE_SIMD_x86
+#endif
 
 #define LCRQ_NOSIMD		0
 #define LCRQ_SIMD_MMX		1

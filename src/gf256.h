@@ -88,7 +88,7 @@ static_assert(sizeof(OCT_LOG) == 255 + 1, "OCT_LOG table has wrong size.");
 
 extern uint8_t GF256LR[256][2][16];
 
-#ifdef __x86_64__
+#ifdef USE_SIMD_x86
 #define GF256LR_INIT if (GF256LR[7][0][0x0f] != 0x2d) gf256_init()
 #else
 #define GF256LR_INIT while(0)
@@ -121,7 +121,7 @@ uint8_t gf256_mul(const uint8_t a, const uint8_t b);
 
 uint8_t gf256_div(const uint8_t u, const uint8_t v);
 
-#ifdef __x86_64__
+#ifdef USE_SIMD_x86
 __m128i gf256_mul_128(__m128i A, uint8_t y);
 #endif
 

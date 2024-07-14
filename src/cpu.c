@@ -3,9 +3,7 @@
 
 #include "cpu.h"
 
-#ifndef __x86_64__
-int cpu_instruction_set(void) { return 0; }
-#else
+#ifdef USE_SIMD_x86
 static inline uint64_t xgetbv (int ctr)
 {
 	uint32_t a, d;
@@ -79,4 +77,6 @@ int cpu_instruction_set(void) {
 
 	return isets;
 }
+#else
+int cpu_instruction_set(void) { return 0; }
 #endif /* __x86_64__ */
