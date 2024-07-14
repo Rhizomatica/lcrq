@@ -231,6 +231,7 @@ static void rq_encoder_rfc6330_phase0(rq_t *rq, matrix_t *A)
 static int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 {
 	matrix_t A;
+	matrix_t D = {0};
 	uint8_t *sym;
 	int i = 0, u = rq->P;
 	int rc = 0;
@@ -245,7 +246,7 @@ static int rq_encode_block_rfc(rq_t *rq, uint8_t *C, uint8_t *src)
 	if (rc) goto fail;
 	rc = rq_decoder_rfc6330_phase3(rq, &A, &i, &u);
 	if (rc) goto fail;
-	matrix_t D = rq_matrix_D(rq, src, rq->K);
+	D = rq_matrix_D(rq, src, rq->K);
 	sym = rq_decode_C(rq, &D);
 	matrix_t Cm;
 	matrix_new(&Cm, rq->L, rq->T, sym, 0);
