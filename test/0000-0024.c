@@ -11,7 +11,7 @@ int main(void)
 {
 	loginit();
 #ifdef __SSSE3__
-	test_name("Galois Field 256 SIMD (SSE3) multiplication");
+	test_name("Galois Field 256 SIMD (SSSE3) multiplication");
 
 	gf256_init();
 
@@ -84,7 +84,7 @@ int main(void)
 		test_assert(out[i] == v, "%02x * %02x == %02x (expected %02x)", in[i], y, out[i], v);
 	}
 #else
-	return test_skip("Galois Field 256 SIMD (SSE) multiplication (requires SSE3)");
+	return test_skip("Galois Field 256 SIMD (SSSE3) multiplication (requires SSSE3)");
 #endif
 
 	return test_status;
